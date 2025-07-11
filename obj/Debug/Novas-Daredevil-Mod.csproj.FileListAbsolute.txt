@@ -1,0 +1,4 @@
+G:\My-Games\Source Files\PPG Dump\Mods\Nova's-Daredevil-Mod\obj\Debug\Novas-Daredevil-Mod.csproj.AssemblyReference.cache
+G:\My-Games\Source Files\PPG Dump\Mods\Nova's-Daredevil-Mod\obj\Debug\Novas-Daredevil-Mod.csproj.CoreCompileInputs.cache
+G:\My-Games\Source Files\PPG Dump\Mods\Nova's-Daredevil-Mod\obj\Debug\Template Mod.dll
+G:\My-Games\Source Files\PPG Dump\Mods\Nova's-Daredevil-Mod\obj\Debug\Template Mod.pdb
