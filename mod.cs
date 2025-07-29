@@ -580,7 +580,17 @@ namespace Mod
                 var person = Instance.GetComponent<PersonBehaviour>();
 
                 var menu = Instance.GetComponent<TextureMenu>();
+                menu.AddButton("Clint Barton", ModAPI.LoadSprite("Art/Thumbnails/Clint Barton.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Clint Barton/"));
                 menu.AddButton("Classic Suit", ModAPI.LoadSprite("Art/Thumbnails/Classic Hawkeye.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Classic Hawkeye/"));
+            }, "a");
+
+            //Black Widow
+            ModAPIPlus.CreateHuman("Black Widow", "", "Black Widow", "Black Widow", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+               
             }, "a");
 
             //Wanda
@@ -620,6 +630,41 @@ namespace Mod
                 }
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("End of Time", ModAPI.LoadSprite("Art/Thumbnails/Loki End of Time.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Loki End of Time/"));
+            }, "a");
+
+            //Chitauri
+            ModAPIPlus.CreateHuman("Chitauri", "", "Chitauri", "Chitauri", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.name.Contains("UpperBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
+                    }
+
+                    if (Limbs.name.Contains("LowerBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
+                    }
+                }
             }, "a");
 
             //Objects
