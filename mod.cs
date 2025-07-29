@@ -433,7 +433,14 @@ namespace Mod
                 var person = Instance.GetComponent<PersonBehaviour>();
 
                 var menu = Instance.GetComponent<TextureMenu>();
-
+                if (Instance.transform.localScale.x > 0)
+                {
+                    Instance.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
+                }
+                else
+                {
+                    Instance.transform.localScale = new Vector3(-1.2f, 1.2f, 1.2f);
+                }
             }, "a");
 
             //Antman
@@ -532,6 +539,15 @@ namespace Mod
 
             }, "a");
 
+            //Iron Spider
+            ModAPIPlus.CreateHuman("Iron Spider", "", "Iron Spider", "Iron Spider", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+            }, "a");
+
             //Black Panther
             ModAPIPlus.CreateHuman("Black Panther", "", "Black Panther", "Black Panther", (Instance) =>
             {
@@ -600,6 +616,67 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("Multiverse of Madness", ModAPI.LoadSprite("Art/Thumbnails/MOM Wanda.png"), ModAPIPlus.LimbSprites("Art/AltSkins/MOM Wanda/"));
+            }, "a");
+
+            //Thanos
+            ModAPIPlus.CreateHuman("Thanos", "", "Thanos", "Thanos", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+                menu.AddButton("Infinity War", ModAPI.LoadSprite("Art/Thumbnails/Thanos Infinity War.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Thanos Infinity War/"));
+
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.name.Contains("UpperBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
+                    }
+
+                    if (Limbs.name.Contains("LowerBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
+                    }
+                }
+                foreach (var limb in person.Limbs)
+                {
+                    limb.gameObject.FixColliders();
+                }
+
+                if (Instance.transform.localScale.x > 0)
+                {
+                    Instance.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
+                }
+                else
+                {
+                    Instance.transform.localScale = new Vector3(-1.2f, 1.2f, 1.2f);
+                }
+
+
+                foreach (var limb in person.Limbs)
+                {
+                    foreach (var limb2 in person.Limbs)
+                    {
+                        Physics2D.IgnoreCollision(limb.GetComponent<Collider2D>(), limb2.GetComponent<Collider2D>(), true);
+                        limb2.gameObject.AddComponent<NoCollidea>().other = limb.gameObject;
+                    }
+                }
+
+                
             }, "a");
 
             //Loki
