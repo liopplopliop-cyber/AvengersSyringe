@@ -392,8 +392,8 @@ namespace Mod
 
             }, "a");
 
-            //Steve Rodgers
-            ModAPIPlus.CreateHuman("Steve Rodgers", "", "Steve Rodgers", "Steve Rodgers", (Instance) =>
+            //Steve Rogers
+            ModAPIPlus.CreateHuman("Steve Rogers", "", "Steve Rogers", "Steve Rogers", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
@@ -403,7 +403,7 @@ namespace Mod
                 person.GetComponent<SuperMass>().EnablePower();
 
                 var menu = Instance.GetComponent<TextureMenu>();
-                menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Steve Rodgers Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rodgers Unmasked/"));
+                menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers Unmasked/"));
 
             }, "a");
 
