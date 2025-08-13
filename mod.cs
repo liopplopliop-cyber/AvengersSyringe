@@ -373,6 +373,7 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Steve Rodgers Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rodgers Unmasked/"));
+                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Steve Rodgers Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rodgers Casual/"));
 
             }, "a");
 
@@ -460,6 +461,15 @@ namespace Mod
                 }
             }, "a");
 
+            //Shang-Chi
+            ModAPIPlus.CreateHuman("Shang-Chi", "", "Shang-Chi", "Shang-Chi", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+                var menu = Instance.GetComponent<TextureMenu>();
+
+
+            }, "a");
+
             //Jennifer Walters
             ModAPIPlus.CreateHuman("Jennifer Walters", "Justice doesn't flinch. Neither do I.", "Jennifer Walters", "Jennifer Walters", (Instance) =>
             {
@@ -467,6 +477,32 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
 
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.name.Contains("UpperBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
+                    }
+
+                    if (Limbs.name.Contains("LowerBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
+                    }
+                }
             }, "a");
 
             //She-Hulk
@@ -979,36 +1015,6 @@ namespace Mod
                 }
             }, "a");
 
-            //Loki
-            ModAPIPlus.CreateHuman("Loki Laufeyson", "", "Loki", "Loki", (Instance) =>
-            {
-                var person = Instance.GetComponent<PersonBehaviour>();
-
-                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
-                {
-                    if (Limbs.gameObject.name.Contains("ArmFront"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
-                    }
-                    if (Limbs.name.Contains("UpperBody"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
-                    }
-
-                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
-                    }
-
-                    if (Limbs.name.Contains("LowerBody"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
-                    }
-                }
-                var menu = Instance.GetComponent<TextureMenu>();
-                menu.AddButton("End of Time", ModAPI.LoadSprite("Art/Thumbnails/Loki End of Time.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Loki End of Time/"));
-            }, "a");
-
             //Thanos
             ModAPIPlus.CreateHuman("Thanos", "", "Thanos", "Thanos", (Instance) =>
             {
@@ -1067,7 +1073,66 @@ namespace Mod
                     }
                 }
 
-                
+
+            }, "a");
+
+            //Loki
+            ModAPIPlus.CreateHuman("Loki Laufeyson", "", "Loki", "Loki", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+                    if (Limbs.name.Contains("UpperBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
+                    }
+
+                    if (Limbs.name.Contains("LowerBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
+                    }
+                }
+                var menu = Instance.GetComponent<TextureMenu>();
+                menu.AddButton("End of Time", ModAPI.LoadSprite("Art/Thumbnails/Loki End of Time.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Loki End of Time/"));
+            }, "a");
+
+            //Kang
+            ModAPIPlus.CreateHuman("Kang the Conquerer", "", "Kang the Conquerer", "Kang the Conquerer", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+                    if (Limbs.name.Contains("UpperBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
+                    }
+
+                    if (Limbs.name.Contains("LowerBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
+                    }
+                }
+                var menu = Instance.GetComponent<TextureMenu>();
             }, "a");
 
             //Chitauri
