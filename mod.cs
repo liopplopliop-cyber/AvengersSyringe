@@ -714,52 +714,6 @@ namespace Mod
 
             }, "a");
 
-            //Blue Marvel
-            ModAPIPlus.CreateHuman("Blue Marvel", "", "Blue Marvel", "Blue Marvel", (Instance) =>
-            {
-                var person = Instance.GetComponent<PersonBehaviour>();
-                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
-
-                person.GetComponent<SpeedHealing>().EnablePower();
-                person.GetComponent<SuperMass>().EnablePower();
-
-                var menu = Instance.GetComponent<TextureMenu>();
-
-                menu.AddButton("Jacket", ModAPI.LoadSprite("Art/Thumbnails/Blue Marvel Jacket.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Blue Marvel Jacket/"));
-
-
-                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
-                {
-                    if (Limbs.gameObject.name.Contains("ArmFront"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
-                    }
-                    if (Limbs.gameObject.name.Contains("ArmFront"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
-                    }
-
-                    if (Limbs.name.Contains("UpperBody"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
-                    }
-
-                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
-                    }
-
-                    if (Limbs.name.Contains("LowerBody"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
-                    }
-                }
-
-                Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Blue Marvel/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Blue Marvel/CapeThing.png"));
-
-            }, "a");
-
             //Iron Spider
             ModAPIPlus.CreateHuman("Iron Spider", "With Great Power... Comes Great Responsibility. <color=\"yellow\">\n \n- Activate arm to shoot webs \n- Activate with custom activator (typically H) to change web type (Normal, Connector, Grapple, Electric, Webshot, None)", "Iron Spider", "Iron Spider", (Instance) =>
             {
@@ -833,8 +787,8 @@ namespace Mod
 
             }, "a");
 
-            //Nick Fury Sr
-            ModAPIPlus.CreateHuman("Nick Fury Sr", "", "Nick Fury Sr", "Nick Fury Sr", (Instance) =>
+            //Ms. Marvel
+            ModAPIPlus.CreateHuman("Ms. Marvel", "", "Ms. Marvel", "Ms. Marvel", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
@@ -844,11 +798,35 @@ namespace Mod
                 person.GetComponent<SuperMass>().EnablePower();
 
                 var menu = Instance.GetComponent<TextureMenu>();
-                menu.AddButton("Eyepatch", ModAPI.LoadSprite("Art/Thumbnails/Nick Fury Sr Eyepatch.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Nick Fury Sr Eyepatch/"));
-                menu.AddButton("Nick Fury Jr", ModAPI.LoadSprite("Art/Thumbnails/Nick Fury Shield.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Nick Fury Shield/"));
-                menu.AddButton("Nick Fury Jr Eyepatch", ModAPI.LoadSprite("Art/Thumbnails/Nick Fury Shield Eyepatch.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Nick Fury Shield Eyepatch/"));
 
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.name.Contains("UpperBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
+                    }
+
+                    if (Limbs.name.Contains("LowerBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
+                    }
+                }
             }, "a");
+
 
             //Binary
             ModAPIPlus.CreateHuman("Binary", "I don't burn out. I go supernova.", "Binary", "Binary", (Instance) =>
@@ -856,17 +834,6 @@ namespace Mod
                 var person = Instance.GetComponent<PersonBehaviour>();
 
                 var menu = Instance.GetComponent<TextureMenu>();
-               
-            }, "a");
-
-            //Maria Hill
-            ModAPIPlus.CreateHuman("Maria Hill", "I don't do warnings. I do results.", "Maria Hill", "Maria Hill", (Instance) =>
-            {
-                var person = Instance.GetComponent<PersonBehaviour>();
-
-                var menu = Instance.GetComponent<TextureMenu>();
-
-                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Casual Maria Hill.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Casual Maria Hill/"));
                
             }, "a");
 
@@ -1015,6 +982,35 @@ namespace Mod
                 }
             }, "a");
 
+            //Nick Fury Sr
+            ModAPIPlus.CreateHuman("Nick Fury Sr", "", "Nick Fury Sr", "Nick Fury Sr", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
+
+                person.GetComponent<SpeedHealing>().EnablePower();
+                person.GetComponent<SuperMass>().EnablePower();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+                menu.AddButton("Eyepatch", ModAPI.LoadSprite("Art/Thumbnails/Nick Fury Sr Eyepatch.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Nick Fury Sr Eyepatch/"));
+                menu.AddButton("Nick Fury Jr", ModAPI.LoadSprite("Art/Thumbnails/Nick Fury Shield.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Nick Fury Shield/"));
+                menu.AddButton("Nick Fury Jr Eyepatch", ModAPI.LoadSprite("Art/Thumbnails/Nick Fury Shield Eyepatch.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Nick Fury Shield Eyepatch/"));
+
+            }, "a");
+
+
+            //Maria Hill
+            ModAPIPlus.CreateHuman("Maria Hill", "I don't do warnings. I do results.", "Maria Hill", "Maria Hill", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Casual Maria Hill.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Casual Maria Hill/"));
+
+            }, "a");
+
             //Thanos
             ModAPIPlus.CreateHuman("Thanos", "", "Thanos", "Thanos", (Instance) =>
             {
@@ -1104,6 +1100,20 @@ namespace Mod
                 }
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("End of Time", ModAPI.LoadSprite("Art/Thumbnails/Loki End of Time.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Loki End of Time/"));
+            }, "a");
+
+            //Ultron
+            ModAPIPlus.CreateHuman("Ultron", "", "Ultron", "Ultron", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
+
+                person.GetComponent<SpeedHealing>().EnablePower();
+                person.GetComponent<SuperMass>().EnablePower();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
             }, "a");
 
             //Kang
