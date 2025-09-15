@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using UnityEngine.UI.Extensions;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -149,6 +150,7 @@ namespace Mod
         public static Sprite RepulsorCannon = ModAPI.LoadSprite("Art/Objects/Cannon.png");
         public static Sprite NanoBlade = ModAPI.LoadSprite("Art/Objects/Sword.png");
         public static Sprite NanoShield = ModAPI.LoadSprite("Art/Objects/Shield.png");
+        public static Sprite NanoHammer = ModAPI.LoadSprite("Art/Objects/Hammer.png");
 
         //icons
         public static Sprite venomIcon = ModAPI.LoadSprite("Art/UI/Icons/Venom.png");
@@ -632,8 +634,8 @@ namespace Mod
                 person.GetComponent<SuperMass>().EnablePower();
 
                 var menu = Instance.GetComponent<TextureMenu>();
-                menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Steve Rodgers Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rodgers Unmasked/"));
-                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Steve Rodgers Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rodgers Casual/"));
+                menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers Unmasked/"));
+                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers Casual/"));
 
             }, "a");
 
@@ -1035,6 +1037,25 @@ namespace Mod
 
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Iron Spider Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Iron Spider Unmasked/"));
 
+                SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, ModAPI.PixelSize * new Vector2(-10, -3), 120);
+                SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, ModAPI.PixelSize * new Vector2(-10, -3), 120);
+                SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, ModAPI.PixelSize * new Vector2(-10, 3), 120);
+                SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, ModAPI.PixelSize * new Vector2(-10, 3), 120);
+
+                foreach (var spiderarm in person.GetComponentsInChildren<SpiderArm>())
+                {
+                    foreach (var spiderlimb in spiderarm.Segments)
+                    {
+                        foreach (var spiderarm2 in person.GetComponentsInChildren<SpiderArm>())
+                        {
+                            foreach (var spiderlimb2 in spiderarm.Segments)
+                            {
+                                Physics2D.IgnoreCollision(spiderlimb.GetComponent<Collider2D>(), spiderlimb2.GetComponent<Collider2D>(), true);
+                            }
+                        }
+                    }
+                }
+
                 foreach (var limb in person.Limbs)
                 {
                     if (limb.gameObject.name.Contains("LowerArm"))
@@ -1276,6 +1297,9 @@ namespace Mod
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("Infinity War", ModAPI.LoadSprite("Art/Thumbnails/Thanos Infinity War.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Thanos Infinity War/"));
 
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1);
+
                 foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
                 {
                     if (Limbs.gameObject.name.Contains("ArmFront"))
@@ -1304,7 +1328,9 @@ namespace Mod
                 }
                 foreach (var limb in person.Limbs)
                 {
+                    limb.ImmuneToDamage = true;
                     limb.gameObject.FixColliders();
+                    Timtam.CreateFastCollider(limb.GetComponent<SpriteRenderer>());
                 }
 
                 if (Instance.transform.localScale.x > 0)
@@ -1461,6 +1487,7 @@ namespace Mod
 
             ModAPI.Register<AlternateMouseActivator>();
             ModAPI.Register<CategoryButtonEditor>();
+            ModAPI.RegisterLiquid(TBLiquid.ID, new TBLiquid());
             ModAPI.OnItemSpawned += AddLimbLogger;
         }
 
@@ -1510,6 +1537,211 @@ namespace Mod
                 {
                     Destroy(this);
                 }
+            }
+        }
+    }
+
+    public class TBLiquid : Liquid
+    {
+        public const string ID = "THANOSBLOOD";
+        public override string GetDisplayName() => "Titanian Blood";
+
+        public TBLiquid()
+        {
+            Color = new UnityEngine.Color32(138, 52, 123, 255);
+        }
+
+        public override void OnEnterContainer(BloodContainer container)
+        {
+
+        }
+
+        public override void OnEnterLimb(LimbBehaviour limb)
+        {
+
+        }
+
+        public override void OnUpdate(BloodContainer c)
+        {
+            base.OnUpdate(c);
+            if (c is CirculationBehaviour circ)
+            {
+                var limb = circ.Limb;
+
+                if (limb.SpeciesIdentity == Species.Android)
+                    return;
+
+                limb.CirculationBehaviour.HealBleeding();
+            }
+        }
+
+        public override void OnExitContainer(BloodContainer container)
+        {
+
+        }
+    }
+
+    public class SpiderArm : MonoBehaviour
+    {
+        public List<PhysicalBehaviour> Segments = new List<PhysicalBehaviour>();
+
+        public static SpiderArm SetArm(
+            PhysicalBehaviour Connected,
+            List<Sprite> segmentSprites,
+            Vector2 connectionOffset,
+            float angleLimitation,
+            float motorTorque = 500f,
+            bool stiff = true)
+        {
+            if (Connected == null || segmentSprites == null || segmentSprites.Count == 0)
+            {
+                Debug.LogWarning("[SpiderArm] Invalid arguments.");
+                return null;
+            }
+
+            var arm = Connected.gameObject.AddComponent<SpiderArm>();
+
+            var root = Connected.transform.root;
+            var baseColliders = root.GetComponentsInChildren<Collider2D>(true).ToList();
+            float pixelScale = ModAPI.PixelSize;
+            int pixelLength = segmentSprites[0].texture.width;
+            float segmentWorldLength = pixelLength * pixelScale;
+
+            Vector3 baseAnchorWorld = Connected.transform.TransformPoint(connectionOffset * pixelScale);
+
+            Vector3 visualRight = Connected.transform.root.localScale.x < 0 ? -Connected.transform.right : Connected.transform.right;
+            
+            Vector3 buildDir = -visualRight.normalized;
+
+            var createdSegments = new List<PhysicalBehaviour>();
+
+            for (int i = 0; i < segmentSprites.Count; i++)
+            {
+                Sprite segSprite = segmentSprites[i];
+                if (!segSprite) continue;
+
+                var segmentGO = ModAPI.CreatePhysicalObject("SpiderArmSegment_" + i, segSprite);
+                var phys = segmentGO.GetComponent<PhysicalBehaviour>();
+                createdSegments.Add(phys);
+                Destroy(segmentGO.GetComponent<Collider2D>());
+                segmentGO.AddComponent<PolygonCollider2D>();
+                Timtam.CreateCollider(segmentGO.GetComponent<SpriteRenderer>());
+                var rb = phys.rigidbody;
+                rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+                rb.gravityScale = 0f;
+
+                segmentGO.transform.parent = Connected.transform.parent;
+
+                if (Connected.transform.root.TryGetComponent<DisintegrationCounterBehaviour>(out var des))
+                    Destroy(des);
+
+                Vector3 centerPos = baseAnchorWorld + buildDir * ((i + 0.5f) * segmentWorldLength);
+                segmentGO.transform.position = centerPos;
+
+                float angle = Mathf.Atan2(buildDir.y, buildDir.x) * Mathf.Rad2Deg;
+                segmentGO.transform.rotation = Quaternion.Euler(0, 0, angle);
+
+                HingeJoint2D hinge = segmentGO.AddComponent<HingeJoint2D>();
+                hinge.autoConfigureConnectedAnchor = false;
+                hinge.enableCollision = false;
+                hinge.useLimits = angleLimitation > 0.01f;
+
+                hinge.anchor = new Vector2(-segmentWorldLength / 2f, 0f);
+
+                if (i == 0)
+                {
+                    hinge.connectedBody = Connected.rigidbody;
+                    hinge.connectedAnchor = Connected.rigidbody.transform.InverseTransformPoint(baseAnchorWorld);
+                }
+                else
+                {
+                    var prev = createdSegments[i - 1];
+                    hinge.connectedBody = prev.rigidbody;
+
+                    Vector3 prevOutWorld = prev.transform.position + prev.transform.right * (segmentWorldLength / 2f);
+                    hinge.connectedAnchor = prev.rigidbody.transform.InverseTransformPoint(prevOutWorld);
+                }
+
+                if (hinge.useLimits)
+                {
+                    JointAngleLimits2D limits = new JointAngleLimits2D
+                    {
+                        min = -angleLimitation,
+                        max = angleLimitation
+                    };
+                    hinge.limits = limits;
+                }
+
+                if (stiff && motorTorque > 0f)
+                {
+                    hinge.useMotor = true;
+                    var motor = hinge.motor;
+                    motor.motorSpeed = 0f;
+                    motor.maxMotorTorque = motorTorque;
+                    hinge.motor = motor;
+                }
+
+                segmentGO.AddComponent<Dampener>().arm = arm;
+            }
+
+            foreach (var seg in createdSegments)
+            {
+                var segCols = seg.GetComponentsInChildren<Collider2D>(true);
+                foreach (var sc in segCols)
+                {
+                    foreach (var baseCol in baseColliders)
+                    {
+                        if (baseCol && sc) Physics2D.IgnoreCollision(sc, baseCol, true);
+                    }
+                }
+            }
+
+            for (int i = 0; i < createdSegments.Count; i++)
+            {
+                var colsA = createdSegments[i].GetComponentsInChildren<Collider2D>(true);
+                for (int j = i + 1; j < createdSegments.Count; j++)
+                {
+                    var colsB = createdSegments[j].GetComponentsInChildren<Collider2D>(true);
+                    foreach (var ca in colsA)
+                    {
+                        foreach (var cb in colsB)
+                        {
+                            if (ca && cb) Physics2D.IgnoreCollision(ca, cb, true);
+                        }
+                    }
+                }
+            }
+
+            arm.Segments = createdSegments;
+            return arm;
+        }
+
+        public class Dampener : MonoBehaviour
+        {
+            public SpiderArm arm;
+            float dampenStrength = 0.05f;
+            float originalMotor;
+            JointMotor2D og;
+            JointMotor2D dampened;
+
+            public void Start()
+            {
+                if (TryGetComponent<HingeJoint2D>(out var joint) && joint.useMotor)
+                {
+                    originalMotor = joint.motor.maxMotorTorque;
+                }
+                dampened = new JointMotor2D { motorSpeed = 0, maxMotorTorque = originalMotor * dampenStrength };
+                og = new JointMotor2D { motorSpeed = 0, maxMotorTorque = originalMotor };
+            }
+
+            public void Update()
+            {
+                if (SelectionController.Main.SelectedObjects.Contains(GetComponent<PhysicalBehaviour>()))
+                    foreach (var seg in arm.Segments)
+                        seg.GetComponent<HingeJoint2D>().motor = dampened;
+                else
+                    foreach (var seg in arm.Segments)
+                        seg.GetComponent<HingeJoint2D>().motor = og;
             }
         }
     }
@@ -2214,7 +2446,134 @@ namespace Mod
 
             col.enabled = true;
 
-            Limb.ImmuneToDamage = true;
+            Limb.PhysicalBehaviour.BulletPenetration = false;
+            Limb.ShotDamageMultiplier = 0;
+            Limb.PhysicalBehaviour.Properties.BulletSpeedAbsorptionPower = 1;
+            Limb.PhysicalBehaviour.TrueInitialMass *= 20;
+
+            usingBlade = true;
+        }
+
+        public void Unblade()
+        {
+            if (usingBlade)
+            {
+                gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { OGArmSprite, OGArmSprite }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 1, AnimationType.CircleIn, false, 1);
+
+                col.enabled = false;
+
+                Limb.PhysicalBehaviour.BulletPenetration = false;
+                Limb.ShotDamageMultiplier = 0.001f;
+                Limb.PhysicalBehaviour.Properties.BulletSpeedAbsorptionPower = 0.5f;
+                Limb.PhysicalBehaviour.TrueInitialMass /= 20;
+
+                usingBlade = false;
+            }
+        }
+
+        IEnumerator PlaySound(AudioClip SoundToPlay)
+        {
+            var sound = new GameObject();
+            sound.name = "SFX";
+            //sound.transform.parent = transform;
+            sound.transform.position = gameObject.transform.position;
+            sound.AddComponent<AudioSource>();
+            sound.GetComponent<AudioSource>().playOnAwake = false;
+            sound.GetComponent<AudioSource>().clip = SoundToPlay;
+            sound.GetComponent<AudioSource>().spatialBlend = 1;
+            sound.GetComponent<AudioSource>().volume = 2f;
+            sound.AddComponent<AudioDistortionFilter>().distortionLevel = 0.85f;
+            sound.AddComponent<AudioSourceTimeScaleBehaviour>();
+            sound.GetComponent<AudioSource>().Play();
+
+            yield return new WaitForSeconds(SoundToPlay.length);
+
+            Destroy(sound);
+        }
+    }
+
+    public class NanoHammer : Power, Mod.ModAPIPlus.IUse2
+    {
+        public bool usingBlade = false;
+        public Sprite OGArmSprite;
+        public Sprite Nanoblade = Mod.NanoHammer;
+        public BoxCollider2D col;
+        public LimbBehaviour Limb;
+        public ParticleSystem effect;
+
+        public static NanoShield SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon, Sprite Nanoshield = null)
+        {
+            var power = limb.gameObject.AddComponent<NanoShield>();
+            power.icon = icon;
+            power.Name = "Nano Hammer";
+            power.Description = "Creates a powerful hammer that can destroy the target!";
+            power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+            power.Nanoblade = Nanoshield ?? Mod.NanoHammer;
+            power.Limb = limb;
+            power.col = limb.gameObject.AddComponent<BoxCollider2D>();
+            power.col.size = new Vector2(0.342398643f, 0.684489965f);
+            power.col.offset = new Vector2(-0.0287246704f, -0.0861734152f);
+            power.col.enabled = false;
+            return power;
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+            Unblade();
+        }
+
+        public override void Start()
+        {
+            base.Start();
+
+            var muzzleflash = UnityEngine.Object.Instantiate(ModAPI.FindSpawnable("Blaster Rifle").Prefab.transform.GetChild(0).gameObject);
+            muzzleflash.transform.parent = transform;
+            muzzleflash.transform.localRotation = Quaternion.Euler(0, 0, 270);
+            muzzleflash.transform.localPosition = Vector2.zero;
+
+            if (transform.root.localScale.x < 0)
+            {
+                muzzleflash.transform.localRotation = Quaternion.Euler(0, 0, 90);
+                muzzleflash.transform.localScale = new Vector2(0.8703f, 0.8703f);
+            }
+            effect = muzzleflash.GetComponent<ParticleSystem>();
+        }
+
+        public void Use2()
+        {
+            if (GetComponent<SpriteMergerAnimator>() || GetComponent<SpriteMergerAnimatorAdvanced>() || !Enabled)
+                return;
+
+            StartCoroutine(PlaySound(Mod.NanoGunTransform));
+
+            if (usingBlade)
+                Unblade();
+            else
+                Blade();
+            
+
+            foreach (var coll in Limb.Person.GetComponentsInChildren<Collider2D>())
+            {
+                Physics2D.IgnoreCollision(coll, col, true);
+            }
+        }
+
+        public void Blade()
+        {
+            OGArmSprite = Functions.Clone(GetComponent<SpriteRenderer>().sprite);
+
+            gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { Timtam.MergeSprites(OGArmSprite, Nanoblade), Timtam.MergeSprites(OGArmSprite, Nanoblade) }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 1, AnimationType.CircleOut, false, 1);
+
+            foreach (var blast in GetComponents<BlasterBehaviour>())
+            {
+                Destroy(blast.Muzzleflash.gameObject);
+                Destroy(blast.blasterSoundSource);
+                Destroy(blast);
+            }
+
+            col.enabled = true;
+
             Limb.PhysicalBehaviour.BulletPenetration = false;
             Limb.ShotDamageMultiplier = 0;
             Limb.PhysicalBehaviour.Properties.BulletSpeedAbsorptionPower = 1;
@@ -2231,13 +2590,41 @@ namespace Mod
 
                 col.enabled = false;
 
-                Limb.ImmuneToDamage = false;
                 Limb.PhysicalBehaviour.BulletPenetration = false;
                 Limb.ShotDamageMultiplier = 0.001f;
                 Limb.PhysicalBehaviour.Properties.BulletSpeedAbsorptionPower = 0.5f;
                 Limb.PhysicalBehaviour.TrueInitialMass /= 10;
 
                 usingBlade = false;
+            }
+        }
+
+        public void OnCollisionEnter2D(Collision2D col)
+        {
+            if (!Enabled || !usingBlade)
+                return;
+
+            Vector2 relativeVelocity = col.relativeVelocity;
+
+            float impactStrength = relativeVelocity.magnitude * 3;
+
+            if (col.gameObject.GetComponent<Rigidbody2D>() && col.relativeVelocity.magnitude > 3)
+            {
+                Vector2 directionToThisObject = (GetComponent<Rigidbody2D>().position - col.rigidbody.position).normalized;
+
+                float dotProduct = Vector2.Dot(relativeVelocity, directionToThisObject);
+
+                if (dotProduct > 0)
+                {
+                    col.gameObject.GetComponent<Rigidbody2D>().velocity += -relativeVelocity.normalized * impactStrength;
+                    CameraShakeBehaviour.main.Shake(5, base.transform.position);
+                    effect.Play();
+                    var imp = ModAPI.FindSpawnable("Power Hammer").Prefab.GetComponent<PowerHammerBehaviour>().ImpactClips;
+                    StartCoroutine(PlaySound(imp[UnityEngine.Random.Range(0, imp.Length)]));
+                    if (col.gameObject.TryGetComponent<PhysicalBehaviour>(out var phys))
+                        phys.charge += 20;
+                }
+
             }
         }
 
@@ -2366,9 +2753,8 @@ namespace Mod
                 limb.ImpactPainMultiplier = 0;
                 limb.ShotDamageMultiplier = 0;
                 limb.BreakingThreshold = Mathf.Infinity;
+                limb.ImmuneToDamage = true;
             }
-
-            Person.Limbs[0].ImmuneToDamage = true;
 
             Sprites.Clear();
             foreach (var limb in Person.Limbs)
