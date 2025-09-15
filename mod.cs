@@ -889,6 +889,26 @@ namespace Mod
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Antman Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman Unmasked/"));
                 menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Antman Civil War.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman Civil War/"));
                 menu.AddButton("Giant-Man", ModAPI.LoadSprite("Art/Thumbnails/Giant-Man.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Giant-Man/"));
+                menu.AddButton("Goliath", ModAPI.LoadSprite("Art/Thumbnails/Goliath.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Goliath/"));
+                menu.AddButton("Antman EMH", ModAPI.LoadSprite("Art/Thumbnails/Antman EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman EMH/"));
+                menu.AddButton("Giant-Man EMH", ModAPI.LoadSprite("Art/Thumbnails/Giant-Man EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Giant-Man EMH/"));
+                menu.AddButton("Yellowjacket", ModAPI.LoadSprite("Art/Thumbnails/Yellowjacket.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Yellowjacket/"));
+            }, "a");
+
+            //Captain Marvel
+            ModAPIPlus.CreateHuman("Captain Marvel", "", "Captain Marvel", "Captain Marvel", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+                menu.AddButton("Mohawk", ModAPI.LoadSprite("Art/Thumbnails/Captain Marvel Mohawk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Captain Marvel Mohawk/"));
+                menu.AddButton("Mask", ModAPI.LoadSprite("Art/Thumbnails/Captain Marvel Mask.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Captain Marvel Mask/"));
+                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Carol Danvers.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Carol Danvers/"));
+                menu.AddButton("Jacket", ModAPI.LoadSprite("Art/Thumbnails/Captain Marvel Jacket.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Captain Marvel Jacket/"));
+                menu.AddButton("Ms. Marvel", ModAPI.LoadSprite("Art/Thumbnails/Ms. Marvel Carol.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ms. Marvel Carol/"));
+                menu.AddButton("Ms. Marvel Red and Black", ModAPI.LoadSprite("Art/Thumbnails/Ms. Marvel Red and Black.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ms. Marvel Red and Black/"));
+                menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Captain Marvel MCU.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Captain Marvel MCU/"));
+               
             }, "a");
 
             //Doctor Strange
