@@ -188,6 +188,7 @@ namespace Mod
 
         public static Sprite carnageTail = ModAPI.LoadSprite("Art/Skins/Monster Carnage/Tail.png");
         public static Sprite carnageTailEnd = ModAPI.LoadSprite("Art/Skins/Monster Carnage/TailEnd.png");
+        public static List<Sprite> Hulk = ModAPIPlus.LimbSprites("Art/Skins/Hulk/");
 
         #endregion
 
@@ -892,7 +893,6 @@ namespace Mod
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Antman Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman Unmasked/"));
                 menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Antman Civil War.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman Civil War/"));
                 menu.AddButton("Giant-Man", ModAPI.LoadSprite("Art/Thumbnails/Giant-Man.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Giant-Man/"));
-<<<<<<< Updated upstream
                 menu.AddButton("Goliath", ModAPI.LoadSprite("Art/Thumbnails/Goliath.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Goliath/"));
                 menu.AddButton("Antman EMH", ModAPI.LoadSprite("Art/Thumbnails/Antman EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman EMH/"));
                 menu.AddButton("Giant-Man EMH", ModAPI.LoadSprite("Art/Thumbnails/Giant-Man EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Giant-Man EMH/"));
@@ -912,9 +912,7 @@ namespace Mod
                 menu.AddButton("Ms. Marvel", ModAPI.LoadSprite("Art/Thumbnails/Ms. Marvel Carol.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ms. Marvel Carol/"));
                 menu.AddButton("Ms. Marvel Red and Black", ModAPI.LoadSprite("Art/Thumbnails/Ms. Marvel Red and Black.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ms. Marvel Red and Black/"));
                 menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Captain Marvel MCU.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Captain Marvel MCU/"));
-               
-=======
-
+          
                 SizeChange.SetPower(person, person.Limbs[13], null, 2, "Grow");
                 SizeChange.SetPower(person, person.Limbs[13], null, 0.1f).EnablePower();
                 SizeChange.SetPower(person, person.Limbs[11], null, 2, "Grow").EnablePower();
@@ -922,7 +920,6 @@ namespace Mod
 
                 person.Limbs[13].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[13].gameObject);
                 person.Limbs[11].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[11].gameObject);
->>>>>>> Stashed changes
             }, "a");
 
             //Doctor Strange
@@ -1615,7 +1612,7 @@ namespace Mod
         public bool transformed = false;
 
         public List<Sprite> Sprites = new List<Sprite>();
-        public List<Sprite> Skin = Mod.NanotechSuit;
+        public List<Sprite> Skin = Mod.Hulk;
 
         public Dictionary<LimbBehaviour, float> threshold = new Dictionary<LimbBehaviour, float>();
 
@@ -1627,7 +1624,7 @@ namespace Mod
             power.icon = icon;
             power.targetLimb = TargettedLimb.Head;
             power.Person = Limb.Person;
-            power.Skin = Nanotech ?? Mod.NanotechSuit;
+            power.Skin = Nanotech ?? Mod.Hulk;
 
             ChestRepulsor.SetPower(Person, Person.Limbs[1], null);
 
@@ -1719,7 +1716,7 @@ namespace Mod
                 }
             }
 
-            Timtam.MakeCustomSkinSpread(Person.Limbs[startlimb], NanotechSuit, false, true, 2, true, Mod.Nanounder, 1);
+            Timtam.MakeCustomSkinSpread(Person.Limbs[startlimb], Skin, false, true, 2, true, Mod.Nanounder, 1);
 
             Person.Limbs[1].GetComponent<ChestRepulsor>().EnablePower();
 
