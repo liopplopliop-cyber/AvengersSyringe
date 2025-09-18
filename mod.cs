@@ -9,7 +9,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using UnityEngine.UI.Extensions;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -196,8 +195,10 @@ namespace Mod
         public static AudioClip WebStretch = ModAPI.LoadSound("Sounds/WebStretch.wav");
         public static AudioClip ClawSound = ModAPI.LoadSound("Sounds/Claw.wav");
         public static AudioClip TransformationSound = ModAPI.LoadSound("Sounds/Nanotech.wav");
+        public static AudioClip HulkTransformSound = ModAPI.LoadSound("Sounds/Transform.wav");
         public static AudioClip Electricity = ModAPI.LoadSound("Sounds/Electricity.wav");
         public static AudioClip Thunder = ModAPI.LoadSound("Sounds/Thunder.wav");
+        
         public static AudioClip[] WebSFX =
         {
             ModAPI.LoadSound("Sounds/Web1.wav"),
@@ -207,16 +208,10 @@ namespace Mod
             ModAPI.LoadSound("Sounds/Web5.wav"),
             ModAPI.LoadSound("Sounds/Web6.wav")
         };
-        public static Sprite[] SandBlood =
-{
-            ModAPI.LoadSprite("Art/TempForScripts/Sand1.png"),
-            ModAPI.LoadSprite("Art/TempForScripts/Sand2.png"),
-            ModAPI.LoadSprite("Art/TempForScripts/Sand3.png"),
-            ModAPI.LoadSprite("Art/TempForScripts/Sand4.png")
-        };
+        
         public static AudioClip ArcBlast = ModAPI.LoadSound("Sounds/Repulsor.wav");
         public static AudioClip ArcBlast2 = ModAPI.LoadSound("Sounds/Repulsor2.wav");
-        public static AudioClip Thruster = ModAPI.LoadSound("Sounds/Thruster.wav");
+        public static AudioClip ThrusterClip = ModAPI.LoadSound("Sounds/Thruster.wav");
 
         public static AudioClip NanoTransform = ModAPI.LoadSound("Sounds/Nanotech.wav");
         public static AudioClip NanoGunTransform = ModAPI.LoadSound("Sounds/BlasterTransform.wav");
@@ -420,6 +415,10 @@ namespace Mod
                             var flesh = Flesh?.texture;
                             var bone = Bone?.texture;
 
+                            person.SetBruiseColor(130, 10, 10);
+                            person.SetSecondBruiseColor(180, 20, 20);
+                            person.SetThirdBruiseColor(139, 10, 10);
+
                             if (skin != null && flesh != null && bone != null)
                                 person.SetBodyTextures(skin, flesh, bone);
                             else if (skin != null && flesh != null)
@@ -485,6 +484,7 @@ namespace Mod
                             {
                                 Instance.FixColliders();
                                 Instance.GetComponent<PhysicalBehaviour>().RecalculateMassBasedOnSize();
+                                Timtam.CreateCollider(Instance.GetComponent<SpriteRenderer>());
                             }
 
                         }
@@ -886,9 +886,13 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
 
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"));
+
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Antman Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman Unmasked/"));
                 menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Antman Civil War.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman Civil War/"));
                 menu.AddButton("Giant-Man", ModAPI.LoadSprite("Art/Thumbnails/Giant-Man.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Giant-Man/"));
+<<<<<<< Updated upstream
                 menu.AddButton("Goliath", ModAPI.LoadSprite("Art/Thumbnails/Goliath.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Goliath/"));
                 menu.AddButton("Antman EMH", ModAPI.LoadSprite("Art/Thumbnails/Antman EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman EMH/"));
                 menu.AddButton("Giant-Man EMH", ModAPI.LoadSprite("Art/Thumbnails/Giant-Man EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Giant-Man EMH/"));
@@ -909,6 +913,16 @@ namespace Mod
                 menu.AddButton("Ms. Marvel Red and Black", ModAPI.LoadSprite("Art/Thumbnails/Ms. Marvel Red and Black.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ms. Marvel Red and Black/"));
                 menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Captain Marvel MCU.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Captain Marvel MCU/"));
                
+=======
+
+                SizeChange.SetPower(person, person.Limbs[13], null, 2, "Grow");
+                SizeChange.SetPower(person, person.Limbs[13], null, 0.1f).EnablePower();
+                SizeChange.SetPower(person, person.Limbs[11], null, 2, "Grow").EnablePower();
+                SizeChange.SetPower(person, person.Limbs[11], null, 0.1f);
+
+                person.Limbs[13].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[13].gameObject);
+                person.Limbs[11].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[11].gameObject);
+>>>>>>> Stashed changes
             }, "a");
 
             //Doctor Strange
@@ -1057,24 +1071,12 @@ namespace Mod
 
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Iron Spider Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Iron Spider Unmasked/"));
 
-                SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, ModAPI.PixelSize * new Vector2(-10, -3), 120);
-                SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, ModAPI.PixelSize * new Vector2(-10, -3), 120);
-                SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, ModAPI.PixelSize * new Vector2(-10, 3), 120);
-                SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, ModAPI.PixelSize * new Vector2(-10, 3), 120);
+                SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, new Vector2(-5, 3), 140);
+                SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, new Vector2(-5, 3), 140);
+                SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, new Vector2(-5, 3), 140);
+                SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, new Vector2(-5, 3), 140);
 
-                foreach (var spiderarm in person.GetComponentsInChildren<SpiderArm>())
-                {
-                    foreach (var spiderlimb in spiderarm.Segments)
-                    {
-                        foreach (var spiderarm2 in person.GetComponentsInChildren<SpiderArm>())
-                        {
-                            foreach (var spiderlimb2 in spiderarm.Segments)
-                            {
-                                Physics2D.IgnoreCollision(spiderlimb.GetComponent<Collider2D>(), spiderlimb2.GetComponent<Collider2D>(), true);
-                            }
-                        }
-                    }
-                }
+                MechArms.SetPower(person, person.Limbs[2], ModAPI.LoadSprite("Art/UI/Icons/Mechanical Arms.png")).EnablePower();
 
                 foreach (var limb in person.Limbs)
                 {
@@ -1317,8 +1319,15 @@ namespace Mod
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("Infinity War", ModAPI.LoadSprite("Art/Thumbnails/Thanos Infinity War.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Thanos Infinity War/"));
 
-                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1);
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1).EnablePower();
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.75f, true);
+
+                person.SetBloodColour(145, 65, 143);
+                person.SetRottenColour(145, 65, 143);
+                person.SetBruiseColor(145, 65, 143);
+                person.SetSecondBruiseColor(116, 50, 128);
+                person.SetThirdBruiseColor(74, 26, 82);
 
                 foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
                 {
@@ -1348,6 +1357,15 @@ namespace Mod
                 }
                 foreach (var limb in person.Limbs)
                 {
+                    person.SetBloodColour(145, 65, 143);
+                    person.SetRottenColour(145, 65, 143);
+                    person.SetBruiseColor(145, 65, 143);
+                    person.SetSecondBruiseColor(116, 50, 128);
+                    person.SetThirdBruiseColor(74, 26, 82);
+                    limb.ImmuneToDamage = true;
+                    limb.BloodLiquidType = TBLiquid.ID;
+                    limb.CirculationBehaviour.ClearLiquid();
+                    limb.CirculationBehaviour.AddLiquid(Liquid.GetLiquid(TBLiquid.ID), 1f);
                     limb.ImmuneToDamage = true;
                     limb.gameObject.FixColliders();
                     Timtam.CreateFastCollider(limb.GetComponent<SpriteRenderer>());
@@ -1370,9 +1388,13 @@ namespace Mod
                         Physics2D.IgnoreCollision(limb.GetComponent<Collider2D>(), limb2.GetComponent<Collider2D>(), true);
                         limb2.gameObject.AddComponent<NoCollidea>().other = limb.gameObject;
                     }
+
+                    person.SetBloodColour(145, 65, 143);
+                    person.SetRottenColour(145, 65, 143);
+                    person.SetBruiseColor(145, 65, 143);
+                    person.SetSecondBruiseColor(116, 50, 128);
+                    person.SetThirdBruiseColor(74, 26, 82);
                 }
-
-
             }, "a");
 
             //Loki
@@ -1410,14 +1432,30 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 0.85f).EnablePower();
 
                 person.GetComponent<SpeedHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
 
                 var menu = Instance.GetComponent<TextureMenu>();
+                ChestRepulsor.SetPower(person, person.Limbs[1], null, new Color32(230, 0, 0, 200)).EnablePower();
+                foreach (var limb in person.Limbs)
+                {
+                    limb.ImmuneToDamage = true;
+                    limb.BloodMuscleStrengthRatio = 0f;
+                    limb.IsAndroid = true;
+                    limb.BaseStrength /= 2;
 
-            }, "a");
+                    if (limb.name.Contains("LowerArm"))
+                    {
+                        Repulsor.SetPower(person, limb, null, new Color32(230, 0, 0, 200)).EnablePower();
+                        limb.gameObject.AddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+                    }
+
+                    if (limb.name.Contains("Foot"))
+                        Thruster.SetPower(person, limb, null, new Color32(230, 0, 0, 200), new Color32(230, 0, 0, 200)).EnablePower();
+                }
+            }, "a", ModAPI.LoadSprite("Art/TempForScripts/AndroidFlesh.png"), ModAPI.LoadSprite("Art/TempForScripts/AndroidBone.png"));
 
             //Kang
             ModAPIPlus.CreateHuman("Kang the Conquerer", "", "Kang the Conquerer", "Kang the Conquerer", (Instance) =>
@@ -1493,6 +1531,9 @@ namespace Mod
             //Tesseract
             ModAPIPlus.CreateObject("Rod", "Tesseract", "", "Tesseract", "Tesseract", (Instance) =>
             {
+                Instance.GetComponent<SpriteRenderer>().sprite = ModAPI.LoadSprite("Art/Objects/Tesseract.png");
+                Instance.GetComponent<PhysicalBehaviour>().Properties = ModAPI.FindPhysicalProperties("Glass");
+                ModAPI.CreateLight(Instance.transform, Color.cyan, 3f, 1f);
             }, "2");
 
             //Cap's Shield
@@ -1561,6 +1602,424 @@ namespace Mod
         }
     }
 
+    public class HulkTransform : Power, Mod.ModAPIPlus.IUse2
+    {
+        public PersonBehaviour Person;
+
+        public AudioClip TransformationSound = Mod.TransformationSound;
+
+        bool TransformOnceNoAnim = false;
+        bool hadHealing;
+        bool hadStrength;
+
+        public bool transformed = false;
+
+        public List<Sprite> Sprites = new List<Sprite>();
+        public List<Sprite> Skin = Mod.NanotechSuit;
+
+        public Dictionary<LimbBehaviour, float> threshold = new Dictionary<LimbBehaviour, float>();
+
+        public static HulkTransform SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon, List<Sprite> Nanotech = null)
+        {
+            var power = Limb.gameObject.AddComponent<HulkTransform>();
+            power.Name = "Hulk";
+            power.Description = "makes the user transform into the Hulk, greatly increasing their strength and durability.\n\nWhile transformed, the user will heal rapidly and have superhuman strength.\n\nWhile transformed, the user cannot be damaged or have their limbs broken.\n<color=\"yellow\">Activate head with custom activation key (typically H) to transform the user";
+            power.icon = icon;
+            power.targetLimb = TargettedLimb.Head;
+            power.Person = Limb.Person;
+            power.Skin = Nanotech ?? Mod.NanotechSuit;
+
+            ChestRepulsor.SetPower(Person, Person.Limbs[1], null);
+
+            foreach (var limb in Person.Limbs)
+            {
+                power.threshold.Add(limb, limb.BreakingThreshold);
+
+                Sprite clonedSprite = Functions.Clone(limb.PhysicalBehaviour.spriteRenderer.sprite);
+                clonedSprite.name = limb.name;
+                power.Sprites.Add(clonedSprite);
+
+                if (limb.name.Contains("LowerArm"))
+                {
+                    Repulsor.SetPower(Person, limb, null);
+                    RepulsorCannons.SetPower(Person, limb, null);
+                    NanoBlade.SetPower(Person, limb, null);
+                    NanoShield.SetPower(Person, limb, null);
+                    NanoHammer.SetPower(Person, limb, null);
+                    limb.gameObject.AddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+                }
+
+                if (limb.name.Contains("Foot"))
+                    Thruster.SetPower(Person, limb, null);
+            }
+
+            return power;
+        }
+
+        public void Use2()
+        {
+            if (transformed)
+                TransformBack();
+            else if (Enabled)
+                Transform();
+        }
+
+        public void FixedUpdate()
+        {
+            if (TransformOnceNoAnim)
+                if (!Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>())
+                {
+                    TransformOnceNoAnim = false;
+                    Use2();
+                }
+        }
+
+        public void Transform(int startlimb = 1)
+        {
+            if (Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>())
+                return;
+
+            foreach (var power in transform.root.GetComponentsInChildren<Power>())
+            {
+                if (power != this && power.Enabled)
+                    power.DisablePower();
+            }
+
+            if (Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>() || !Enabled)
+            {
+                TransformOnceNoAnim = true;
+                return;
+            }
+
+            transformed = true;
+
+            foreach (var limb in Person.Limbs)
+            {
+                limb.PhysicalBehaviour.Properties = ModAPI.FindPhysicalProperties("AndroidArmour");
+                limb.PhysicalBehaviour.BulletPenetration = false;
+                limb.PhysicalBehaviour.Properties.BulletSpeedAbsorptionPower = 1;
+                limb.ImpactDamageMultiplier = 0.001f;
+                limb.ImpactPainMultiplier = 0;
+                limb.ShotDamageMultiplier = 0;
+                limb.BreakingThreshold = Mathf.Infinity;
+                limb.ImmuneToDamage = true;
+            }
+
+            Sprites.Clear();
+            foreach (var limb in Person.Limbs)
+            {
+                Sprite clonedSprite = Functions.Clone(limb.PhysicalBehaviour.spriteRenderer.sprite);
+                clonedSprite.name = limb.name;
+                Sprites.Add(clonedSprite);
+
+                if (limb.GetComponent<LineRenderer>())
+                {
+                    limb.GetComponent<LineRenderer>().startColor = new Color(0, 0, 0, 0);
+                    limb.GetComponent<LineRenderer>().endColor = new Color(0, 0, 0, 0);
+                }
+            }
+
+            Timtam.MakeCustomSkinSpread(Person.Limbs[startlimb], NanotechSuit, false, true, 2, true, Mod.Nanounder, 1);
+
+            Person.Limbs[1].GetComponent<ChestRepulsor>().EnablePower();
+
+            foreach (var limb in Person.Limbs)
+            {
+                if (limb.name.Contains("LowerArm"))
+                {
+                    limb.GetComponent<Repulsor>().EnablePower();
+                }
+                else if (limb.name.Contains("Foot"))
+                {
+                    limb.GetComponent<Thruster>().EnablePower();
+                }
+
+                if (Person.TryGetComponent<SpeedHealing>(out var heal))
+                {
+                    if (heal.Enabled)
+                        hadHealing = true;
+                    else
+                    {
+                        hadHealing = false;
+                        heal.EnablePower();
+                    }
+                }
+                else
+                {
+                    hadHealing = false;
+                    SpeedHealing.SetPower(Person, null).EnablePower();
+                }
+
+                if (Person.TryGetComponent<SuperMass>(out var mass))
+                {
+                    if (mass.Enabled)
+                        hadStrength = true;
+                    else
+                    {
+                        hadStrength = false;
+                        mass.EnablePower();
+                    }
+                }
+                else
+                {
+                    hadStrength = false;
+                    SuperMass.SetPower(Person, null).EnablePower();
+                }
+
+                Person.Limbs[2].PhysicalBehaviour.PlayClipOnce(TransformationSound);
+            }
+        }
+
+        public void TransformBack()
+        {
+            if (Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>())
+                return;
+
+            foreach (var power in transform.root.GetComponentsInChildren<Power>())
+            {
+                if (power != this && power.Enabled)
+                    power.DisablePower();
+            }
+
+            if (Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>())
+            {
+                TransformOnceNoAnim = true;
+                return;
+            }
+
+            transformed = false;
+
+            foreach (var limb in Person.Limbs)
+            {
+                limb.PhysicalBehaviour.Properties = ModAPI.FindPhysicalProperties("Human");
+                limb.PhysicalBehaviour.BulletPenetration = true;
+                limb.ImpactDamageMultiplier = 1;
+                limb.ImpactPainMultiplier = 1;
+                limb.ShotDamageMultiplier = 1;
+                limb.BreakingThreshold = threshold.FirstOrDefault(a => a.Key == limb).Value;
+                limb.ImmuneToDamage = false;
+            }
+
+            Person.Limbs[2].PhysicalBehaviour.PlayClipOnce(TransformationSound);
+
+            foreach (var limb in GetDeepestPushedToLimbs(Person.Limbs[1]))
+            {
+                Timtam.MakeCustomSkinSpread(limb, Sprites, false, true, 1, true, Sprites, 1, true);
+
+                if (limb.TryGetComponent<LineRenderer>(out var line))
+                {
+                    line.startColor = Color.white;
+                    line.endColor = Color.white;
+                }
+
+            }
+
+            if (!hadHealing)
+                Person.GetComponent<SpeedHealing>().DisablePower();
+
+            if (!hadStrength)
+                Person.GetComponent<SuperMass>().DisablePower();
+        }
+
+        public static List<LimbBehaviour> GetDeepestPushedToLimbs(LimbBehaviour rootLimb)
+        {
+            var result = new List<LimbBehaviour>();
+            var visited = new HashSet<CirculationBehaviour>();
+
+            void Traverse(CirculationBehaviour cb)
+            {
+                if (cb == null || visited.Contains(cb))
+                    return;
+
+                visited.Add(cb);
+
+                if (cb.PushesTo == null || cb.PushesTo.Count() == 0)
+                {
+                    if (cb.Limb != null)
+                        result.Add(cb.Limb);
+                    return;
+                }
+
+                foreach (var nextCb in cb.PushesTo)
+                {
+                    Traverse(nextCb);
+                }
+            }
+
+            if (rootLimb?.CirculationBehaviour != null)
+                Traverse(rootLimb.CirculationBehaviour);
+
+            return result;
+        }
+    }
+
+    public class SizeChange : Power, Messages.IUse
+    {
+        public float Size = 3;
+        public bool Stretched = false;
+        float stretchDuration = 1f;
+        public bool stretching;
+
+        public static SizeChange SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon, float size = 0.1f, string name = "Shrink")
+        {
+            var power = limb.gameObject.AddComponent<SizeChange>();
+            power.icon = icon;
+            power.Name = name;
+            power.Description = name+"s the user";
+            power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+            power.Size = size;
+            foreach (var limbb in person.Limbs)
+            {
+                if(limbb.Joint)limbb.Joint.autoConfigureConnectedAnchor = false;
+                limbb.PhysicalBehaviour.ContextMenuOptions.Buttons.Add(new ContextMenuButton(() => !ColorpickerDialogBehaviour.IsOpen, "setAddSizeThing", "Change Size Change Size", "Change Size Change Size", delegate
+                {
+                    Utils.OpenFloatInputDialog(0, power, delegate (SizeChange obj, float c)
+                    {
+                        power.Size = c;
+
+                    }, "Change Size Change Size", "Size to add");
+                }));
+            }
+
+            return power;
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled || stretching)
+                return;
+
+            if (Stretched)
+            {
+                foreach (var sizeChange in transform.root.GetComponentsInChildren<SizeChange>())
+                {
+                    sizeChange.stretching = true;
+                }
+                foreach (var limb in GetComponent<LimbBehaviour>().Person.Limbs)
+                {
+                    ModAPI.CreateParticleEffect("Flash", limb.transform.position);
+                    StartCoroutine(SmoothScale(limb.transform, new Vector2(1, 1)));
+                }
+                foreach (var sizeChange in transform.root.GetComponentsInChildren<SizeChange>())
+                {
+                    sizeChange.Stretched = false;
+                }
+            }
+            else
+            {
+                foreach (var sizeChange in transform.root.GetComponentsInChildren<SizeChange>())
+                {
+                    sizeChange.stretching = true;
+                }
+                foreach (var limb in GetComponent<LimbBehaviour>().Person.Limbs)
+                {
+                    ModAPI.CreateParticleEffect("Spark", limb.transform.position);
+                    StartCoroutine(SmoothScale(limb.transform, new Vector2(Size, Size)));
+                }
+                foreach (var sizeChange in transform.root.GetComponentsInChildren<SizeChange>())
+                {
+                    sizeChange.Stretched = true;
+                }
+            }
+        }
+
+        public IEnumerator SmoothScale(Transform Target, Vector2 targetScale)
+        {
+            Vector2 initialScale = Target.localScale;
+            float elapsed = 0f;
+
+            float[] thresholds = { 0.25f, 0.50f, 0.75f, 1.0f };
+            int nextThresholdIndex = 0;
+
+            while (elapsed < stretchDuration)
+            {
+                float t = elapsed / stretchDuration;
+                Target.localScale = Vector2.Lerp(initialScale, targetScale, t);
+
+                var phys = Target.GetComponent<PhysicalBehaviour>();
+                if (phys)
+                {
+                    phys.RecalculateMassBasedOnSize();
+                }
+
+                while (nextThresholdIndex < thresholds.Length && t >= thresholds[nextThresholdIndex])
+                {
+                    StartCoroutine(CreateAfterimage(Target));
+                    nextThresholdIndex++;
+                }
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            Target.localScale = targetScale;
+            if (nextThresholdIndex < thresholds.Length)
+            {
+                StartCoroutine(CreateAfterimage(Target));
+            }
+
+            foreach (var sizeChange in transform.root.GetComponentsInChildren<SizeChange>())
+            {
+                sizeChange.stretching = false;
+            }
+        }
+
+        private IEnumerator CreateAfterimage(Transform target)
+        {
+            if (!target) yield break;
+
+            var sr = target.GetComponent<SpriteRenderer>();
+            if (sr == null || sr.sprite == null) yield break;
+            
+            GameObject afterimage = new GameObject("Afterimage");
+            afterimage.transform.position = target.position;
+            afterimage.transform.rotation = target.rotation;
+            var a = target.transform.localScale;
+            var b = target.transform.root.localScale;
+            afterimage.transform.localScale = new Vector3(a.x * b.x, a.y * b.y, 1);
+
+            var aisr = afterimage.AddComponent<SpriteRenderer>();
+            aisr.sprite = sr.sprite;
+            aisr.flipX = sr.flipX;
+            aisr.flipY = sr.flipY;
+            aisr.sortingLayerID = sr.sortingLayerID;
+            aisr.sortingOrder = sr.sortingOrder - 1;
+            aisr.material = sr.sharedMaterial;
+
+            Color baseColor = sr.color;
+            baseColor.a = 0.9f;
+            aisr.color = baseColor;
+
+            yield return StartCoroutine(FadeAndDestroy(aisr, 2f));
+        }
+
+        private IEnumerator FadeAndDestroy(SpriteRenderer sr, float duration)
+        {
+            if (!sr) yield break;
+            float elapsed = 0f;
+            Color start = sr.color;
+            while (elapsed < duration && sr)
+            {
+                float t = elapsed / duration;
+                if (sr)
+                {
+                    Color c = start;
+                    c.a = Mathf.Lerp(start.a, 0f, t);
+                    sr.color = c;
+                }
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+            if (sr)
+            {
+                Color c = sr.color;
+                c.a = 0f;
+                sr.color = c;
+                Destroy(sr.gameObject);
+            }
+        }
+    }
+
     public class TBLiquid : Liquid
     {
         public const string ID = "THANOSBLOOD";
@@ -1604,13 +2063,14 @@ namespace Mod
     public class SpiderArm : MonoBehaviour
     {
         public List<PhysicalBehaviour> Segments = new List<PhysicalBehaviour>();
+        Vector2 connectionOffset = Vector2.zero;
 
         public static SpiderArm SetArm(
             PhysicalBehaviour Connected,
             List<Sprite> segmentSprites,
             Vector2 connectionOffset,
             float angleLimitation,
-            float motorTorque = 500f,
+            float motorTorque = 5000f,
             bool stiff = true)
         {
             if (Connected == null || segmentSprites == null || segmentSprites.Count == 0)
@@ -1649,7 +2109,11 @@ namespace Mod
                 var rb = phys.rigidbody;
                 rb.interpolation = RigidbodyInterpolation2D.Interpolate;
                 rb.gravityScale = 0f;
-
+                rb.drag = 5f;
+                rb.angularDrag = 5f;
+                rb.mass = Connected.rigidbody.mass * 0.3f;
+                phys.TrueInitialMass = rb.mass;
+                segmentGO.AddComponent<Dampener>().arm = arm;
                 segmentGO.transform.parent = Connected.transform.parent;
 
                 if (Connected.transform.root.TryGetComponent<DisintegrationCounterBehaviour>(out var des))
@@ -1682,6 +2146,15 @@ namespace Mod
                     hinge.connectedAnchor = prev.rigidbody.transform.InverseTransformPoint(prevOutWorld);
                 }
 
+                if (i == segmentSprites.Count - 1)
+                {
+                    var newp = Instantiate(phys.Properties);
+                    newp.Sharp = true;
+                    newp.SharpAxes = new SharpAxis[] { new SharpAxis(Vector2.right, -0.26f, 0.28f, true, true) };
+                    phys.Properties = newp;
+                    Debug.Log("[SpiderArm] Added sharpness to end segment.");
+                }
+
                 if (hinge.useLimits)
                 {
                     JointAngleLimits2D limits = new JointAngleLimits2D
@@ -1701,7 +2174,7 @@ namespace Mod
                     hinge.motor = motor;
                 }
 
-                segmentGO.AddComponent<Dampener>().arm = arm;
+                
             }
 
             foreach (var seg in createdSegments)
@@ -1733,13 +2206,38 @@ namespace Mod
             }
 
             arm.Segments = createdSegments;
+            arm.connectionOffset = connectionOffset;
             return arm;
+        }
+
+        public void Reposition()
+        {
+            float pixelScale = ModAPI.PixelSize;
+            Vector3 baseAnchorWorld = transform.TransformPoint(connectionOffset * pixelScale);
+
+            Vector3 visualRight = transform.root.localScale.x < 0 ? -transform.right : transform.right;
+
+            Vector3 buildDir = -visualRight.normalized;
+
+            int pixelLength = Segments[0].GetComponent<SpriteRenderer>().sprite.texture.width;
+            float segmentWorldLength = pixelLength * pixelScale;
+
+            for (int i = 0; i < Segments.Count; i++)
+            {
+                var seg = Segments[i];
+
+                Vector3 centerPos = baseAnchorWorld + buildDir * ((i + 0.5f) * segmentWorldLength);
+                seg.transform.position = centerPos;
+
+                float angle = Mathf.Atan2(buildDir.y, buildDir.x) * Mathf.Rad2Deg;
+                seg.transform.rotation = Quaternion.Euler(0, 0, angle);
+            }
         }
 
         public class Dampener : MonoBehaviour
         {
             public SpiderArm arm;
-            float dampenStrength = 0.05f;
+            float dampenStrength = 0.00025f;
             float originalMotor;
             JointMotor2D og;
             JointMotor2D dampened;
@@ -1766,6 +2264,75 @@ namespace Mod
         }
     }
 
+    public class MechArms : Power, Messages.IUse
+    {
+        bool armsOut = true;
+
+        public static MechArms SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon)
+        {
+            var power = limb.gameObject.AddComponent<MechArms>();
+            power.icon = icon;
+            power.Name = "Spider Arms";
+            power.Description = "Gives the user 4 spider arms on their back, toggleable by activating middle body";
+            power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+            return power;
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+            if (armsOut)
+            {
+                foreach (var spiderarm in transform.root.GetComponentsInChildren<SpiderArm>())
+                {
+                    foreach (var seg in spiderarm.Segments)
+                    {
+                        seg.enabled = false;
+                    }
+                }
+            }
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled)
+                return;
+
+            if (armsOut)
+            {
+                foreach (var spiderarm in transform.root.GetComponentsInChildren<SpiderArm>())
+                {
+                    foreach (var seg in spiderarm.Segments)
+                    {
+                        seg.gameObject.SetActive(false);
+                    }
+                }
+                armsOut = false;
+            }
+            else
+            {
+                foreach (var spiderarm2 in transform.root.GetComponentsInChildren<SpiderArm>())
+                {
+                    spiderarm2.Reposition();
+                    foreach (var seg in spiderarm2.Segments)
+                    {
+                        seg.gameObject.SetActive(true);
+                    }
+                }
+
+                foreach (var col1 in transform.root.GetComponentsInChildren<Collider2D>())
+                {
+                    foreach (var col2 in transform.root.GetComponentsInChildren<Collider2D>())
+                    {
+                        Physics2D.IgnoreCollision(col1, col2, true);
+                    }
+                }
+                armsOut = true;
+            }
+        }
+
+    }
+
     public class Thruster : Power, Messages.IUse
     {
         public bool InFlight = false;
@@ -1777,16 +2344,19 @@ namespace Mod
         float gravity;
         float ogbasestrength = 8.5f;
 
-        public Color ThrustColor = new Color(0.2064f, 0.8f, 1, 4);
-        public Color ThrustColor2 = new Color(0.377f, 0.8438f, 1f, 0.08f);
+        public Color32 ThrustColor = new Color32(52, 204, 255, 255);
+        public Color32 ThrustColor2 = new Color32(96, 210, 255, 20);
 
-        public static Thruster SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon)
+        public static Thruster SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon, Color32 thrust = new Color32(), Color32 thrust2 = new Color32())
         {
             var power = limb.gameObject.AddComponent<Thruster>();
             power.icon = icon;
             power.person = person;
             power.Name = "Thruster";
             power.Description = "Allows the user to fly by activating their feet!";
+            power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+            power.ThrustColor = thrust.CompareRGB(new Color32()) ? power.ThrustColor : thrust;
+            power.ThrustColor2 = thrust2.CompareRGB(new Color32()) ? power.ThrustColor2 : thrust2;
             power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
             return power;
         }
@@ -1921,8 +2491,9 @@ namespace Mod
     public class ChestRepulsor : Power
     {
         LimbBehaviour limb;
+        public Color32 laserColor = new Color32(0, 255, 250, 255);
 
-        public static ChestRepulsor SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon)
+        public static ChestRepulsor SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon, Color32 laserColor = new Color32())
         {
             var power = limb.gameObject.AddComponent<ChestRepulsor>();
             power.limb = limb;
@@ -1930,6 +2501,7 @@ namespace Mod
             power.Name = "Chest Repulsor";
             power.Description = "Shoots a powerful energy blast out of the chest.";
             power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+            power.laserColor = laserColor.CompareRGB(new Color32()) ? power.laserColor : laserColor;
             return power;
         }
 
@@ -1994,7 +2566,8 @@ namespace Mod
             muzzleflash.transform.parent = limb.transform;
             muzzleflash.transform.localRotation = Quaternion.Euler(0, 0, 0);
             muzzleflash.transform.localPosition = new Vector2(0.1f, 0);
-
+            muzzleflash.GetComponent<ParticleSystem>().startColor = laserColor;
+            muzzleflash.transform.GetChild(0).GetComponent<ParticleSystem>().startColor = laserColor;
             if (GetComponent<LimbBehaviour>().Person.transform.localScale.x < 0)
             {
                 muzzleflash.transform.localRotation = Quaternion.Euler(0, 0, 180);
@@ -2004,6 +2577,8 @@ namespace Mod
             blaster.Muzzleflash = muzzleflash.GetComponent<ParticleSystem>();
 
             blaster.Bolt.transform.position = new Vector3(999990f, 999990f, 999990f);
+            blaster.Bolt.GetComponent<BlasterboltBehaviour>().Trail.startColor = laserColor;
+            blaster.Bolt.GetComponent<BlasterboltBehaviour>().Trail.endColor = laserColor;
             blaster.Bolt.GetComponent<BlasterboltBehaviour>().Trail.widthMultiplier = +0.2f;
             blaster.Bolt.GetComponent<BlasterboltBehaviour>().ImpactStrength = 0.1f;
             blaster.Bolt.GetComponent<BlasterboltBehaviour>().damage = 10;
@@ -2037,8 +2612,9 @@ namespace Mod
     {
         LimbBehaviour limb;
         public Vector2 BarrelPos = new Vector2(0, -0.25f);
+        public Color32 laserColor = new Color(0, 255, 250, 255);
 
-        public static Repulsor SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon)
+        public static Repulsor SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon, Color32 laserColor = new Color32())
         {
             var power = limb.gameObject.AddComponent<Repulsor>();
             power.limb = limb;
@@ -2046,6 +2622,7 @@ namespace Mod
             power.Name = "Repulsor";
             power.Description = "Shoots a powerful energy blast.";
             power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+            power.laserColor = laserColor.CompareRGB(new Color32()) ? power.laserColor : laserColor;
             return power;
         }
 
@@ -2100,6 +2677,8 @@ namespace Mod
             muzzleflash.transform.parent = limb.transform;
             muzzleflash.transform.localRotation = Quaternion.Euler(0, 0, 270);
             muzzleflash.transform.localPosition = new Vector2(0, -0.3f);
+            muzzleflash.GetComponent<ParticleSystem>().startColor = laserColor;
+            muzzleflash.transform.GetChild(0).GetComponent<ParticleSystem>().startColor = laserColor;
             if (GetComponent<LimbBehaviour>().Person.transform.localScale.x < 0)
             {
                 muzzleflash.transform.localRotation = Quaternion.Euler(0, 0, 90);
@@ -2108,6 +2687,8 @@ namespace Mod
             blaster.Muzzleflash = muzzleflash.GetComponent<ParticleSystem>();
 
             blaster.Bolt.transform.position = new Vector3(999990f, 999990f, 999990f);
+            blaster.Bolt.GetComponent<BlasterboltBehaviour>().Trail.startColor = laserColor;
+            blaster.Bolt.GetComponent<BlasterboltBehaviour>().Trail.endColor = laserColor;
             blaster.Bolt.GetComponent<BlasterboltBehaviour>().Trail.widthMultiplier = +0.2f;
             blaster.Bolt.GetComponent<BlasterboltBehaviour>().ImpactStrength = 0.1f;
             blaster.Bolt.GetComponent<BlasterboltBehaviour>().damage = 10;
@@ -2181,7 +2762,7 @@ namespace Mod
         {
             OGArmSprite = Functions.Clone(GetComponent<SpriteRenderer>().sprite);
             
-            gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { Timtam.MergeSprites(OGArmSprite, Repulsor), Timtam.MergeSprites(OGArmSprite, Repulsor) }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 1, AnimationType.BottomToTop, false, 1);
+            gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { Timtam.MergeSprites(OGArmSprite, Repulsor), Timtam.MergeSprites(OGArmSprite, Repulsor) }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 2, AnimationType.BottomToTop, false, 1);
 
             foreach (var blast in GetComponents<BlasterBehaviour>())
             {
@@ -2254,7 +2835,7 @@ namespace Mod
         {
             if (usingCannon)
             {
-                gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { OGArmSprite, OGArmSprite }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 1, AnimationType.TopToBottom, false, 1);
+                gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { OGArmSprite, OGArmSprite }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 2, AnimationType.TopToBottom, false, 1);
 
                 foreach (var blast in GetComponents<BlasterBehaviour>())
                 {
@@ -2338,7 +2919,7 @@ namespace Mod
         {
             OGArmSprite = Functions.Clone(GetComponent<SpriteRenderer>().sprite);
 
-            gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { Timtam.MergeSprites(OGArmSprite, Nanoblade), Timtam.MergeSprites(OGArmSprite, Nanoblade) }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 1, AnimationType.BottomToTop, false, 1);
+            gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { Timtam.MergeSprites(OGArmSprite, Nanoblade), Timtam.MergeSprites(OGArmSprite, Nanoblade) }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 2, AnimationType.BottomToTop, false, 1);
 
             foreach (var blast in GetComponents<BlasterBehaviour>())
             {
@@ -2367,7 +2948,7 @@ namespace Mod
         {
             if (usingBlade)
             {
-                gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { OGArmSprite, OGArmSprite }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 1, AnimationType.TopToBottom, false, 1);
+                gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { OGArmSprite, OGArmSprite }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 2, AnimationType.TopToBottom, false, 1);
 
                 gameObject.GetComponent<PhysicalBehaviour>().Properties = GetComponent<LimbBehaviour>().Person.Limbs[2].PhysicalBehaviour.Properties;
                 gameObject.GetComponent<BoxCollider2D>().size = OGBoxColliderSize;
@@ -2455,8 +3036,8 @@ namespace Mod
         {
             OGArmSprite = Functions.Clone(GetComponent<SpriteRenderer>().sprite);
 
-            gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { Timtam.MergeSprites(OGArmSprite, Nanoblade), Timtam.MergeSprites(OGArmSprite, Nanoblade) }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 1, AnimationType.CircleOut, false, 1);
-
+            gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { Timtam.MergeSprites(OGArmSprite, Nanoblade), Timtam.MergeSprites(OGArmSprite, Nanoblade) }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 2, AnimationType.CircleOut, false, 1);
+            gameObject.GetComponent<SpriteRenderer>().sortingOrder = GetComponent<ConnectedNodeBehaviour>().Connections[0].GetComponent<SpriteRenderer>().sortingOrder + 1;
             foreach (var blast in GetComponents<BlasterBehaviour>())
             {
                 Destroy(blast.Muzzleflash.gameObject);
@@ -2478,7 +3059,7 @@ namespace Mod
         {
             if (usingBlade)
             {
-                gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { OGArmSprite, OGArmSprite }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 1, AnimationType.CircleIn, false, 1);
+                gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { OGArmSprite, OGArmSprite }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 2, AnimationType.CircleIn, false, 1);
 
                 col.enabled = false;
 
@@ -2521,9 +3102,9 @@ namespace Mod
         public LimbBehaviour Limb;
         public ParticleSystem effect;
 
-        public static NanoShield SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon, Sprite Nanoshield = null)
+        public static NanoHammer SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon, Sprite Nanoshield = null)
         {
-            var power = limb.gameObject.AddComponent<NanoShield>();
+            var power = limb.gameObject.AddComponent<NanoHammer>();
             power.icon = icon;
             power.Name = "Nano Hammer";
             power.Description = "Creates a powerful hammer that can destroy the target!";
@@ -2583,7 +3164,7 @@ namespace Mod
         {
             OGArmSprite = Functions.Clone(GetComponent<SpriteRenderer>().sprite);
 
-            gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { Timtam.MergeSprites(OGArmSprite, Nanoblade), Timtam.MergeSprites(OGArmSprite, Nanoblade) }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 1, AnimationType.CircleOut, false, 1);
+            gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { Timtam.MergeSprites(OGArmSprite, Nanoblade), Timtam.MergeSprites(OGArmSprite, Nanoblade) }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 2, AnimationType.CircleOut, false, 1);
 
             foreach (var blast in GetComponents<BlasterBehaviour>())
             {
@@ -2606,7 +3187,7 @@ namespace Mod
         {
             if (usingBlade)
             {
-                gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { OGArmSprite, OGArmSprite }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 1, AnimationType.CircleIn, false, 1);
+                gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(gameObject.GetComponent<SpriteRenderer>().sprite, new List<Sprite> { OGArmSprite, OGArmSprite }, gameObject.GetComponent<SpriteRenderer>().material, gameObject.GetComponent<SpriteRenderer>().material, 2, AnimationType.CircleIn, false, 1);
 
                 col.enabled = false;
 
@@ -2619,30 +3200,33 @@ namespace Mod
             }
         }
 
-        public void OnCollisionEnter2D(Collision2D col)
+        void OnCollisionEnter2D(Collision2D collision)
         {
-            if (!Enabled || !usingBlade)
+            Debug.Log("Nigger");
+            if (!Enabled)
                 return;
 
-            Vector2 relativeVelocity = col.relativeVelocity;
+            Vector2 relativeVelocity = collision.relativeVelocity;
 
-            float impactStrength = relativeVelocity.magnitude * 3;
-
-            if (col.gameObject.GetComponent<Rigidbody2D>() && col.relativeVelocity.magnitude > 3)
+            float impactStrength = relativeVelocity.magnitude * 25;
+            Debug.Log("Nigger2");
+            if (collision.gameObject.GetComponent<Rigidbody2D>() && collision.relativeVelocity.magnitude > 3)
             {
-                Vector2 directionToThisObject = (GetComponent<Rigidbody2D>().position - col.rigidbody.position).normalized;
+                Debug.Log("Nigger3");
+                Vector2 directionToThisObject = (GetComponent<Rigidbody2D>().position - collision.rigidbody.position).normalized;
 
                 float dotProduct = Vector2.Dot(relativeVelocity, directionToThisObject);
 
                 if (dotProduct > 0)
                 {
-                    col.gameObject.GetComponent<Rigidbody2D>().velocity += -relativeVelocity.normalized * impactStrength;
-                    CameraShakeBehaviour.main.Shake(5, base.transform.position);
-                    effect.Play();
+                    Debug.Log("Nigger3");
+                    collision.gameObject.GetComponent<Rigidbody2D>().velocity += -relativeVelocity.normalized * impactStrength;
+                    CameraShakeBehaviour.main.Shake(7, base.transform.position);
+                    if (collision.gameObject.GetComponent<PhysicalBehaviour>())
+                        collision.gameObject.GetComponent<PhysicalBehaviour>().charge += impactStrength / 10;
+                    ModAPI.CreateParticleEffect("HugeZap", base.transform.position);
                     var imp = ModAPI.FindSpawnable("Power Hammer").Prefab.GetComponent<PowerHammerBehaviour>().ImpactClips;
                     StartCoroutine(PlaySound(imp[UnityEngine.Random.Range(0, imp.Length)]));
-                    if (col.gameObject.TryGetComponent<PhysicalBehaviour>(out var phys))
-                        phys.charge += 20;
                 }
 
             }
@@ -2675,6 +3259,7 @@ namespace Mod
 
         public AudioClip TransformationSound = Mod.TransformationSound;
 
+        bool TransformOnceNoAnim = false;
         bool hadHealing;
         bool hadStrength;
 
@@ -2713,6 +3298,7 @@ namespace Mod
                     RepulsorCannons.SetPower(Person, limb, null);
                     NanoBlade.SetPower(Person, limb, null);
                     NanoShield.SetPower(Person, limb, null);
+                    NanoHammer.SetPower(Person, limb, null);
                     limb.gameObject.AddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
                 }
 
@@ -2757,10 +3343,32 @@ namespace Mod
                 Transform();
         }
 
+        public void FixedUpdate()
+        {
+            if (TransformOnceNoAnim)
+                if (!Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>())
+                {
+                    TransformOnceNoAnim = false;
+                    Use2();
+                }
+        }
+
         public void Transform(int startlimb = 1)
         {
-            if (Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>() || !Enabled)
+            if (Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>())
                 return;
+
+            foreach (var power in transform.root.GetComponentsInChildren<Power>())
+            {
+                if (power != this && power.Enabled)
+                    power.DisablePower();
+            }
+
+            if (Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>() || !Enabled)
+            {
+                TransformOnceNoAnim = true;
+                return;
+            }
 
             transformed = true;
 
@@ -2847,6 +3455,18 @@ namespace Mod
             if (Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>())
                 return;
 
+            foreach (var power in transform.root.GetComponentsInChildren<Power>())
+            {
+                if (power != this && power.Enabled)
+                    power.DisablePower();
+            }
+
+            if (Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>())
+            {
+                TransformOnceNoAnim = true;
+                return;
+            }
+
             transformed = false;
 
             foreach (var limb in Person.Limbs)
@@ -2875,15 +3495,6 @@ namespace Mod
 
             }
 
-            foreach (var limb in Person.Limbs)
-            {
-                if (limb.name.Contains("LowerArm"))
-                    limb.GetComponent<NoPower>().EnablePower();
-                else if(limb.name.Contains("Foot"))
-                    limb.GetComponent<NoPower>().EnablePower();
-            }
-
-                
             if (!hadHealing)
                 Person.GetComponent<SpeedHealing>().DisablePower();
 
@@ -6580,6 +7191,7 @@ namespace Mod
                 consumed[o] = new int[overlaysLayers[o].Count];
 
             bool firstLayerCompletedInvoked = false;
+            bool firstLayerJustCompleted = false;
 
             HashSet<Vector2Int>[] erasedPixels = new HashSet<Vector2Int>[overlaysCount];
             for (int o = 0; o < overlaysCount; o++)
@@ -6604,6 +7216,7 @@ namespace Mod
                         if (o == 0 && !firstLayerCompletedInvoked)
                         {
                             firstLayerCompletedInvoked = true;
+                            firstLayerJustCompleted = true;
                             OnAnimationComplete?.Invoke();
                         }
                         continue;
@@ -6671,9 +7284,6 @@ namespace Mod
 
                         Color cO = tex.GetPixel(pos.x, pos.y);
 
-                        // MODIFICATION:
-                        // For the FIRST overlay layer (o == 0) we now ALWAYS replace the pixel in baseTexture,
-                        // even if the incoming pixel is fully transparent. This ensures true replacement semantics.
                         baseTexture.SetPixel(pos.x, pos.y, cO);
 
                         UpdateShaderTextures(pos);
@@ -6690,11 +7300,21 @@ namespace Mod
                     }
                 }
 
+                
                 baseTexture.Apply();
                 spriteRenderer.sprite = Sprite.Create(
                     baseTexture, finalRect, Vector2.one * 0.5f,
                     spriteRenderer.sprite.pixelsPerUnit
                 );
+                if (firstLayerJustCompleted)
+                {
+                    firstLayerJustCompleted = false;
+                    if (IsFinalAppearanceReached(overlays[overlays.Count - 1], baseTexture))
+                    {
+                        break;
+                    }
+                }
+
                 if (allDone) break;
                 yield return new WaitForFixedUpdate();
             }
@@ -6713,6 +7333,23 @@ namespace Mod
 
             GetComponent<PhysicalBehaviour>().RefreshOutline();
             Destroy(this);
+        }
+
+        private bool IsFinalAppearanceReached(Texture2D finalTex, Texture2D currentTex)
+        {
+            if (!finalTex || !currentTex) return false;
+            if (finalTex.width != currentTex.width || finalTex.height != currentTex.height) return false;
+
+            var a = currentTex.GetPixels32();
+            var b = finalTex.GetPixels32();
+            if (a.Length != b.Length) return false;
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i].r != b[i].r || a[i].g != b[i].g || a[i].b != b[i].b || a[i].a != b[i].a)
+                    return false;
+            }
+            return true;
         }
 
         private void UpdateShaderTextures(Vector2Int pixelPos)
@@ -7726,11 +8363,6 @@ namespace Mod
                 Head.sprite = Timtam.MergeSpritesWithShaderHandling(Head.sprite, sprite, Head.material, WrapOverBasically, OverlayOnly);
                 Head.GetComponent<PhysicalBehaviour>().RefreshOutline();
             }
-            person.SetBruiseColor(130, 10, 10);             // Purple
-            person.SetSecondBruiseColor(180, 20, 20);        // Indigo (deep purple)
-            person.SetThirdBruiseColor(139, 10, 10);         // Dark magenta (reddish purple)
-            person.SetRottenColour(139, 0, 10);         // Medium orchid (purple tint)
-            person.SetBloodColour(139, 0, 10);            // Dark red
         }
 
         public static void MakeCustomSkinAnimated(PersonBehaviour person, List<Sprite> sprites, bool WrapOverBasically = false, bool OverlayOnly = false, float duration = 2, AnimationType animtype = AnimationType.CircleOut, bool random = true, List<Sprite> other = null)
@@ -7795,45 +8427,54 @@ namespace Mod
 
             return matchedd;
         }
-
-        public static void SpreadSprite(CirculationBehaviour source, LimbBehaviour limb, List<Sprite> sprites1, List<Sprite> sprites2 = null, float speed = 4, bool randomized = true, int otherspeed = 3)
+        public static void SpreadSprite(CirculationBehaviour source, LimbBehaviour limb, List<Sprite> sprites1, List<Sprite> sprites2 = null, float speed = 4, bool randomized = true, int otherspeed = 3, HashSet<CirculationBehaviour> processedLimbs = null)
         {
+            if (processedLimbs == null)
+                processedLimbs = new HashSet<CirculationBehaviour>();
+
+            processedLimbs.Add(limb.CirculationBehaviour);
+
             foreach (var connectedLimb in limb.CirculationBehaviour.PushesTo)
             {
+                if (processedLimbs.Contains(connectedLimb))
+                    continue;
 
                 Sprite matched = GetLimbSprite(sprites1, connectedLimb.Limb);
 
                 if (!matched)
-                    return;
+                    continue;
 
                 if (!connectedLimb.Limb.GetComponent<SpriteMergerAnimatorAdvanced>() && connectedLimb != source)
                 {
+                    processedLimbs.Add(connectedLimb);
+
                     var sr = connectedLimb.Limb.GetComponent<SpriteRenderer>();
                     var merg = connectedLimb.Limb.gameObject.AddComponent<SpriteMergerAnimatorAdvanced>();
 
                     merg.OnAnimationComplete.AddListener(() =>
                     {
-                        SpreadSprite(limb.CirculationBehaviour, connectedLimb.Limb, sprites1, sprites2, speed, randomized, otherspeed);
+                        SpreadSprite(limb.CirculationBehaviour, connectedLimb.Limb, sprites1, sprites2, speed, randomized, otherspeed, processedLimbs);
                     });
+
                     if (sprites2 != null)
                     {
                         Sprite sprite2 = GetLimbSprite(sprites2, connectedLimb.Limb);
                         List<Sprite> spritess = new List<Sprite> { sprite2, matched, matched };
                         merg.Initialize(sr.sprite, spritess, sr.material, true, speed, connectedLimb.name == "Head" ? AnimationType.TopToBottom : AnimationType.BottomToTop, randomized);
-
                     }
                     else
                     {
                         merg.Initialize(sr.sprite, matched, sr.material, true, speed, AnimationType.BottomToTop, randomized);
-
                     }
                 }
             }
 
             if (limb.CirculationBehaviour.Source != null && limb.CirculationBehaviour.Source != source)
             {
-                var connectedLimb = limb.CirculationBehaviour.Source;
+                if (processedLimbs.Contains(limb.CirculationBehaviour.Source))
+                    return;
 
+                var connectedLimb = limb.CirculationBehaviour.Source;
                 Sprite matched = GetLimbSprite(sprites1, connectedLimb.Limb);
 
                 if (!matched)
@@ -7841,12 +8482,16 @@ namespace Mod
 
                 if (!connectedLimb.Limb.GetComponent<SpriteMergerAnimatorAdvanced>())
                 {
+                    processedLimbs.Add(connectedLimb);
+
                     var sr = connectedLimb.Limb.GetComponent<SpriteRenderer>();
                     var merg = connectedLimb.Limb.gameObject.AddComponent<SpriteMergerAnimatorAdvanced>();
+
                     merg.OnAnimationComplete.AddListener(() =>
                     {
-                        SpreadSprite(limb.CirculationBehaviour, connectedLimb.Limb, sprites1, sprites2, speed, randomized);
+                        SpreadSprite(limb.CirculationBehaviour, connectedLimb.Limb, sprites1, sprites2, speed, randomized, otherspeed, processedLimbs);
                     });
+
                     if (sprites2 != null)
                     {
                         Sprite sprite2 = GetLimbSprite(sprites2, connectedLimb.Limb);
@@ -8309,6 +8954,14 @@ namespace Mod
             });
 
             ui.SetActive(false);
+        }
+
+        public void OnDestroy()
+        {
+            if (ui != null)
+            {
+                Destroy(ui);
+            }
         }
     }
 
