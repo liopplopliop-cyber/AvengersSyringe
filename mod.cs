@@ -1135,6 +1135,22 @@ namespace Mod
                
             }, "a");
 
+            //Iron Lad
+            ModAPIPlus.CreateHuman("Iron Lad", "I know what I become. I know what I do. I know how many people I hurt. I won't let it happen.", "Iron Lad", "Iron Lad", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
+
+                person.GetComponent<SpeedHealing>().EnablePower();
+                person.GetComponent<SuperMass>().EnablePower();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                menu.AddButton("Ultimate", ModAPI.LoadSprite("Art/Thumbnails/Ultimate Iron Lad.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ultimate Iron Lad/"));
+
+            }, "a");
+
             //Wiccan
             ModAPIPlus.CreateHuman("Wiccan", "Magic's not just power. It's purpose.", "Wiccan", "Wiccan", (Instance) =>
             {
