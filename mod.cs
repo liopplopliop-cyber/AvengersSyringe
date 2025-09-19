@@ -614,7 +614,7 @@ namespace Mod
             ModAPI.RegisterCategory(CategoryName, "Category for Nova's Avengers Mod", ModAPI.LoadSprite("icon.png"));
 
              //Tony Stark
-            ModAPIPlus.CreateHuman("Tony Stark", "", "Tony Stark", "Tony Stark", (Instance) =>
+            ModAPIPlus.CreateHuman("Tony Stark (Iron Man)", "", "Tony Stark", "Tony Stark", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
       
@@ -625,7 +625,7 @@ namespace Mod
             }, "a");
 
             //Steve Rogers
-            ModAPIPlus.CreateHuman("Steve Rogers", "", "Steve Rogers", "Steve Rogers", (Instance) =>
+            ModAPIPlus.CreateHuman("Steve Rogers (Captain America)", "", "Steve Rogers", "Steve Rogers", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
@@ -637,11 +637,12 @@ namespace Mod
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers Unmasked/"));
                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers Casual/"));
+                menu.AddButton("EMH", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers EMH/"));
 
             }, "a");
 
             //Sam Wilson
-            ModAPIPlus.CreateHuman("Sam Wilson", "", "Sam Wilson", "Sam Wilson", (Instance) =>
+            ModAPIPlus.CreateHuman("Sam Wilson (Captain America)", "", "Sam Wilson", "Sam Wilson", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();              
                 var menu = Instance.GetComponent<TextureMenu>();
