@@ -233,6 +233,28 @@ namespace Mod
             Destroy(person.Limbs[1].GetComponent<DynamicCape>());
         });
 
+        public static UnityEvent HulkSkinAddEvent(List<Sprite> skin, PersonBehaviour person, Action<GameObject> addon = null)
+        {
+            var act = new Action<GameObject>((Instance) =>
+            {
+                var hulk = person.GetComponentInChildren<HulkTransform>();
+                hulk.Skin = skin;
+
+                if (hulk.transformed)
+                {
+                    Timtam.MakeCustomSkinSpread(person.Limbs[0], skin, false, true);
+                }
+            });
+
+            var even = new UnityEvent();
+            even.AddListener(() =>
+            {
+                (act + addon).Invoke(person.gameObject);
+            });
+
+            return even;
+        }
+
         public static Action<GameObject> AddCloth(Sprite cloth, Vector2 PixelPerfectLocation, int limb = 1, Sprite Collar = null)
         {
             var action = new Action<GameObject>((Instance) =>
@@ -691,37 +713,21 @@ namespace Mod
             }, "a");
 
             //Bruce Banner
-            ModAPIPlus.CreateHuman("Bruce Banner", "", "Bruce Banner", "Bruce Banner", (Instance) =>
+            ModAPIPlus.CreateHuman("Bruce Banner", "", "Bruce Banner", "Hulk", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 
                 var menu = Instance.GetComponent<TextureMenu>();
 
                 menu.AddButton("First Apearance", ModAPI.LoadSprite("Art/Thumbnails/First Apearance Bruce Banner.png"), ModAPIPlus.LimbSprites("Art/AltSkins/First Apearance Bruce Banner/"));
+                menu.AddFakeButton("Maestro Hulk", ModAPI.LoadSprite("Art/Thumbnails/Maestro.png"), null, HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Maestro/"), person));
+                menu.AddFakeButton("First Apearance Hulk", ModAPI.LoadSprite("Art/Thumbnails/First Apearance Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/First Apearance Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/First Apearance Hulk/"), person));
+                menu.AddFakeButton("Gray Hulk", ModAPI.LoadSprite("Art/Thumbnails/Gray Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Gray Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Gray Hulk/"), person));
+                menu.AddFakeButton("Gladiator Hulk", ModAPI.LoadSprite("Art/Thumbnails/Gladiator.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Gladiator/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Gladiator/"), person));
+                menu.AddFakeButton("Professor Hulk", ModAPI.LoadSprite("Art/Thumbnails/Professor Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Professor Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Professor Hulk/"), person));
+                menu.AddFakeButton("Smart Hulk", ModAPI.LoadSprite("Art/Thumbnails/Smart Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Smart Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Smart Hulk/"), person));
 
-            }, "a");
-
-            //Hulk
-            ModAPIPlus.CreateHuman("Hulk", "", "Hulk", "Hulk", (Instance) =>
-            {
-                var person = Instance.GetComponent<PersonBehaviour>();
-
-                var menu = Instance.GetComponent<TextureMenu>();
-
-                menu.AddButton("Maestro", ModAPI.LoadSprite("Art/Thumbnails/Maestro.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Maestro/"));
-                menu.AddButton("First Apearance", ModAPI.LoadSprite("Art/Thumbnails/First Apearance Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/First Apearance Hulk/"));
-                menu.AddButton("Gray", ModAPI.LoadSprite("Art/Thumbnails/Gray Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Gray Hulk/"));
-                menu.AddButton("Gladiator", ModAPI.LoadSprite("Art/Thumbnails/Gladiator.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Gladiator/"));
-                menu.AddButton("Professor", ModAPI.LoadSprite("Art/Thumbnails/Professor Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Professor Hulk/"));
-                menu.AddButton("Smart", ModAPI.LoadSprite("Art/Thumbnails/Smart Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Smart Hulk/"));
-                if (Instance.transform.localScale.x > 0)
-                {
-                    Instance.transform.localScale = new Vector3(1.25f, 1.25f, 1.25f);
-                }
-                else
-                {
-                    Instance.transform.localScale = new Vector3(-1.25f, 1.25f, 1.25f);
-                }
+                HulkTransform.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Hulk.png")).EnablePower();
             }, "a");
 
             //Shang-Chi
@@ -897,6 +903,14 @@ namespace Mod
                 menu.AddButton("Antman EMH", ModAPI.LoadSprite("Art/Thumbnails/Antman EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman EMH/"));
                 menu.AddButton("Giant-Man EMH", ModAPI.LoadSprite("Art/Thumbnails/Giant-Man EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Giant-Man EMH/"));
                 menu.AddButton("Yellowjacket", ModAPI.LoadSprite("Art/Thumbnails/Yellowjacket.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Yellowjacket/"));
+
+                SizeChange.SetPower(person, person.Limbs[13], null, 2, "Grow");
+                SizeChange.SetPower(person, person.Limbs[13], null, 0.1f).EnablePower();
+                SizeChange.SetPower(person, person.Limbs[11], null, 2, "Grow").EnablePower();
+                SizeChange.SetPower(person, person.Limbs[11], null, 0.1f);
+
+                person.Limbs[13].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[13].gameObject);
+                person.Limbs[11].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[11].gameObject);
             }, "a");
 
             //Captain Marvel
@@ -912,14 +926,7 @@ namespace Mod
                 menu.AddButton("Ms. Marvel", ModAPI.LoadSprite("Art/Thumbnails/Ms. Marvel Carol.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ms. Marvel Carol/"));
                 menu.AddButton("Ms. Marvel Red and Black", ModAPI.LoadSprite("Art/Thumbnails/Ms. Marvel Red and Black.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ms. Marvel Red and Black/"));
                 menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Captain Marvel MCU.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Captain Marvel MCU/"));
-          
-                SizeChange.SetPower(person, person.Limbs[13], null, 2, "Grow");
-                SizeChange.SetPower(person, person.Limbs[13], null, 0.1f).EnablePower();
-                SizeChange.SetPower(person, person.Limbs[11], null, 2, "Grow").EnablePower();
-                SizeChange.SetPower(person, person.Limbs[11], null, 0.1f);
-
-                person.Limbs[13].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[13].gameObject);
-                person.Limbs[11].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[11].gameObject);
+         
             }, "a");
 
             //Doctor Strange
@@ -1603,7 +1610,7 @@ namespace Mod
     {
         public PersonBehaviour Person;
 
-        public AudioClip TransformationSound = Mod.TransformationSound;
+        public AudioClip TransformationSound = Mod.HulkTransformSound;
 
         bool TransformOnceNoAnim = false;
         bool hadHealing;
@@ -1626,8 +1633,6 @@ namespace Mod
             power.Person = Limb.Person;
             power.Skin = Nanotech ?? Mod.Hulk;
 
-            ChestRepulsor.SetPower(Person, Person.Limbs[1], null);
-
             foreach (var limb in Person.Limbs)
             {
                 power.threshold.Add(limb, limb.BreakingThreshold);
@@ -1636,18 +1641,13 @@ namespace Mod
                 clonedSprite.name = limb.name;
                 power.Sprites.Add(clonedSprite);
 
+                if (limb.Joint)
+                    limb.Joint.autoConfigureConnectedAnchor = false;
+
                 if (limb.name.Contains("LowerArm"))
                 {
-                    Repulsor.SetPower(Person, limb, null);
-                    RepulsorCannons.SetPower(Person, limb, null);
-                    NanoBlade.SetPower(Person, limb, null);
-                    NanoShield.SetPower(Person, limb, null);
-                    NanoHammer.SetPower(Person, limb, null);
-                    limb.gameObject.AddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+                    SuperPunch.SetPower(Person, limb, null);
                 }
-
-                if (limb.name.Contains("Foot"))
-                    Thruster.SetPower(Person, limb, null);
             }
 
             return power;
@@ -1669,9 +1669,13 @@ namespace Mod
                     TransformOnceNoAnim = false;
                     Use2();
                 }
+
+            if (Enabled && !transformed)
+                if (!Person.IsAlive())
+                    Transform(0);
         }
 
-        public void Transform(int startlimb = 1)
+        public void Transform(int startlimb = 0)
         {
             if (Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>())
                 return;
@@ -1692,7 +1696,9 @@ namespace Mod
 
             foreach (var limb in Person.Limbs)
             {
-                limb.PhysicalBehaviour.Properties = ModAPI.FindPhysicalProperties("AndroidArmour");
+                StartCoroutine(SmoothScale(limb.transform, new Vector2(1.3f, 1.3f)));
+
+                limb.PhysicalBehaviour.Properties = ModAPI.FindPhysicalProperties("Incredible");
                 limb.PhysicalBehaviour.BulletPenetration = false;
                 limb.PhysicalBehaviour.Properties.BulletSpeedAbsorptionPower = 1;
                 limb.ImpactDamageMultiplier = 0.001f;
@@ -1700,6 +1706,7 @@ namespace Mod
                 limb.ShotDamageMultiplier = 0;
                 limb.BreakingThreshold = Mathf.Infinity;
                 limb.ImmuneToDamage = true;
+                limb.CirculationBehaviour.ImmuneToDamage = true;
             }
 
             Sprites.Clear();
@@ -1716,19 +1723,13 @@ namespace Mod
                 }
             }
 
-            Timtam.MakeCustomSkinSpread(Person.Limbs[startlimb], Skin, false, true, 2, true, Mod.Nanounder, 1);
-
-            Person.Limbs[1].GetComponent<ChestRepulsor>().EnablePower();
+            Timtam.MakeCustomSkinSpread(Person.Limbs[startlimb], Skin, false, true, 2, true, Skin, 2);
 
             foreach (var limb in Person.Limbs)
             {
                 if (limb.name.Contains("LowerArm"))
                 {
-                    limb.GetComponent<Repulsor>().EnablePower();
-                }
-                else if (limb.name.Contains("Foot"))
-                {
-                    limb.GetComponent<Thruster>().EnablePower();
+                    limb.GetComponent<SuperPunch>().EnablePower();
                 }
 
                 if (Person.TryGetComponent<SpeedHealing>(out var heal))
@@ -1738,6 +1739,7 @@ namespace Mod
                     else
                     {
                         hadHealing = false;
+                        heal.immortal = true;
                         heal.EnablePower();
                     }
                 }
@@ -1760,7 +1762,7 @@ namespace Mod
                 else
                 {
                     hadStrength = false;
-                    SuperMass.SetPower(Person, null).EnablePower();
+                    SuperMass.SetPower(Person, null, 1).EnablePower();
                 }
 
                 Person.Limbs[2].PhysicalBehaviour.PlayClipOnce(TransformationSound);
@@ -1788,6 +1790,7 @@ namespace Mod
 
             foreach (var limb in Person.Limbs)
             {
+                StartCoroutine(SmoothScale(limb.transform, new Vector2(1f, 1f)));
                 limb.PhysicalBehaviour.Properties = ModAPI.FindPhysicalProperties("Human");
                 limb.PhysicalBehaviour.BulletPenetration = true;
                 limb.ImpactDamageMultiplier = 1;
@@ -1801,7 +1804,7 @@ namespace Mod
 
             foreach (var limb in GetDeepestPushedToLimbs(Person.Limbs[1]))
             {
-                Timtam.MakeCustomSkinSpread(limb, Sprites, false, true, 1, true, Sprites, 1, true);
+                Timtam.MakeCustomSkinSpread(limb, Sprites, false, true, 2, true, Sprites, 2, true);
 
                 if (limb.TryGetComponent<LineRenderer>(out var line))
                 {
@@ -1848,10 +1851,40 @@ namespace Mod
 
             return result;
         }
+
+        public IEnumerator SmoothScale(Transform Target, Vector2 targetScale)
+        {
+            Vector2 initialScale = Target.localScale;
+            float elapsed = 0f;
+            float stretchDuration = 1f;
+
+            while (elapsed < stretchDuration)
+            {
+                float t = elapsed / stretchDuration;
+                Target.localScale = Vector2.Lerp(initialScale, targetScale, t);
+
+                var phys = Target.GetComponent<PhysicalBehaviour>();
+                if (phys)
+                {
+                    phys.RecalculateMassBasedOnSize();
+                }
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            Target.localScale = targetScale;
+
+            foreach (var sizeChange in transform.root.GetComponentsInChildren<SizeChange>())
+            {
+                sizeChange.stretching = false;
+            }
+        }
     }
 
     public class SizeChange : Power, Messages.IUse
     {
+        float defaultSize = 3;
         public float Size = 3;
         public bool Stretched = false;
         float stretchDuration = 1f;
@@ -1865,18 +1898,17 @@ namespace Mod
             power.Description = name+"s the user";
             power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
             power.Size = size;
-            foreach (var limbb in person.Limbs)
-            {
-                if(limbb.Joint)limbb.Joint.autoConfigureConnectedAnchor = false;
-                limbb.PhysicalBehaviour.ContextMenuOptions.Buttons.Add(new ContextMenuButton(() => !ColorpickerDialogBehaviour.IsOpen, "setAddSizeThing", "Change Size Change Size", "Change Size Change Size", delegate
-                {
-                    Utils.OpenFloatInputDialog(0, power, delegate (SizeChange obj, float c)
-                    {
-                        power.Size = c;
+            power.defaultSize = size;
 
-                    }, "Change Size Change Size", "Size to add");
-                }));
-            }
+            limb.PhysicalBehaviour.ContextMenuOptions.Buttons.Add(new ContextMenuButton(() => !ColorpickerDialogBehaviour.IsOpen, "setAddSizeThing", "Change Size", "Change Size", delegate
+            {
+                Utils.OpenFloatInputDialog(power.Size, power, delegate (SizeChange obj, float c)
+                {
+                    power.Size = c;
+
+                }, "Change Size", "Change the target size of the user's ability (Default value is" + power.defaultSize + ")");
+            }));
+
 
             return power;
         }
@@ -3048,6 +3080,7 @@ namespace Mod
             Limb.ShotDamageMultiplier = 0;
             Limb.PhysicalBehaviour.Properties.BulletSpeedAbsorptionPower = 1;
             Limb.PhysicalBehaviour.TrueInitialMass *= 20;
+            Limb.BreakingThreshold = Mathf.Infinity;
 
             usingBlade = true;
         }
@@ -3064,6 +3097,7 @@ namespace Mod
                 Limb.ShotDamageMultiplier = 0.001f;
                 Limb.PhysicalBehaviour.Properties.BulletSpeedAbsorptionPower = 0.5f;
                 Limb.PhysicalBehaviour.TrueInitialMass /= 20;
+                Limb.BreakingThreshold = Mathf.Infinity;
 
                 usingBlade = false;
             }
@@ -3176,7 +3210,7 @@ namespace Mod
             Limb.ShotDamageMultiplier = 0;
             Limb.PhysicalBehaviour.Properties.BulletSpeedAbsorptionPower = 1;
             Limb.PhysicalBehaviour.TrueInitialMass *= 10;
-
+            Limb.BreakingThreshold = Mathf.Infinity;
             usingBlade = true;
         }
 
@@ -3192,6 +3226,7 @@ namespace Mod
                 Limb.ShotDamageMultiplier = 0.001f;
                 Limb.PhysicalBehaviour.Properties.BulletSpeedAbsorptionPower = 0.5f;
                 Limb.PhysicalBehaviour.TrueInitialMass /= 10;
+                Limb.BreakingThreshold = Mathf.Infinity;
 
                 usingBlade = false;
             }
@@ -3199,24 +3234,21 @@ namespace Mod
 
         void OnCollisionEnter2D(Collision2D collision)
         {
-            Debug.Log("Nigger");
             if (!Enabled)
                 return;
 
             Vector2 relativeVelocity = collision.relativeVelocity;
 
-            float impactStrength = relativeVelocity.magnitude * 25;
-            Debug.Log("Nigger2");
+            float impactStrength = relativeVelocity.magnitude * 4;
+
             if (collision.gameObject.GetComponent<Rigidbody2D>() && collision.relativeVelocity.magnitude > 3)
             {
-                Debug.Log("Nigger3");
                 Vector2 directionToThisObject = (GetComponent<Rigidbody2D>().position - collision.rigidbody.position).normalized;
 
                 float dotProduct = Vector2.Dot(relativeVelocity, directionToThisObject);
 
                 if (dotProduct > 0)
                 {
-                    Debug.Log("Nigger3");
                     collision.gameObject.GetComponent<Rigidbody2D>().velocity += -relativeVelocity.normalized * impactStrength;
                     CameraShakeBehaviour.main.Shake(7, base.transform.position);
                     if (collision.gameObject.GetComponent<PhysicalBehaviour>())
@@ -9408,6 +9440,54 @@ namespace Mod
                 buttonCount++;
             }
         }
+
+        public void AddFakeButton(string name, Sprite sprite, List<Sprite> limbs, UnityEvent OnAddEvent = null, UnityEvent OnRemoveEvent = null, Sprite Cape = null, Sprite CapeCollar = null)
+        {
+            if (ui != null)
+            {
+                GameObject canvas = GameObject.Find("Canvas");
+                GameObject button = new GameObject(name);
+                Image buttonImage = button.AddComponent<Image>();
+                buttonImage.sprite = sprite;
+
+                RectTransform buttonTransform = button.GetComponent<RectTransform>();
+
+                Button uiButton = button.AddComponent<Button>();
+                uiButton.onClick.AddListener(() =>
+                {
+                    SelectedEvent = OnAddEvent;
+                    DeselectedEvent = OnRemoveEvent;
+                    Selnametext.text = name;
+
+                    foreach (var ci in PreviewHuman.GetComponentsInChildren<Image>())
+                    {
+                        ci.sprite = null;
+                        ci.color = new Color(0, 0, 0, 0);
+
+                        foreach (var limb in SelectedSkin)
+                        {
+                            if (ci.name.Contains(limb.name))
+                                ci.sprite = limb;
+                        }
+
+                        ci.SetNativeSize();
+                        if (ci.GetComponent<Image>().sprite != null)
+                            ci.GetComponent<Image>().color = Color.white;
+                    }
+
+                    PreviewHuman.transform.GetChild(1).GetChild(0).GetComponent<Image>().sprite = CapeCollar;
+                    PreviewHuman.transform.GetChild(1).GetChild(0).GetComponent<Image>().SetNativeSize();
+                    PreviewHuman.transform.GetChild(1).GetChild(1).GetComponent<Image>().sprite = Cape;
+                    PreviewHuman.transform.GetChild(1).GetChild(0).GetComponent<Image>().SetNativeSize();
+                    PreviewHuman.transform.GetChild(1).GetChild(0).GetComponent<Image>().color = CapeCollar ? Color.white : new Color(0, 0, 0, 0);
+                    PreviewHuman.transform.GetChild(1).GetChild(1).GetComponent<Image>().color = Cape ? Color.white : new Color(0, 0, 0, 0);
+                });
+
+                Buttons.Add(button);
+                buttonCount++;
+            }
+        }
+
 
         public void ChangeTexture(List<Sprite> Skin)
         {
