@@ -199,7 +199,9 @@ namespace Mod
         public static AudioClip HulkTransformSound = ModAPI.LoadSound("Sounds/Transform.wav");
         public static AudioClip Electricity = ModAPI.LoadSound("Sounds/Electricity.wav");
         public static AudioClip Thunder = ModAPI.LoadSound("Sounds/Thunder.wav");
-        
+        public static AudioClip HulkRoarSound = ModAPI.LoadSound("Sounds/Roar.wav");
+        public static AudioClip Shrink = ModAPI.LoadSound("Sounds/Shrink.wav");
+
         public static AudioClip[] WebSFX =
         {
             ModAPI.LoadSound("Sounds/Web1.wav"),
@@ -1623,11 +1625,14 @@ namespace Mod
         }
     }
 
+    public class HulkRoar : Power
+    {
+        public AudioClip Roar = Mod.HulkRoarSound;
+    }
+
     public class HulkTransform : Power, Mod.ModAPIPlus.IUse2
     {
         public PersonBehaviour Person;
-
-        public AudioClip TransformationSound = Mod.HulkTransformSound;
 
         bool TransformOnceNoAnim = false;
         bool hadHealing;
@@ -1646,7 +1651,7 @@ namespace Mod
             power.Name = "Hulk";
             power.Description = "makes the user transform into the Hulk, greatly increasing their strength and durability.\n\nWhile transformed, the user will heal rapidly and have superhuman strength.\n\nWhile transformed, the user cannot be damaged or have their limbs broken.\n<color=\"yellow\">Activate head with custom activation key (typically H) to transform the user";
             power.icon = icon;
-            power.targetLimb = TargettedLimb.Head;
+            power.targetLimb = TargettedLimb.Body;
             power.Person = Limb.Person;
             power.Skin = Nanotech ?? Mod.Hulk;
 
@@ -1660,6 +1665,8 @@ namespace Mod
 
                 if (limb.Joint)
                     limb.Joint.autoConfigureConnectedAnchor = false;
+
+                limb.BreakingThreshold = Mathf.Infinity;
 
                 if (limb.name.Contains("LowerArm"))
                 {
@@ -1782,7 +1789,7 @@ namespace Mod
                     SuperMass.SetPower(Person, null, 1).EnablePower();
                 }
 
-                Person.Limbs[2].PhysicalBehaviour.PlayClipOnce(TransformationSound);
+                //Person.Limbs[2].PhysicalBehaviour.PlayClipOnce(TransformationSound);
             }
         }
 
@@ -1813,11 +1820,11 @@ namespace Mod
                 limb.ImpactDamageMultiplier = 1;
                 limb.ImpactPainMultiplier = 1;
                 limb.ShotDamageMultiplier = 1;
-                limb.BreakingThreshold = threshold.FirstOrDefault(a => a.Key == limb).Value;
+                limb.BreakingThreshold = Mathf.Infinity;
                 limb.ImmuneToDamage = false;
             }
 
-            Person.Limbs[2].PhysicalBehaviour.PlayClipOnce(TransformationSound);
+            //Person.Limbs[2].PhysicalBehaviour.PlayClipOnce(TransformationSound);
 
             foreach (var limb in GetDeepestPushedToLimbs(Person.Limbs[1]))
             {
@@ -1926,6 +1933,9 @@ namespace Mod
                 }, "Change Size", "Change the target size of the user's ability (Default value is" + power.defaultSize + ")");
             }));
 
+            foreach(var Limb in person.Limbs)
+                if(limb.Joint)
+                    Limb.Joint.autoConfigureConnectedAnchor = false;
 
             return power;
         }
@@ -1950,6 +1960,8 @@ namespace Mod
                 {
                     sizeChange.Stretched = false;
                 }
+
+                transform.root.GetComponent<PersonBehaviour>().Limbs[2].PhysicalBehaviour.PlayClipOnce(Mod.Shrink);
             }
             else
             {
@@ -1966,6 +1978,8 @@ namespace Mod
                 {
                     sizeChange.Stretched = true;
                 }
+
+                transform.root.GetComponent<PersonBehaviour>().Limbs[2].PhysicalBehaviour.PlayClipOnce(Mod.Shrink);
             }
         }
 
@@ -3333,7 +3347,7 @@ namespace Mod
                 power.threshold.Add(limb, limb.BreakingThreshold);
 
                 limb.gameObject.GetOrAddComponent<NanoLimb>().tech = power;
-
+                limb.BreakingThreshold = Mathf.Infinity;
                 Sprite clonedSprite = Functions.Clone(limb.PhysicalBehaviour.spriteRenderer.sprite);
                 clonedSprite.name = limb.name;
                 power.Sprites.Add(clonedSprite);
@@ -3522,7 +3536,6 @@ namespace Mod
                 limb.ImpactDamageMultiplier = 1;
                 limb.ImpactPainMultiplier = 1;
                 limb.ShotDamageMultiplier = 1;
-                limb.BreakingThreshold = threshold.FirstOrDefault(a => a.Key == limb).Value;
                 limb.ImmuneToDamage = false;
             }
 
@@ -4220,7 +4233,9 @@ namespace Mod
                 if (dotProduct > 0)
                 {
                     collision.gameObject.GetComponent<Rigidbody2D>().velocity += -relativeVelocity.normalized * impactStrength;
-                    CameraShakeBehaviour.main.Shake(5, base.transform.position);
+                    CameraShakeBehaviour.main.Shake(6, transform.position);
+
+                    ModAPI.CreateParticleEffect("Vapor", transform.position).transform.localScale = Vector3.one * 3;
                 }
 
             }
