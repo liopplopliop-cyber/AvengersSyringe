@@ -244,7 +244,10 @@ namespace Mod
 
                 if (hulk.transformed)
                 {
-                    Timtam.MakeCustomSkinSpread(person.Limbs[0], skin, false, true);
+                    foreach (var limb in person.Limbs)
+                    {
+                        limb.gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(limb.GetComponent<SpriteRenderer>().sprite, Timtam.GetLimbSprite(skin, limb), limb.GetComponent<SpriteRenderer>().material, true, 2, AnimationType.Random, true);
+                    }
                 }
             });
 
@@ -638,14 +641,14 @@ namespace Mod
             ModAPI.RegisterCategory(CategoryName, "Category for Nova's Avengers Mod", ModAPI.LoadSprite("icon.png"));
 
              //Tony Stark
-            ModAPIPlus.CreateHuman("Tony Stark (Iron Man)", "", "Tony Stark", "Tony Stark", (Instance) =>
+            ModAPIPlus.CreateHuman("Tony Stark (Iron Man)", "", "Tony Stark", "Iron Man", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
       
                 var menu = Instance.GetComponent<TextureMenu>();
 
                 Nanotech.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Nanotech.png")).EnablePower();
-
+                SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
             }, "a");
 
             //Steve Rogers
@@ -749,7 +752,7 @@ namespace Mod
             }, "a");
 
             //Jennifer Walters
-            ModAPIPlus.CreateHuman("Jennifer Walters", "Justice doesn't flinch. Neither do I.", "Jennifer Walters", "Jennifer Walters", (Instance) =>
+            ModAPIPlus.CreateHuman("Jennifer Walters", "Justice doesn't flinch. Neither do I.", "Jennifer Walters", "She-Hulk", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
 
@@ -780,16 +783,10 @@ namespace Mod
                     {
                         Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
                     }
+
+                    HulkTransform.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Hulk.png"), ModAPIPlus.LimbSprites("Art/Skins/She-Hulk/")).EnablePower();
+                    menu.AddFakeButton("F4", ModAPI.LoadSprite("Art/Thumbnails/She-Hulk F4.png"), ModAPIPlus.LimbSprites("Art/AltSkins/She-Hulk F4/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/She-Hulk F4/"), person));
                 }
-            }, "a");
-
-            //She-Hulk
-            ModAPIPlus.CreateHuman("She-Hulk", "Justice doesn't flinch. Neither do I.", "She-Hulk", "She-Hulk", (Instance) =>
-            {
-                var person = Instance.GetComponent<PersonBehaviour>();
-
-                var menu = Instance.GetComponent<TextureMenu>();
-                menu.AddButton("F4", ModAPI.LoadSprite("Art/Thumbnails/She-Hulk F4.png"), ModAPIPlus.LimbSprites("Art/AltSkins/She-Hulk F4/"));
             }, "a");
 
             //Black Widow
@@ -857,12 +854,9 @@ namespace Mod
             ModAPIPlus.CreateHuman("Vision", "", "Vision", "Vision", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
-                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
-
-                person.GetComponent<SpeedHealing>().EnablePower();
-                person.GetComponent<SuperMass>().EnablePower();
-
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+                
+                //SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png")).EnablePower();
 
                 foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
                 {
@@ -889,6 +883,8 @@ namespace Mod
                     {
                         Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
                     }
+
+                    Limbs.IsAndroid = true;
                 }
 
                 Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Vision/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Vision/CapeThing.png"));
@@ -902,8 +898,8 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
 
-                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"));
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png")).EnablePower();
 
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Antman Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman Unmasked/"));
                 menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Antman Civil War.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman Civil War/"));
@@ -913,10 +909,10 @@ namespace Mod
                 menu.AddButton("Giant-Man EMH", ModAPI.LoadSprite("Art/Thumbnails/Giant-Man EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Giant-Man EMH/"));
                 menu.AddButton("Yellowjacket", ModAPI.LoadSprite("Art/Thumbnails/Yellowjacket.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Yellowjacket/"));
 
-                SizeChange.SetPower(person, person.Limbs[13], null, 2, "Grow");
-                SizeChange.SetPower(person, person.Limbs[13], null, 0.1f).EnablePower();
-                SizeChange.SetPower(person, person.Limbs[11], null, 2, "Grow").EnablePower();
+                SizeChange.SetPower(person, person.Limbs[11], null, 3, "Grow").EnablePower();
                 SizeChange.SetPower(person, person.Limbs[11], null, 0.1f);
+                SizeChange.SetPower(person, person.Limbs[13], null, 3, "Grow");
+                SizeChange.SetPower(person, person.Limbs[13], null, 0.1f).EnablePower();
 
                 person.Limbs[13].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[13].gameObject);
                 person.Limbs[11].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[11].gameObject);
@@ -1385,6 +1381,8 @@ namespace Mod
 
             }, "a");
 
+            #region Villains
+
             //Loki
             ModAPIPlus.CreateHuman("Loki Laufeyson", "", "Loki", "Loki", (Instance) =>
             {
@@ -1601,7 +1599,9 @@ namespace Mod
                 }
             }, "a");
 
-            //Objects
+            #endregion
+
+            #region Objects
 
             //Tesseract
             ModAPIPlus.CreateObject("Rod", "Tesseract", "", "Tesseract", "Tesseract", (Instance) =>
@@ -1634,6 +1634,8 @@ namespace Mod
             ModAPIPlus.CreateObject("Rod", "Mjolnir", "", "Mjolnir", "Mjolnir", (Instance) =>
             {
             }, "2");
+
+            #endregion
 
             ModAPI.Register<AlternateMouseActivator>();
             ModAPI.Register<CategoryButtonEditor>();
@@ -1762,10 +1764,10 @@ namespace Mod
 
             if (Enabled && !transformed)
                 if (!Person.IsAlive())
-                    Transform(0);
+                    Transform();
         }
 
-        public void Transform(int startlimb = 0)
+        public void Transform()
         {
             if (Person.GetComponentInChildren<SpriteMergerAnimatorAdvanced>())
                 return;
@@ -1813,10 +1815,10 @@ namespace Mod
                 }
             }
 
-            Timtam.MakeCustomSkinSpread(Person.Limbs[startlimb], Skin, false, true, 2, true, Skin, 2);
-
             foreach (var limb in Person.Limbs)
             {
+                limb.gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(limb.GetComponent<SpriteRenderer>().sprite, Timtam.GetLimbSprite(Skin, limb), limb.GetComponent<SpriteRenderer>().material, true, 3, AnimationType.Random);
+
                 if (limb.name.Contains("LowerArm"))
                 {
                     limb.GetComponent<SuperPunch>().EnablePower();
@@ -1996,13 +1998,12 @@ namespace Mod
                 {
                     power.Size = c;
 
-                }, "Change Size", "Change the target size of the user's ability (Default value is" + power.defaultSize + ")");
+                }, "Change " + name + " Size", "Change the target size of the user's ability (Default value is" + power.defaultSize + ")");
             }));
 
-            foreach(var Limb in person.Limbs)
-                if(limb.Joint)
+            foreach (var Limb in person.Limbs)
+                if (Limb.Joint != null)
                     Limb.Joint.autoConfigureConnectedAnchor = false;
-
             return power;
         }
 
@@ -9616,7 +9617,7 @@ namespace Mod
                         ci.sprite = null;
                         ci.color = new Color(0, 0, 0, 0);
 
-                        foreach (var limb in SelectedSkin)
+                        foreach (var limb in limbs)
                         {
                             if (ci.name.Contains(limb.name))
                                 ci.sprite = limb;
@@ -9639,7 +9640,6 @@ namespace Mod
                 buttonCount++;
             }
         }
-
 
         public void ChangeTexture(List<Sprite> Skin)
         {
