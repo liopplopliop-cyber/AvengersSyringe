@@ -1054,7 +1054,7 @@ namespace Mod
                     }
                 }
 
-                EnergyExplosion.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Energy Explosion.png"), ColorPlus.Orange, ModAPIPlus.LimbGlowSprites("Art/Skins/Black Panther/")).EnablePower();
+                EnergyExplosion.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Energy Explosion.png"), new Color(0.7f, 0f, 0.9f, 1f), ModAPIPlus.LimbGlowSprites("Art/Skins/Black Panther/")).EnablePower();
 
                 Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Black Panther/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Black Panther/CapeThing.png"));
 
@@ -1735,14 +1735,15 @@ namespace Mod
             power.targetLimb = TargettedLimb.Head;
             power.person = Person;
             power.color = colo;
-            
-            foreach (var glow in Glows)
+
+            foreach (var limb in Person.Limbs)
             {
-                foreach (var limb in Person.Limbs)
+                foreach (var glow in Glows)
                 {
                     limb.gameObject.GetOrAddComponent<ExpLimb>().parent = power;
-
-                    if (glow.name.Contains(limb.name))
+                    string a = glow.name;
+                    a = a.Replace("G", "");
+                    if (limb.name.Contains(a))
                     {
                         var sr = new GameObject("Glow").AddComponent<SpriteRenderer>();
                         sr.sprite = glow;
@@ -1782,7 +1783,10 @@ namespace Mod
             {
                 if(!GetComponent<LimbBehaviour>().ImmuneToDamage)
                     foreach (var limb in person.Limbs)
+                    {
                         limb.ImmuneToDamage = true;
+                        limb.CirculationBehaviour.ImmuneToDamage = true;
+                    }
             }
 
             foreach (var glow in glows)
@@ -1796,21 +1800,31 @@ namespace Mod
             if (Enabled == false || charge < 5)
                 return;
 
+            PhotonEngage(false);
+        }
+
+        void PhotonEngage(bool harmless = false)
+        {
             CameraShakeBehaviour.main.Shake(charge / 5, transform.position);
             var emp = Instantiate(ModAPI.FindSpawnable("EMP Generator").Prefab.GetComponent<EMPBehaviour>().Effect);
             Mod.ModAPIPlus.SetPFXColors(ModAPI.CreateParticleEffect(ParticleEffects.BigExplosion, transform.position), color);
             emp.transform.position = transform.position;
-            emp.transform.localScale = Vector3.one * 0.5f;
+            emp.transform.localScale = Vector3.one * (harmless?0.01f:0.1f);
             var main = emp.GetComponent<ParticleSystem>().main;
             main.startColor = color;
+            var n = main.startLifetime;
+            n.constantMax *= 0.5f;
             emp.transform.GetChild(0).GetComponent<ParticleSystem>().startColor = color;
             var imp = ModAPI.FindSpawnable("Power Hammer").Prefab.GetComponent<PowerHammerBehaviour>().ImpactClips;
             StartCoroutine(PlaySound(imp[UnityEngine.Random.Range(0, imp.Length)]));
-            PhotonEngage();
-        }
 
-        void PhotonEngage()
-        {
+            if (harmless)
+            {
+                GetComponent<LimbBehaviour>().PhysicalBehaviour.charge += 5;
+                charge = 0;
+                return;
+            }
+
             Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, 10);
 
             foreach (var col in cols)
@@ -1838,7 +1852,7 @@ namespace Mod
 
                 if (collider.TryGetComponent<LimbBehaviour>(out var limb) && limb.Person != person)
                 {
-                    limb.Damage(50 * (charge / 45) / Vector2.Distance(limb.transform.position, transform.position));
+                    limb.Damage(25 * (charge / 60) / Vector2.Distance(limb.transform.position, transform.position));
 
                     collider.attachedRigidbody?.AddForce((collider.transform.position - transform.position).normalized * 40f / Mathf.Clamp(Vector2.Distance(transform.position, transform.position), 0.1f, 100) * (charge / 45));
                 }
@@ -1855,7 +1869,7 @@ namespace Mod
                     collider.attachedRigidbody?.AddForce((collider.transform.position - transform.position).normalized * 35f / Mathf.Clamp(Vector2.Distance(transform.position, transform.position), 0.1f, 100) * (charge / 45));
 
                 }
-                else if (limb == null)
+                else if (limb == null && !collider.name.Contains("Cape"))
                 {
                     collider.attachedRigidbody?.AddForce((collider.transform.position - transform.position).normalized * 35f / Mathf.Clamp(Vector2.Distance(transform.position, transform.position), 0.1f, 100) * (charge / 45));
                 }
@@ -1897,18 +1911,34 @@ namespace Mod
         public class ExpLimb : MonoBehaviour
         {
             public EnergyExplosion parent;
+            bool Cooled = false;
 
             public void OnCollisionEnter2D(Collision2D col)
             {
-                if (!parent.Enabled || col.relativeVelocity.magnitude < 5 || parent.OnCooldown)
+                if (!parent.Enabled || col.relativeVelocity.magnitude < 5 || parent.OnCooldown || Cooled)
                     return;
 
-                parent.charge += col.relativeVelocity.magnitude / 3;
+                if (col.relativeVelocity.magnitude / 3 < 1)
+                    parent.charge += col.relativeVelocity.magnitude / 3;
+                else
+                    parent.charge += 1;
 
-                if (parent.charge == 45 && col.relativeVelocity.magnitude > 15)
+                if (parent.charge > 44 && col.relativeVelocity.magnitude > 45)
                 {
-                    parent.Use(null);
+                    parent.PhotonEngage(true);
                 }
+
+                if (parent.charge > 44)
+                    Mod.ModAPIPlus.SetPFXColors(ModAPI.CreateParticleEffect(ParticleEffects.Vapor, parent.transform.position), parent.color);
+
+                StartCoroutine(Cooldown());
+            }
+
+            IEnumerator Cooldown()
+            {
+                Cooled = true;
+                yield return new WaitForSeconds(0.2f);
+                Cooled = false;
             }
         }
     }
@@ -2442,7 +2472,7 @@ namespace Mod
                 else
                 {
                     hadHealing = false;
-                    SpeedHealing.SetPower(Person, null).EnablePower();
+                    SpeedHealing.SetPower(Person, null, true).EnablePower();
                 }
 
                 if (Person.TryGetComponent<SuperMass>(out var mass))
@@ -4016,7 +4046,7 @@ namespace Mod
             foreach (var limb in Person.Limbs)
             {
                 power.threshold.Add(limb, limb.BreakingThreshold);
-
+                limb.PhysicalBehaviour.ForceNoCharge = true;
                 limb.gameObject.GetOrAddComponent<NanoLimb>().tech = power;
                 limb.BreakingThreshold = Mathf.Infinity;
                 Sprite clonedSprite = Functions.Clone(limb.PhysicalBehaviour.spriteRenderer.sprite);
