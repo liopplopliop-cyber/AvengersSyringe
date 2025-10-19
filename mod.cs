@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -151,6 +152,8 @@ namespace Mod
         public static Sprite NanoShield = ModAPI.LoadSprite("Art/Objects/Shield.png");
         public static Sprite NanoHammer = ModAPI.LoadSprite("Art/Objects/Hammer.png");
 
+        public static Sprite Vision = ModAPI.LoadSprite("Art/Objects/Vision.png");
+
         //icons
         public static Sprite venomIcon = ModAPI.LoadSprite("Art/UI/Icons/Venom.png");
         public static Sprite Ice = ModAPI.LoadSprite("Art/Objects/Ice.png");
@@ -202,6 +205,12 @@ namespace Mod
         public static AudioClip HulkRoarSound = ModAPI.LoadSound("Sounds/Roar.wav");
         public static AudioClip Shrink = ModAPI.LoadSound("Sounds/Shrink.wav");
 
+        public static AudioClip Laser = ModAPI.LoadSound("Sounds/Laser.wav");
+        public static AudioClip LaserStart = ModAPI.LoadSound("Sounds/LaserStart.wav");
+        public static AudioClip LaserEnd = ModAPI.LoadSound("Sounds/LaserEnd.wav");
+
+        public static AudioClip Swap = ModAPI.LoadSound("Sounds/Swap.wav");
+
         public static AudioClip[] WebSFX =
         {
             ModAPI.LoadSound("Sounds/Web1.wav"),
@@ -243,6 +252,31 @@ namespace Mod
                 hulk.Skin = skin;
 
                 if (hulk.transformed)
+                {
+                    foreach (var limb in person.Limbs)
+                    {
+                        limb.gameObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(limb.GetComponent<SpriteRenderer>().sprite, Timtam.GetLimbSprite(skin, limb), limb.GetComponent<SpriteRenderer>().material, true, 2, AnimationType.Random, true);
+                    }
+                }
+            });
+
+            var even = new UnityEvent();
+            even.AddListener(() =>
+            {
+                (act + addon).Invoke(person.gameObject);
+            });
+
+            return even;
+        }
+
+        public static UnityEvent IronSkinAddEvent(List<Sprite> skin, PersonBehaviour person, Action<GameObject> addon = null)
+        {
+            var act = new Action<GameObject>((Instance) =>
+            {
+                var nano = person.GetComponentInChildren<Nanotech>();
+                nano.NanotechSuit = skin;
+
+                if (nano.transformed)
                 {
                     foreach (var limb in person.Limbs)
                     {
@@ -552,6 +586,7 @@ namespace Mod
             ModAPI.RegisterInput("Nova's Custom Input Key", "NovaKeyActivation", KeyCode.H);
             ModAPI.RegisterInput("Nova's Power Swap Key", "NovaSwapActivation", KeyCode.J);
 
+            #region Checks
             if (GameObject.Find("Canvas").transform.FindChild("Mods"))
             {
                 foreach (var text in GameObject.Find("Canvas").transform.FindChild("Mods").GetComponentsInChildren<TextMeshProUGUI>())
@@ -624,12 +659,16 @@ namespace Mod
                     new DialogButton[] { button1, button2 }
                 );
             }
+            #endregion
 
             #region Settings
             Settings.main = new Settings();
             Settings.main.AddSetting("UI Size", "Adjust the UI scale if it is incorrect", "UISize", 0.9f, typeof(float), 0.5f, 1.5f);
+            Settings.main.AddSetting("Upright Flight", "Determines whether flying keeps the user upright or not", "UprightFlight", true, typeof(bool));
+            Settings.main.AddSetting("Capes", "When disabled, no characters will spawn with capes", "UseCapes", true, typeof(bool));
             Settings.main.AddSetting("Stronger healing", "Automatically enables the Speed Healing power on entities using the slower varient.", "SpeedHeal", false, typeof(bool));
             Settings.main.AddSetting("Durability", "Changes the damage dampening on speed healing and super strength, divides impact damage variable by whatever is inputted in this setting, and stacks if it has both strength and healing.", "DamDamp", 10, typeof(int), 1, 40);
+            Settings.main.AddSetting("Ultron Body Swapping", "Toggles whether Ultron can swap bodies when killed automatically", "UltronSwapping", true, typeof(bool));
             Settings.main.AddSetting("Default Web Type", "(1 = normal, 2 = connector, 3 = grapple, 4 = electric, 5 = webshot, 6 = none)", "DefaultWeb", 1, typeof(int), 1, 6);
             Settings.main.AddSetting("Synced Web Type", "When enabled, it will make all limbs with the web ability use the same web type when one is changed", "SyncedWeb", false, typeof(bool));
             Settings.main.AddSetting("Rigid Webs", "Will change the joint type of the webs from being springy to stiff.", "RigidWebs", false, typeof(bool));
@@ -637,9 +676,6 @@ namespace Mod
             Settings.main.AddSetting("Web Length", "Adjust the length a web can shoot from.", "WebLength", 25f, typeof(float));
             Settings.main.AddSetting("Webshot force", "Adjust the force a webshot is shot at.", "WebshotForce", 10f, typeof(float));
             Settings.main.AddSetting("Wall Climbing Force", "Adjust the strength that characters stick to walls.", "WallClimbForce", 500, typeof(int));
-            //Settings.main.AddSetting("Venom Arm Morph", "Toggles whether Venom's arm morphing power is enabled after transformation. (webslinging will be enabled by default if this setting is disabled)", "VenomArmMorph", true, typeof(bool));
-            Settings.main.AddSetting("Venom Aggrevation", "Toggles whether venom is effected by metal objects or not", "VenomAggrevation", true, typeof(bool));
-            Settings.main.AddSetting("Default Symbiote Skin", "Set the default skin used by the venom symbiote (Case Sensitive)", "DefaultVenom", "Venom", typeof(string));
             Settings.main.LoadAll();
             #endregion
 
@@ -878,8 +914,14 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
-                
+
                 //SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png")).EnablePower();
+
+                UltronBot.SetBot(person, ModAPIPlus.LimbGlowSprites("Art/Skins/Vision/"), false, false);
+
+                VisionBeam.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Vision Beam.png")).EnablePower();
+
+                Phase.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Phase.png")).EnablePower();
 
                 foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
                 {
@@ -892,26 +934,39 @@ namespace Mod
                         Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
                     }
 
+                    if (Limbs.gameObject.name.Contains("LowerArm"))
+                    {
+                        EMPHand.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/EMP Touch.png"));
+                    }
+
                     if (Limbs.name.Contains("UpperBody"))
                     {
                         Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
                     }
 
-                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
-                    }
-
-                    if (Limbs.name.Contains("LowerBody"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
-                    }
-
                     Limbs.IsAndroid = true;
+
+                    Limbs.ImpactDamageMultiplier *= 0.01f;
+                    Limbs.ImpactPainMultiplier = 0;
+                    Limbs.BreakingThreshold *= 10000;
+                    Limbs.ImmuneToDamage = true;
+                    Limbs.InitialHealth = 1000;
+                    Limbs.Health = 1000;
+
+                    Limbs.PhysicalBehaviour.Properties = PhysicalProperty.Incredible;
+
+                    foreach (var limb2 in ModAPI.FindSpawnable("Android").Prefab.GetComponent<PersonBehaviour>().Limbs)
+                    {
+                        if (Limbs.name == limb2.name)
+                        {
+                            Limbs.BaseStrength = limb2.BaseStrength;
+                            Limbs.PhysicalBehaviour.TrueInitialMass = limb2.PhysicalBehaviour.rigidbody.mass;
+                            Limbs.PhysicalBehaviour.rigidbody.mass = limb2.PhysicalBehaviour.rigidbody.mass;
+                        }
+                    }
                 }
 
                 Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Vision/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Vision/CapeThing.png"));
-
             }, "a");
 
             //Antman
@@ -1443,19 +1498,84 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 0.85f).EnablePower();
 
                 person.GetComponent<SpeedHealing>().EnablePower();
-                person.GetComponent<SuperMass>().EnablePower();
+
+                var ult = UltronBot.SetBot(person, ModAPIPlus.LimbGlowSprites("Art/Skins/Ultron/"), true);
 
                 var menu = Instance.GetComponent<TextureMenu>();
                 ChestRepulsor.SetPower(person, person.Limbs[1], null, new Color32(230, 0, 0, 200)).EnablePower();
+
                 foreach (var limb in person.Limbs)
                 {
-                    limb.ImmuneToDamage = true;
-                    limb.BloodMuscleStrengthRatio = 0f;
                     limb.IsAndroid = true;
-                    limb.BaseStrength /= 2;
+
+                    limb.ImpactDamageMultiplier *= 0.05f;
+                    limb.ImpactPainMultiplier = 0;
+                    limb.BreakingThreshold *= 100;
+                    limb.ImmuneToDamage = true;
+                    limb.InitialHealth = 250;
+                    limb.Health = 250;
+
+                    limb.PhysicalBehaviour.Properties = PhysicalProperty.AndroidArmour;
+
+                    foreach (var limb2 in ModAPI.FindSpawnable("Android").Prefab.GetComponent<PersonBehaviour>().Limbs)
+                    {
+                        if(limb.name == limb2.name)
+                        {
+                            limb.SkinMaterialHandler.renderer.material = limb2.SkinMaterialHandler.renderer.material;
+                            limb.BaseStrength = limb2.BaseStrength;
+                            limb.FakeUprightForce = limb2.FakeUprightForce;
+                            limb.PhysicalBehaviour.TrueInitialMass = limb2.PhysicalBehaviour.rigidbody.mass;
+                            limb.PhysicalBehaviour.rigidbody.mass = limb2.PhysicalBehaviour.rigidbody.mass;
+                        }
+                    }
+
+                    if (limb.name.Contains("LowerArm"))
+                    {
+                        Repulsor.SetPower(person, limb, null, new Color32(230, 0, 0, 200));
+                        UltronTouch.SetPower(person, limb, ModAPI.LoadSprite("Art/UI/Icons/Ultron Touch.png"), ult).EnablePower();
+                        limb.gameObject.AddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+                    }
+
+                    if (limb.name.Contains("Foot"))
+                        Thruster.SetPower(person, limb, null, new Color32(230, 0, 0, 200), new Color32(230, 0, 0, 200)).EnablePower();
+                }
+
+            }, "a", ModAPI.LoadSprite("Art/TempForScripts/AndroidFlesh.png"), ModAPI.LoadSprite("Art/TempForScripts/AndroidBone.png"));
+
+            //Ultron Bot
+            ModAPIPlus.CreateHuman("Ultron Bot", "", "Ultron Bot", "Ultron Bot", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+                
+                var ult = UltronBot.SetBot(person, ModAPIPlus.LimbGlowSprites("Art/Skins/Ultron Bot/"), false, true, ColorPlus.Teal);
+                ult.Inactive = false;
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                foreach (var limb in person.Limbs)
+                {
+                    limb.IsAndroid = true;
+
+                    limb.ImpactPainMultiplier = 0;
+                    limb.InitialHealth = 1000;
+                    limb.Health = 1000;
+
+                    limb.PhysicalBehaviour.Properties = PhysicalProperty.AndroidArmour;
+
+                    foreach (var limb2 in ModAPI.FindSpawnable("Android").Prefab.GetComponent<PersonBehaviour>().Limbs)
+                    {
+                        if (limb.name == limb2.name)
+                        {
+                            limb.SkinMaterialHandler.renderer.material = limb2.SkinMaterialHandler.renderer.material;
+                            limb.BaseStrength = limb2.BaseStrength;
+                            limb.FakeUprightForce = limb2.FakeUprightForce;
+                            limb.PhysicalBehaviour.TrueInitialMass = limb2.PhysicalBehaviour.TrueInitialMass;
+                            limb.PhysicalBehaviour.InitialMass = limb2.PhysicalBehaviour.InitialMass;
+                            limb.PhysicalBehaviour.rigidbody.mass = limb2.PhysicalBehaviour.rigidbody.mass;
+                        }
+                    }
 
                     if (limb.name.Contains("LowerArm"))
                     {
@@ -1466,6 +1586,7 @@ namespace Mod
                     if (limb.name.Contains("Foot"))
                         Thruster.SetPower(person, limb, null, new Color32(230, 0, 0, 200), new Color32(230, 0, 0, 200)).EnablePower();
                 }
+
             }, "a", ModAPI.LoadSprite("Art/TempForScripts/AndroidFlesh.png"), ModAPI.LoadSprite("Art/TempForScripts/AndroidBone.png"));
 
             //Kang
@@ -1718,6 +1839,672 @@ namespace Mod
         }
     }
 
+    public class UltronTouch : Power, Mod.ModAPIPlus.IUse2
+    {
+        public UltronBot bot;
+        public ParticleSystem Bolt;
+        bool Using = false;
+
+        public static UltronTouch SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon, UltronBot bott)
+        {
+            var power = Limb.gameObject.AddComponent<UltronTouch>();
+            power.Name = "Body Switch";
+            power.Description = "Allows ultron to switch bodies to another bot\n<color=\"yellow\">Use alternate activation key (typically H) on Lower Arm to toggle";
+            power.icon = icon;
+            power.bot = bott;
+
+            if (power.name.Contains("Front"))
+            {
+                power.targetLimb = TargettedLimb.FrontArm;
+            }
+            else
+            {
+                power.targetLimb = TargettedLimb.BackArm;
+            }
+
+            var bolt = Instantiate(ModAPI.FindSpawnable("Particle Projector").Prefab.transform.FindChild("bolts").gameObject);
+            bolt.transform.parent = Limb.transform;
+            bolt.transform.GetChild(0).gameObject.GetComponent<ParticleSystem>().startColor = Color.red;
+            bolt.transform.GetChild(1).gameObject.GetComponent<ParticleSystem>().startColor = Color.red;
+            var boltmain = bolt.GetComponent<ParticleSystem>().main;
+            boltmain.startColor = Color.yellow;
+            bolt.transform.localPosition = Vector2.zero;
+            bolt.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+            power.Bolt = bolt.GetComponent<ParticleSystem>();
+            return power;
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+
+            Using = false;
+            Bolt.Stop();
+        }
+
+        public void FixedUpdate()
+        {
+            if (bot == null && Enabled || bot.Ultron == false && Enabled)
+                DisablePower();
+        }
+
+        public void Use2()
+        {
+            if (!Enabled || bot == null || bot.Ultron == false)
+                return;
+            if (!Using)
+            {
+                Using = true;
+                Bolt.Play();
+            }
+            else
+            {
+                Using = false;
+                Bolt.Stop();
+            }
+        }
+
+        public void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (Using && Enabled)
+            {
+                if (collision.transform.root.TryGetComponent<UltronBot>(out var Bot))
+                {
+                    if (Bot.person.name.Contains("Vision") && Bot.person.IsAlive())
+                        return;
+
+                    Bot.Activate(true);
+                    Bot.Ultron = true;
+                    bot.Inactive = true;
+                    bot.Ultron = false;
+                    bot.person.Braindead = true;
+                    bot.person.Limbs[0].Health = 0;
+                    ModAPI.CreateParticleEffect(ParticleEffects.BigZap, bot.person.Limbs[0].transform.position);
+                    StartCoroutine(bot.ActivateLine(bot.person.Limbs[0].transform, Bot.person.Limbs[0].transform));
+                    ModAPI.Notify("Ultron has transferred to another body!");
+                    DisablePower();
+                }
+            }
+        }
+    }
+
+    public class UltronBot : MonoBehaviour
+    {
+        public List<SpriteRenderer> glows = new List<SpriteRenderer>();
+
+        public bool Ultron = false;
+        public bool Inactive = false;
+        bool attempted;
+
+        public PersonBehaviour person;
+        LineRenderer line;
+
+        bool glowsNormally = true;
+
+        public Color normalColor;
+
+        public static UltronBot SetBot(PersonBehaviour Person, List<Sprite> Glows, bool isUltron = false, bool glowsNormally = true, Color normalColor = default)
+        {
+            var bot = Person.gameObject.AddComponent<UltronBot>();
+            bot.normalColor = normalColor == default ? Color.red : normalColor;
+            bot.glowsNormally = glowsNormally;
+            bot.Ultron = isUltron;
+            bot.person = Person;
+            bot.line = new GameObject("ultronLine").AddComponent<LineRenderer>();
+            bot.line.positionCount = 2;
+            bot.line.startWidth = 0.01f;
+            bot.line.endWidth = 0.01f;
+            bot.line.material = ModAPI.FindMaterial("VeryBright");
+            bot.line.startColor = Color.clear;
+            bot.line.endColor = Color.clear;
+            bot.line.sortingLayerName = Layers.Sorting.Bottom;
+
+            foreach (var limb in Person.Limbs)
+            {
+                limb.PhysicalBehaviour.ContextMenuOptions.Buttons.Add(new ContextMenuButton(() => !ColorpickerDialogBehaviour.IsOpen, "toggleActive", "<color=\"yellow\">Toggle Active", "<color=\"yellow\">Toggle Active", delegate
+                {
+                    if (bot.Inactive)
+                    {
+                        bot.Activate(false);
+                    }else
+                    {
+                        bot.Inactive = true;
+                        bot.person.Limbs[0].Health = 0;
+                        bot.person.Braindead = true;
+                    }
+                }));
+
+                foreach (var glow in Glows)
+                {
+                    string a = glow.name;
+                    a = a.Replace("G", "");
+                    if (limb.name.Contains(a))
+                    {
+                        var sr = new GameObject("Glow").AddComponent<SpriteRenderer>();
+                        sr.sprite = glow;
+                        sr.gameObject.layer = 9;
+                        sr.sortingLayerName = limb.GetComponent<SpriteRenderer>().sortingLayerName;
+                        sr.sortingOrder = limb.GetComponent<SpriteRenderer>().sortingOrder + 1;
+                        sr.color = Color.clear;
+                        sr.material = ModAPI.FindMaterial("VeryBright");
+                        sr.transform.SetParent(limb.transform, false);
+
+                        bot.glows.Add(sr);
+                    }
+                }
+            }
+            return bot;
+        }
+
+        public void Activate(bool ultron = true)
+        {
+            if (!Inactive)
+                return;
+
+            if(ultron == true)
+                Ultron = true;
+
+            person.Braindead = false;
+            person.Limbs[0].Health = person.Limbs[0].InitialHealth / 10;
+            person.Braindead = false;
+            person.BrainDamaged = false;
+            person.Heartbeat = 100;
+            person.AdrenalineLevel = 1;
+
+            foreach (var limb in person.Limbs)
+            {
+                limb.CirculationBehaviour.AddLiquid(limb.GetOriginalBloodType(), 10);
+                limb.CirculationBehaviour.BloodFlow = 50;
+                limb.Numbness = 0;
+                person.Heartbeat = 100;
+                if (limb.name.Contains("LowerArm") && ultron)
+                {
+                    if (limb.TryGetComponent<UltronTouch>(out var toch))
+                        toch.EnablePower();
+                    else
+                        UltronTouch.SetPower(person, limb, null, this).EnablePower();
+                }
+            }
+
+            Inactive = false;
+        }
+
+        public void FixedUpdate()
+        {
+            foreach (var glow in glows)
+            {
+                if (person.IsAlive())
+                {
+                    if (Ultron)
+                        glow.color = Color.Lerp(glow.color, new Color(Color.red.r, Color.red.g, Color.red.b, Inactive ? 0 : 0.3f), 0.1f);
+                    else
+                        glow.color = Color.Lerp(glow.color, new Color(normalColor.r, normalColor.g, normalColor.b, Inactive ? 0 : glowsNormally ? 0.05f : 0), 0.1f);
+                }else
+                {
+                    glow.color = Color.Lerp(glow.color, new Color(Color.red.r, Color.red.g, Color.red.b, 0), 0.1f);
+                }
+
+            }
+
+            if (Ultron)
+                if (!attempted)
+                {
+                    if (person.IsAlive() == false)
+                    {
+                        //if (Settings.main.Get<bool>("UltronSwapping") == false)
+                            //return;
+                        EnterOtherBot();
+                        attempted = true;
+                    }
+                }
+                else if(person.IsAlive() && attempted)
+                {
+                    attempted = false;
+                }
+        }
+
+        public void EnterOtherBot()
+        {
+            var bots = FindObjectsOfType<UltronBot>();
+            UltronBot otherBot = null;
+            foreach (var bot in bots)
+            {
+                if (bot != this && bot.Inactive)
+                {
+                    if (bot.person.name.Contains("Vision") && bot.person.IsAlive())
+                        continue;
+                    otherBot = bot;
+                    return;
+                }
+            }
+            if (otherBot != null)
+            {
+                StartCoroutine(PlaySound(Mod.Swap));
+                ModAPI.CreateParticleEffect(ParticleEffects.BigZap, person.Limbs[0].transform.position);
+                otherBot.Activate(true);
+                otherBot.Ultron = true;
+                ActivateLine(person.Limbs[0].transform, otherBot.person.Limbs[0].transform);
+                Inactive = true;
+                Ultron = false;
+                person.Limbs[0].Health = 0;
+                person.Braindead = true;
+                ModAPI.Notify("Ultron has transferred to another body!");
+            }
+            else
+            {
+                ModAPI.Notify("Ultron cannot transform bodies!");
+            }
+        }
+
+        public IEnumerator ActivateLine(Transform position1, Transform position2)
+        {
+            line.SetPosition(0, position1.position);
+            line.SetPosition(1, position2.position);
+            line.startColor = Color.red;
+            line.endColor = Color.red;
+
+            var duration = 1;
+            float elapsedTime = 0;
+            while (elapsedTime < duration)
+            {
+                line.SetPosition(0, position1.position);
+                line.SetPosition(1, position2.position);
+                line.startColor = Color.Lerp(Color.red, Color.clear, (elapsedTime / duration));
+                line.endColor = Color.Lerp(Color.red, Color.clear, (elapsedTime / duration));
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+            line.startColor = Color.clear;
+            line.endColor = Color.clear;
+        }
+
+        private IEnumerator PlaySound(AudioClip SoundToPlay)
+        {
+            var sound = new GameObject();
+            sound.name = "SFX";
+            sound.transform.position = gameObject.transform.position;
+            sound.AddComponent<AudioSource>();
+            sound.GetComponent<AudioSource>().playOnAwake = false;
+            sound.GetComponent<AudioSource>().clip = SoundToPlay;
+            sound.GetComponent<AudioSource>().spatialBlend = 1;
+            sound.GetComponent<AudioSource>().volume = 5f;
+            sound.AddComponent<AudioDistortionFilter>().distortionLevel = 0.85f;
+            sound.AddComponent<AudioSourceTimeScaleBehaviour>();
+            sound.GetComponent<AudioSource>().Play();
+            sound.AddComponent<OBJDestroyer>();
+            yield return new WaitForSeconds(SoundToPlay.length);
+
+            Destroy(sound);
+        }
+    }
+
+    public class EMPHand : Power, Mod.ModAPIPlus.IUse2
+    {
+        public ParticleSystem Bolt;
+        bool Using = false;
+
+        public static EMPHand SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
+        {
+            var power = Limb.gameObject.AddComponent<EMPHand>();
+            power.Name = "EMP Touch";
+            power.Description = "Allows the user to disable any electronic devices while touching them\n<color=\"yellow\">Use alternate activation key (typically H) on Lower Arm to toggle claws";
+            power.icon = icon;
+
+            if (power.name.Contains("Front"))
+            {
+                power.targetLimb = TargettedLimb.FrontArm;
+            }
+            else
+            {
+                power.targetLimb = TargettedLimb.BackArm;
+            }
+
+            var bolt = Instantiate(ModAPI.FindSpawnable("Particle Projector").Prefab.transform.FindChild("bolts").gameObject);
+            bolt.transform.parent = Limb.transform;
+            bolt.transform.GetChild(0).gameObject.GetComponent<ParticleSystem>().startColor = Color.yellow;
+            bolt.transform.GetChild(1).gameObject.GetComponent<ParticleSystem>().startColor = Color.yellow;
+            var boltmain = bolt.GetComponent<ParticleSystem>().main;
+            boltmain.startColor = Color.yellow;
+            bolt.transform.localPosition = Vector2.zero;
+            bolt.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+            power.Bolt = bolt.GetComponent<ParticleSystem>();
+            return power;
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+
+            Using = false;
+            Bolt.Stop();
+        }
+
+        public void Use2()
+        {
+            if (!Enabled)
+                return;
+            if (!Using)
+            {
+                Using = true;
+                Bolt.Play();
+            }
+            else
+            {
+                Using = false;
+                Bolt.Stop();
+            }
+        }
+
+        public void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (Using && Enabled)
+            {
+                if (collision.gameObject.TryGetComponent<PhysicalBehaviour>(out var phys))
+                {
+                    if (phys.TryGetComponent<DamagableMachineryBehaviour>(out var dam))
+                    {
+                        if (!dam.Destroyed)
+                        {
+                            ModAPI.CreateParticleEffect(ParticleEffects.BigZap, phys.transform.position);
+                            dam.Health = 0;
+                            dam.Break(Vector2.zero);
+                        }
+                    }
+                    else if (phys.transform.root.TryGetComponent<PersonBehaviour>(out var person) && phys.TryGetComponent<LimbBehaviour>(out var limb) && person.Braindead == false)
+                    {
+                        if(person.name.Contains("Ultron"))
+                        {
+                            ModAPI.CreateParticleEffect(ParticleEffects.BrokenElectronicsSpark, phys.transform.position);
+                            foreach (var limbb in person.Limbs) limbb.Damage(5);
+
+                            if (person.name.Contains("Bot"))
+                            {
+                                person.Braindead = true;
+                                ModAPI.CreateParticleEffect(ParticleEffects.BigZap, phys.transform.position);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public class VisionBeam : Power, Messages.IUse
+    {
+        public PersonBehaviour person;
+
+        AudioSource Source;
+        bool doingTransition;
+        bool Lasering;
+
+        RaycastHit2D hit;
+        public LineRenderer line;
+        public SpriteRenderer GlowEye;
+        public TrailRenderer trail;
+        public GameObject RaycastPoint;
+        public GameObject RaycastPoint2;
+        public float blastRadius = 20f;
+        public float maxForce = 1f;
+        public float crushRadius = 5f;
+
+        Vector3 offset;
+
+        public static Power SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon, Vector2 offset = default)
+        {
+            var power = Limb.gameObject.AddComponent<VisionBeam>();
+            power.Name = "Vision Beam";
+            power.icon = icon;
+            power.person = Person;
+            power.targetLimb = TargettedLimb.Head;
+            power.offset = offset == null ? Vector2.zero : offset;
+            Limb.gameObject.GetOrAddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(Limb.gameObject);
+            return power;
+        }
+
+        public override void Start()
+        {
+            line = gameObject.GetOrAddComponent<LineRenderer>();
+            line.startColor = Color.yellow;
+            line.endColor = Color.yellow;
+            line.startWidth = 0.025f;
+            line.endWidth = 0.025f;
+            line.material = UnityEngine.Object.Instantiate<Material>(ModAPI.FindMaterial("VeryBright"));
+            line.material.SetFloat("_GlowIntensity", 0.05f);
+            line.material.mainTexture = ModAPI.FindMaterial("Sprites-Default").mainTexture;
+            line.sortingOrder = gameObject.GetComponent<SpriteRenderer>().sortingOrder + 1;
+            line.sortingLayerID = gameObject.GetComponent<SpriteRenderer>().sortingLayerID;
+            line.positionCount = 2;
+            line.enabled = false;
+
+            trail = new GameObject("trail").AddComponent<TrailRenderer>();
+            trail.transform.parent = transform;
+            trail.transform.localPosition = (new Vector3(5f, 2f, 0) * ModAPI.PixelSize) + offset;
+            trail.transform.localRotation = Quaternion.identity;
+            trail.transform.localScale = Vector3.one;
+            trail.gameObject.layer = gameObject.layer;
+            trail.time = 0.1f;
+            trail.startWidth = 0.02f;
+            trail.endWidth = 0.005f;
+            trail.material = UnityEngine.Object.Instantiate<Material>(ModAPI.FindMaterial("VeryBright"));
+            trail.startColor = new Color(1, 1, 0, 0.2f);
+            trail.endColor = new Color(0, 0, 0, 0);
+            trail.sortingLayerName = gameObject.GetComponent<SpriteRenderer>().sortingLayerName;
+            trail.sortingOrder = gameObject.GetComponent<SpriteRenderer>().sortingOrder + 1;
+            trail.enabled = false;
+
+            GlowEye = new GameObject("GlowEye").AddComponent<SpriteRenderer>();
+            GlowEye.transform.parent = transform;
+            GlowEye.transform.localPosition = Vector2.zero + (Vector2)offset;
+            GlowEye.transform.localRotation = Quaternion.identity;
+            GlowEye.transform.localScale = Vector3.one;
+            GlowEye.sprite = Mod.Vision;
+            GlowEye.material = UnityEngine.Object.Instantiate<Material>(ModAPI.FindMaterial("VeryBright"));
+            GlowEye.color = Color.clear;
+            GlowEye.sortingLayerName = gameObject.GetComponent<SpriteRenderer>().sortingLayerName;
+            GlowEye.sortingOrder = gameObject.GetComponent<SpriteRenderer>().sortingOrder + 1;
+            GlowEye.gameObject.layer = gameObject.layer;
+
+            Source = gameObject.AddComponent<AudioSource>();
+            Source.loop = true;
+            Source.clip = Mod.Laser;
+
+            if (!gameObject.GetComponent<AudioSourceTimeScaleBehaviour>())
+            {
+                gameObject.AddComponent<AudioSourceTimeScaleBehaviour>();
+            }
+
+            RaycastPoint = new GameObject("RaycastPoint");
+            RaycastPoint.transform.parent = transform;
+            RaycastPoint.transform.localPosition = (new Vector2(5, 2) * ModAPI.PixelSize) + (Vector2)offset;
+            RaycastPoint.transform.localRotation = Quaternion.identity;
+            RaycastPoint2 = new GameObject("RaycastPoint2");
+            RaycastPoint2.transform.parent = transform;
+            RaycastPoint2.transform.localPosition = (new Vector2(5, 2) * ModAPI.PixelSize) + (Vector2)offset;
+            RaycastPoint2.transform.localRotation = Quaternion.identity;
+            base.Start();
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled)
+                return;
+
+            line.endWidth = 0.025f;
+
+            if (!person.Braindead)
+            {
+                if (!doingTransition && !Lasering)
+                {
+                    StartCoroutine(Transition());
+                    StartCoroutine(PlaySound(Mod.LaserStart));
+                }
+                else if (!doingTransition)
+                {
+                    Source.Stop();
+                    StartCoroutine(DoneTransition());
+                    StartCoroutine(PlaySound(Mod.LaserEnd));
+                }
+            }
+        }
+
+        public override void DisablePower()
+        {
+            Source.Stop();
+            if (Lasering)
+                Use(null);
+            base.DisablePower();
+        }
+
+        public IEnumerator Transition()
+        {
+            doingTransition = true;
+            StartCoroutine(RendererColorTransition(GlowEye, Color.yellow, Color.clear, 1f));
+            yield return new WaitForSeconds(1f);
+            line.enabled = true;
+            StartCoroutine(RendererColorTransition(line, Color.yellow, Color.clear, 0.1f));
+            Source.Play();
+            Lasering = true;
+            trail.enabled = true;
+            doingTransition = false;
+        }
+
+        public IEnumerator DoneTransition()
+        {
+            doingTransition = true;
+            Source.Stop();
+
+            StartCoroutine(RendererColorTransition(line, Color.clear, Color.yellow, 0.25f));
+            yield return new WaitForSeconds(0.25f);
+            StartCoroutine(RendererColorTransition(GlowEye, Color.clear, Color.yellow, 1f));
+
+            line.enabled = false;
+            Lasering = false;
+            trail.enabled = false;
+            doingTransition = false;
+        }
+
+        public IEnumerator RendererColorTransition(Renderer renderer, Color newColor, Color OriginalColor, float duration = 0.5f)
+        {
+            if (renderer.GetType() == typeof(SpriteRenderer))
+            {
+                var sr = renderer as SpriteRenderer;
+
+                float elapsedTime = 0;
+                while (elapsedTime < duration)
+                {
+                    sr.color = Color.Lerp(OriginalColor, newColor, (elapsedTime / duration));
+                    elapsedTime += Time.deltaTime;
+                    yield return null;
+                }
+                sr.color = newColor;
+            }
+            else if (renderer.GetType() == typeof(LineRenderer))
+            {
+                var l = renderer as LineRenderer;
+
+                float elapsedTime = 0;
+                while (elapsedTime < duration)
+                {
+                    l.startColor = Color.Lerp(OriginalColor, newColor, (elapsedTime / duration));
+                    l.endColor = Color.Lerp(OriginalColor, newColor, (elapsedTime / duration));
+                    elapsedTime += Time.deltaTime;
+                    yield return null;
+                }
+                l.startColor = newColor;
+                l.endColor = newColor;
+
+            }
+        }
+
+        private IEnumerator PlaySound(AudioClip SoundToPlay)
+        {
+            var sound = new GameObject();
+            sound.name = "SFX";
+            sound.transform.position = gameObject.transform.position;
+            sound.AddComponent<AudioSource>();
+            sound.GetComponent<AudioSource>().playOnAwake = false;
+            sound.GetComponent<AudioSource>().clip = SoundToPlay;
+            sound.GetComponent<AudioSource>().spatialBlend = 1;
+            sound.GetComponent<AudioSource>().volume = 5f;
+            sound.AddComponent<AudioDistortionFilter>().distortionLevel = 0.85f;
+            sound.AddComponent<AudioSourceTimeScaleBehaviour>();
+            sound.GetComponent<AudioSource>().Play();
+            sound.AddComponent<OBJDestroyer>();
+            yield return new WaitForSeconds(SoundToPlay.length);
+
+            Destroy(sound);
+        }
+
+        public void Update()
+        {
+            if (!Enabled)
+                return;
+
+            if (Lasering && person.Braindead)
+            {
+                DoneTransition();
+            }
+
+
+            if (person.transform.localScale.x > 0)
+            {
+                hit = Physics2D.Raycast(RaycastPoint2.transform.position, RaycastPoint.transform.right, 200000, LayerMask.GetMask(new string[] { "Objects", "Bounds" }));
+
+            }
+            else
+            {
+                hit = Physics2D.Raycast(RaycastPoint2.transform.position, -RaycastPoint.transform.right, 200000, LayerMask.GetMask(new string[] { "Objects", "Bounds" }));
+
+            }
+
+            if (Lasering)
+            {
+                line.SetPosition(0, RaycastPoint.transform.position);
+                line.SetPosition(1, hit.point);
+            }
+        }
+
+        public void FixedUpdate()
+        {
+            if (!Enabled)
+                return;
+
+            Vector2 hitPoint = hit.point;
+
+            if (Lasering)
+            {
+                if (hit.collider != null)
+                {
+                    Mod.ModAPIPlus.SetPFXColors(ModAPI.CreateParticleEffect("Flash", hit.point), Color.yellow);
+                    if (hit.collider.TryGetComponent<LimbBehaviour>(out var limb))
+                    {
+                        if (limb.Person != GetComponent<LimbBehaviour>().Person)
+                        {
+                            limb.Damage(1f);
+                            limb.PhysicalBehaviour.Temperature += 1f;
+                            limb.SkinMaterialHandler.AddDamagePoint(DamageType.Blunt, hit.point, 10);
+                            if (hit.collider.TryGetComponent<Rigidbody2D>(out var rb) && hit.collider.GetComponent<SpriteRenderer>())
+                            {
+                                Vector2 direction = (hit.point - (Vector2)transform.position).normalized;
+                                rb.AddForce(direction * maxForce, ForceMode2D.Impulse);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (hit.collider.TryGetComponent<Rigidbody2D>(out var rb) && hit.collider.GetComponent<SpriteRenderer>())
+                        {
+                            Vector2 direction = (hit.point - (Vector2)transform.position).normalized;
+                            rb.AddForce(direction * maxForce, ForceMode2D.Impulse);
+                        }
+                    }
+                }
+
+                CameraShakeBehaviour.main.Shake(0.1f, transform.position);
+            }
+        }
+    }
+
     public class EnergyExplosion : Power, Messages.IUse
     {
         public PersonBehaviour person;
@@ -1806,14 +2593,16 @@ namespace Mod
         void PhotonEngage(bool harmless = false)
         {
             CameraShakeBehaviour.main.Shake(charge / 5, transform.position);
+            
             var emp = Instantiate(ModAPI.FindSpawnable("EMP Generator").Prefab.GetComponent<EMPBehaviour>().Effect);
-            Mod.ModAPIPlus.SetPFXColors(ModAPI.CreateParticleEffect(ParticleEffects.BigExplosion, transform.position), color);
+            
             emp.transform.position = transform.position;
-            emp.transform.localScale = Vector3.one * (harmless?0.01f:0.1f);
+            emp.transform.localScale = Vector3.one * (harmless?0.07f:0.1f);
             var main = emp.GetComponent<ParticleSystem>().main;
             main.startColor = color;
             var n = main.startLifetime;
             n.constantMax *= 0.5f;
+            main.simulationSpeed *= 1.5f;
             emp.transform.GetChild(0).GetComponent<ParticleSystem>().startColor = color;
             var imp = ModAPI.FindSpawnable("Power Hammer").Prefab.GetComponent<PowerHammerBehaviour>().ImpactClips;
             StartCoroutine(PlaySound(imp[UnityEngine.Random.Range(0, imp.Length)]));
@@ -1823,6 +2612,9 @@ namespace Mod
                 GetComponent<LimbBehaviour>().PhysicalBehaviour.charge += 5;
                 charge = 0;
                 return;
+            }else
+            {
+                Mod.ModAPIPlus.SetPFXColors(ModAPI.CreateParticleEffect(ParticleEffects.BigExplosion, transform.position), color);
             }
 
             Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, 10);
@@ -4310,10 +5102,10 @@ namespace Mod
         {
             var power = TargetLimb.gameObject.AddComponent<Phase>();
             power.person = Person;
-            power.Name = "Invisibility";
-            power.Description = "Allows the user to become invisible\n<color=\"yellow\">Disabling the power will revert the user back to their original form, but they can also be reverted by activating the head again";
+            power.Name = "Phasing";
+            power.Description = "Allows the user able to phase through objects\n<color=\"yellow\">Disabling the power will revert the user back to their original form, but they can also be reverted by activating the limb again";
             power.icon = icon;
-            power.targetLimb = TargettedLimb.Head;
+            power.targetLimb = TargettedLimb.Body;
             return power;
         }
 
@@ -4325,9 +5117,12 @@ namespace Mod
             }
 
             Vibrating = !Vibrating;
+
             foreach (var limb in person.Limbs)
             {
-                limb.GetComponent<SpriteRenderer>().color = Vibrating ? new Color(1, 1, 1, 0.1f) : Color.white;
+                limb.GetComponent<SpriteRenderer>().color = Vibrating ? new Color(1, 1, 1, 0.4f) : Color.white;
+
+                limb.gameObject.layer = Vibrating ? 10 : 9;
             }
         }
     }
@@ -7233,11 +8028,6 @@ namespace Mod
             power.Description = "Allows the user to heal their wounds and restore their health at a slow rate\n<color=\"yellow\">Heals most damage slowly, heals heart attacks, brain damage, but not bone breakage, it is similar to the speed healing power but much slower and weaker.</color>";
             power.targetLimb = TargettedLimb.Internal;
             power.immortal = immortal;
-            foreach (var limb in Personb.Limbs)
-            {
-                limb.ImpactDamageMultiplier /= 5f;
-                limb.ImpactPainMultiplier /= 5f;
-            }
             return power;
         }
 
@@ -7318,11 +8108,6 @@ namespace Mod
             power.Description = "Allows the user to heal their wounds and restore their health at an accelerated rate\n<color=\"yellow\">Heals all damage, including heart attacks, brain damage, and bone breakage, it is similar to the mending syringe but less potent</color>";
             power.targetLimb = TargettedLimb.Internal;
             power.immortal = immortal;
-            foreach (var limb in Personb.Limbs)
-            {
-                limb.ImpactDamageMultiplier /= 15f;
-                limb.ImpactPainMultiplier /= 15f;
-            }
             return power;
         }
 
@@ -7455,13 +8240,6 @@ namespace Mod
             power.targetLimb = TargettedLimb.Internal;
             power.NewMass = newMass;
             power.changeMass = changeMass;
-            int damdamp = Settings.main.Get<int>("DamDamp");
-
-            foreach (var limb in Person.Limbs)
-            {
-                limb.ImpactDamageMultiplier /= damdamp * newMass;
-                limb.ImpactPainMultiplier /= damdamp * newMass;
-            }
             return power;
         }
 
@@ -7509,6 +8287,137 @@ namespace Mod
             StartCoroutine(ChangeMassAfterSeconds());
         }
 
+    }
+
+    public class Cape : MonoBehaviour
+    {
+        public int numberOfPoints = 20;
+        public float pointSpacing = 0.085f;
+        public Vector3 offset = new Vector3(-0.1675f, 0.069f, 0);
+        public float sizeMultiplier = 1.0f;
+        public LineRenderer lineRenderer;
+        public GameObject[] capePoints;
+        private Vector3[] positions;
+        public Texture2D capeTexture;
+        public Sprite CapeCollar;
+        public GameObject CapeCollarOBJ;
+
+        public static void CreateCapeForPerson(PersonBehaviour person, Texture2D Cape, Sprite capeCollar)
+        {
+            if (Settings.main.Get<bool>("UseCapes") == false)
+                return;
+
+            var cape = person.Limbs[1].gameObject.AddComponent<Cape>();
+            cape.capeTexture = Cape;
+            cape.CapeCollar = capeCollar;
+            cape.CapeCollarOBJ = new GameObject("CapeCollar");
+            cape.CapeCollarOBJ.transform.parent = person.Limbs[1].transform;
+            cape.CapeCollarOBJ.transform.localPosition = Vector3.zero;
+            cape.CapeCollarOBJ.transform.localRotation = Quaternion.identity;
+            cape.CapeCollarOBJ.transform.localScale = Vector3.one;
+            cape.CapeCollarOBJ.AddComponent<SpriteRenderer>().sprite = capeCollar;
+            cape.CapeCollarOBJ.GetComponent<SpriteRenderer>().sortingLayerID = person.Limbs[1].GetComponent<SpriteRenderer>().sortingLayerID;
+            cape.CapeCollarOBJ.GetComponent<SpriteRenderer>().sortingOrder = person.Limbs[1].GetComponent<SpriteRenderer>().sortingOrder + 1;
+            cape.lineRenderer = cape.gameObject.AddComponent<LineRenderer>();
+            cape.lineRenderer.positionCount = cape.numberOfPoints;
+            cape.lineRenderer.startWidth = 0.2f * cape.sizeMultiplier;
+            cape.lineRenderer.endWidth = 0.2f * cape.sizeMultiplier;
+
+            if (cape.capeTexture != null)
+            {
+                Material material = new Material(Shader.Find("Sprites/Default"));
+                material.mainTexture = cape.capeTexture;
+                cape.lineRenderer.material = material;
+                cape.lineRenderer.startColor = Color.white;
+                cape.lineRenderer.endColor = Color.white;
+            }
+            else
+            {
+                cape.lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+                cape.lineRenderer.startColor = Color.red;
+                cape.lineRenderer.endColor = Color.red;
+            }
+
+            cape.lineRenderer.useWorldSpace = false;
+            cape.lineRenderer.alignment = LineAlignment.View;
+
+            cape.capePoints = new GameObject[cape.numberOfPoints];
+            cape.positions = new Vector3[cape.numberOfPoints];
+
+            for (int i = 0; i < cape.numberOfPoints; i++)
+            {
+                GameObject point = new GameObject("CapePoint" + i);
+                point.transform.parent = cape.transform;
+                if (i == 0)
+                {
+                    point.transform.localPosition = cape.offset;
+                }
+                else
+                {
+                    point.transform.localPosition = cape.offset + new Vector3(0, -i * cape.pointSpacing * cape.sizeMultiplier, 0);
+                }
+
+                Rigidbody2D rb = point.AddComponent<Rigidbody2D>();
+                rb.gravityScale = 1f;
+                rb.mass = 0.001f;
+                rb.drag = 1.2f;
+                CircleCollider2D collider = point.AddComponent<CircleCollider2D>();
+                collider.radius = 0.05f * cape.sizeMultiplier;
+
+                cape.capePoints[i] = point;
+                cape.positions[i] = point.transform.localPosition;
+            }
+
+            FixedJoint2D firstJoint = cape.capePoints[0].AddComponent<FixedJoint2D>();
+            firstJoint.connectedBody = cape.GetComponent<Rigidbody2D>();
+
+            for (int i = 0; i < cape.numberOfPoints - 1; i++)
+            {
+                DistanceJoint2D joint = cape.capePoints[i].AddComponent<DistanceJoint2D>();
+                joint.connectedBody = cape.capePoints[i + 1].GetComponent<Rigidbody2D>();
+                cape.capePoints[i + 1].GetComponent<Rigidbody2D>().interpolation = RigidbodyInterpolation2D.Interpolate;
+                joint.autoConfigureDistance = false;
+                joint.distance = cape.pointSpacing * cape.sizeMultiplier;
+            }
+
+
+        }
+
+        public void Update()
+        {
+            CapeCollarOBJ.GetComponent<SpriteRenderer>().sprite = CapeCollar;
+            lineRenderer.material.mainTexture = capeTexture;
+
+            Vector3[] positions = new Vector3[(numberOfPoints - 1) * 10 + 1];
+
+            for (int i = 0; i < numberOfPoints - 1; i++)
+            {
+                Vector3 p0 = (i > 0) ? capePoints[i - 1].transform.localPosition : capePoints[i].transform.localPosition;
+                Vector3 p1 = capePoints[i].transform.localPosition;
+                Vector3 p2 = capePoints[i + 1].transform.localPosition;
+                Vector3 p3 = (i < numberOfPoints - 2) ? capePoints[i + 2].transform.localPosition : capePoints[i + 1].transform.localPosition;
+
+                for (int j = 0; j < 10; j++)
+                {
+                    float t = j / 10f;
+                    positions[i * 10 + j] = 0.5f * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
+                }
+            }
+
+            positions[positions.Length - 1] = capePoints[numberOfPoints - 1].transform.localPosition;
+
+            lineRenderer.positionCount = positions.Length;
+            lineRenderer.SetPositions(positions);
+
+            if (transform.root.localScale.x < 0)
+            {
+                lineRenderer.widthMultiplier = -1f;
+            }
+            else
+            {
+                lineRenderer.widthMultiplier = 1f;
+            }
+        }
     }
 
     public class DynamicCape : MonoBehaviour
@@ -7594,134 +8503,6 @@ namespace Mod
                 joint.distance = cape.pointSpacing;
             }
         }
-        public void Update()
-        {
-            CapeCollarOBJ.GetComponent<SpriteRenderer>().sprite = CapeCollar;
-            lineRenderer.material.mainTexture = capeTexture;
-
-            Vector3[] positions = new Vector3[(numberOfPoints - 1) * 10 + 1];
-
-            for (int i = 0; i < numberOfPoints - 1; i++)
-            {
-                Vector3 p0 = (i > 0) ? capePoints[i - 1].transform.localPosition : capePoints[i].transform.localPosition;
-                Vector3 p1 = capePoints[i].transform.localPosition;
-                Vector3 p2 = capePoints[i + 1].transform.localPosition;
-                Vector3 p3 = (i < numberOfPoints - 2) ? capePoints[i + 2].transform.localPosition : capePoints[i + 1].transform.localPosition;
-
-                for (int j = 0; j < 10; j++)
-                {
-                    float t = j / 10f;
-                    positions[i * 10 + j] = 0.5f * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
-                }
-            }
-
-            positions[positions.Length - 1] = capePoints[numberOfPoints - 1].transform.localPosition;
-
-            lineRenderer.positionCount = positions.Length;
-            lineRenderer.SetPositions(positions);
-
-            if (transform.root.localScale.x < 0)
-            {
-                lineRenderer.widthMultiplier = -1f;
-            }
-            else
-            {
-                lineRenderer.widthMultiplier = 1f;
-            }
-        }
-    }
-
-    public class Cape : MonoBehaviour
-    {
-        public int numberOfPoints = 20;
-        public float pointSpacing = 0.085f;
-        public Vector3 offset = new Vector3(-0.13f, 0.12f, 0);
-        public float sizeMultiplier = 1.0f;
-        public LineRenderer lineRenderer;
-        public GameObject[] capePoints;
-        private Vector3[] positions;
-        public Texture2D capeTexture;
-        public Sprite CapeCollar;
-        public GameObject CapeCollarOBJ;
-
-        public static void CreateCapeForPerson(PersonBehaviour person, Texture2D Cape, Sprite capeCollar)
-        {
-            var cape = person.Limbs[1].gameObject.AddComponent<Cape>();
-            cape.capeTexture = Cape;
-            cape.CapeCollar = capeCollar;
-            cape.CapeCollarOBJ = new GameObject("CapeCollar");
-            cape.CapeCollarOBJ.transform.parent = person.Limbs[1].transform;
-            cape.CapeCollarOBJ.transform.localPosition = Vector3.zero;
-            cape.CapeCollarOBJ.transform.localRotation = Quaternion.identity;
-            cape.CapeCollarOBJ.transform.localScale = Vector3.one;
-            cape.CapeCollarOBJ.AddComponent<SpriteRenderer>().sprite = capeCollar;
-            cape.CapeCollarOBJ.GetComponent<SpriteRenderer>().sortingLayerID = person.Limbs[1].GetComponent<SpriteRenderer>().sortingLayerID;
-            cape.CapeCollarOBJ.GetComponent<SpriteRenderer>().sortingOrder = person.Limbs[1].GetComponent<SpriteRenderer>().sortingOrder + 1;
-            cape.lineRenderer = cape.gameObject.AddComponent<LineRenderer>();
-            cape.lineRenderer.positionCount = cape.numberOfPoints;
-            cape.lineRenderer.startWidth = 0.175f * cape.sizeMultiplier;
-            cape.lineRenderer.endWidth = 0.175f * cape.sizeMultiplier;
-
-            if (cape.capeTexture != null)
-            {
-                Material material = new Material(Shader.Find("Sprites/Default"))
-                {
-                    mainTexture = cape.capeTexture
-                };
-                cape.lineRenderer.material = material;
-                cape.lineRenderer.startColor = Color.white;
-                cape.lineRenderer.endColor = Color.white;
-            }
-            else
-            {
-                cape.lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-                cape.lineRenderer.startColor = Color.red;
-                cape.lineRenderer.endColor = Color.red;
-            }
-
-            cape.lineRenderer.useWorldSpace = false;
-            cape.lineRenderer.alignment = LineAlignment.View;
-
-            cape.capePoints = new GameObject[cape.numberOfPoints];
-            cape.positions = new Vector3[cape.numberOfPoints];
-
-            for (int i = 0; i < cape.numberOfPoints; i++)
-            {
-                GameObject point = new GameObject("CapePoint" + i);
-                point.transform.parent = cape.transform;
-                if (i == 0)
-                {
-                    point.transform.localPosition = cape.offset;
-                }
-                else
-                {
-                    point.transform.localPosition = cape.offset + new Vector3(0, -i * cape.pointSpacing * cape.sizeMultiplier, 0);
-                }
-
-                Rigidbody2D rb = point.AddComponent<Rigidbody2D>();
-                rb.gravityScale = 1f;
-                rb.mass = 0.001f;
-                rb.drag = 1.2f;
-                CircleCollider2D collider = point.AddComponent<CircleCollider2D>();
-                collider.radius = 0.05f * cape.sizeMultiplier;
-
-                cape.capePoints[i] = point;
-                cape.positions[i] = point.transform.localPosition;
-            }
-
-            FixedJoint2D firstJoint = cape.capePoints[0].AddComponent<FixedJoint2D>();
-            firstJoint.connectedBody = cape.GetComponent<Rigidbody2D>();
-
-            for (int i = 0; i < cape.numberOfPoints - 1; i++)
-            {
-                DistanceJoint2D joint = cape.capePoints[i].AddComponent<DistanceJoint2D>();
-                joint.connectedBody = cape.capePoints[i + 1].GetComponent<Rigidbody2D>();
-                cape.capePoints[i + 1].GetComponent<Rigidbody2D>().interpolation = RigidbodyInterpolation2D.Interpolate;
-                joint.autoConfigureDistance = false;
-                joint.distance = cape.pointSpacing * cape.sizeMultiplier;
-            }
-        }
-
         public void Update()
         {
             CapeCollarOBJ.GetComponent<SpriteRenderer>().sprite = CapeCollar;
