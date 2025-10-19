@@ -1511,7 +1511,7 @@ namespace Mod
                     limb.IsAndroid = true;
 
                     limb.ImpactDamageMultiplier *= 0.05f;
-                    limb.ImpactPainMultiplier = 0;
+                    limb.ImpactPainMultiplier = 0.01f;
                     limb.BreakingThreshold *= 100;
                     limb.ImmuneToDamage = true;
                     limb.InitialHealth = 250;
@@ -1783,6 +1783,28 @@ namespace Mod
 
             #endregion
 
+            //Settings
+            ModAPI.Register(
+                new Modification()
+                {
+                    OriginalItem = ModAPI.FindSpawnable("Brick"),
+                    NameOverride = "[" + CategoryName + "]<color=\"yellow\"> Mod Settings",
+                    NameToOrderByOverride = "!!!!!!!",
+                    DescriptionOverride = "Opens the settings menu for the mod",
+                    CategoryOverride = ModAPI.FindCategory(CategoryName),
+                    ThumbnailOverride = ModAPI.LoadSprite("Art/Thumbnails/Settings.png"),
+                    AfterSpawn = (Instance) =>
+                    {
+                        if (!Settings.SettingsMenuCurrentUI)
+                        {
+                            new GameObject("SettingsMenu").AddComponent<SettingsMenu>();
+                        }
+
+                        Destroy(Instance);
+                    }
+                }
+            );
+
             ModAPI.Register<AlternateMouseActivator>();
             ModAPI.Register<CategoryButtonEditor>();
             ModAPI.RegisterLiquid(TBLiquid.ID, new TBLiquid());
@@ -1996,12 +2018,12 @@ namespace Mod
             return bot;
         }
 
-        public void Activate(bool ultron = true)
+        public void Activate(bool ultronn = true)
         {
             if (!Inactive)
                 return;
 
-            if(ultron == true)
+            if(ultronn == true)
                 Ultron = true;
 
             person.Braindead = false;
@@ -2017,8 +2039,10 @@ namespace Mod
                 limb.CirculationBehaviour.BloodFlow = 50;
                 limb.Numbness = 0;
                 person.Heartbeat = 100;
-                if (limb.name.Contains("LowerArm") && ultron)
+
+                if (limb.name.Contains("LowerArm") && ultronn == true)
                 {
+                    Debug.Log("Enabling Ultron Touch");
                     if (limb.TryGetComponent<UltronTouch>(out var toch))
                         toch.EnablePower();
                     else
@@ -2046,10 +2070,25 @@ namespace Mod
 
             }
 
-            if (Ultron)
-                if (!attempted)
+            foreach (var limb in person.Limbs)
+            {
+                foreach (var limb2 in ModAPI.FindSpawnable("Android").Prefab.GetComponent<PersonBehaviour>().Limbs)
                 {
-                    if (person.IsAlive() == false)
+                    if (limb.name == limb2.name)
+                    {
+                        limb.SkinMaterialHandler.renderer.material = limb2.SkinMaterialHandler.renderer.material;
+                        limb.BaseStrength = limb2.BaseStrength;
+                        limb.FakeUprightForce = limb2.FakeUprightForce;
+                        limb.PhysicalBehaviour.TrueInitialMass = limb2.PhysicalBehaviour.rigidbody.mass;
+                        limb.PhysicalBehaviour.rigidbody.mass = limb2.PhysicalBehaviour.rigidbody.mass;
+                    }
+                }
+            }
+
+            if (Ultron)
+                if (attempted == false)
+                {
+                    if (person.Braindead == true)
                     {
                         //if (Settings.main.Get<bool>("UltronSwapping") == false)
                             //return;
@@ -2057,7 +2096,7 @@ namespace Mod
                         attempted = true;
                     }
                 }
-                else if(person.IsAlive() && attempted)
+                else if(!person.Braindead && attempted)
                 {
                     attempted = false;
                 }
@@ -2069,14 +2108,15 @@ namespace Mod
             UltronBot otherBot = null;
             foreach (var bot in bots)
             {
-                if (bot != this && bot.Inactive)
+                if (bot != this)
                 {
-                    if (bot.person.name.Contains("Vision") && bot.person.IsAlive())
+                    if (bot.name.Contains("Vision") && !bot.Inactive)
                         continue;
                     otherBot = bot;
-                    return;
+                    break;
                 }
             }
+
             if (otherBot != null)
             {
                 StartCoroutine(PlaySound(Mod.Swap));
@@ -7902,6 +7942,166 @@ namespace Mod
                     canBounce = false;
                     StartCoroutine(WaitForASec());
                 }
+            }
+        }
+    }
+
+    public class Flight : Power, Messages.IUse
+    {
+        public bool InFlight = false;
+
+        public PersonBehaviour person;
+        float gravity;
+        float ogbasestrength = 8.5f;
+        bool upright = true;
+
+        public static Power SetPower(PersonBehaviour Person, LimbBehaviour TargetLimb, Sprite icon)
+        {
+            var power = TargetLimb.gameObject.AddComponent<Flight>();
+            power.person = Person;
+            power.Name = "Flight";
+            power.Description = "Allows the user to fly through the air";
+            power.icon = icon;
+            power.targetLimb = TargettedLimb.Body;
+            return power;
+        }
+
+        public void FixedUpdate()
+        {
+            if (InFlight)
+            {
+                foreach (var limb in person.Limbs)
+                {
+                    if (!limb.gameObject.activeSelf)
+                        continue;
+
+                    if (limb.GetComponent<Rigidbody2D>().bodyType != RigidbodyType2D.Static)
+                    {
+                        limb.GetComponent<Rigidbody2D>().angularVelocity *= 0.98f;
+                        limb.GetComponent<Rigidbody2D>().velocity *= 0.98f;
+
+                        if (limb.name.Contains("Body") && upright)
+                        {
+                            float num2 = limb.gameObject.GetComponent<PhysicalBehaviour>().rigidbody.mass / 1.5f;
+                            float num3 = 10 * Mathf.Clamp(limb.gameObject.GetComponent<PhysicalBehaviour>().Charge, 1f, 5f) * num2 * num2;
+                            limb.gameObject.GetComponent<PhysicalBehaviour>().rigidbody.angularVelocity *= Mathf.Pow(0.5f, 1f);
+                            limb.gameObject.GetComponent<Rigidbody2D>().AddTorque(Mathf.DeltaAngle(limb.transform.eulerAngles.z, 0f) * num3);
+                        }
+                    }
+                }
+            }
+        }
+
+        public override void DisablePower()
+        {
+            if (InFlight)
+                StopFlying();
+
+            base.DisablePower();
+        }
+
+        public void StopFlying()
+        {
+            InFlight = false;
+            person.OverridePoseIndex = -1;
+            foreach (var limb in person.Limbs)
+            {
+                if (!limb.gameObject.activeSelf)
+                    continue;
+
+                if (limb.name.Contains("Arm"))
+                    limb.BaseStrength = ogbasestrength;
+
+                if (limb.TryGetComponent<GripBehaviour>(out var grip))
+                    if (grip.CurrentlyHolding && grip.CurrentlyHolding.gameObject.TryGetComponent<FlightHeld>(out var fh))
+                        fh.OnDrop(grip);
+
+                if (limb.TryGetComponent<Cape>(out var cape))
+                    foreach (var part in cape.capePoints)
+                        part.GetComponent<Rigidbody2D>().gravityScale = 1;
+
+                if (limb.GetComponent<Flight>())
+                    if (limb.GetComponent<Flight>().InFlight)
+                        limb.GetComponent<Flight>().StopFlying();
+
+                limb.GetComponent<Rigidbody2D>().drag = 0;
+                limb.GetComponent<Rigidbody2D>().gravityScale = gravity;
+
+                Debug.Log("Stopped Flying" + limb.name);
+            }
+        }
+
+        public void StartFlying()
+        {
+            upright = Settings.main.Get<bool>("UprightFlight");
+            if (!InFlight)
+            {
+                person.OverridePoseIndex = 8;
+                InFlight = true;
+                foreach (var limb in person.Limbs)
+                {
+                    if (!limb.gameObject.activeSelf)
+                        continue;
+
+                    if (limb.name.Contains("Arm"))
+                    {
+                        limb.BaseStrength = 0;
+                    }
+
+                    if (limb.TryGetComponent<GripBehaviour>(out var grip))
+                        if (grip.CurrentlyHolding && !grip.CurrentlyHolding.gameObject.GetComponent<FlightHeld>())
+                        {
+                            grip.CurrentlyHolding.gameObject.AddComponent<FlightHeld>().initialGravity = grip.CurrentlyHolding.rigidbody.gravityScale;
+                            grip.CurrentlyHolding.rigidbody.gravityScale = 0;
+                        }
+
+                    if (limb.TryGetComponent<Cape>(out var cape))
+                        foreach (var part in cape.capePoints)
+                        {
+                            part.GetComponent<Rigidbody2D>().drag = 5;
+                            part.GetComponent<Rigidbody2D>().gravityScale = 0;
+                        }
+
+
+                    gravity = limb.GetComponent<PhysicalBehaviour>().InitialGravityScale;
+                    limb.GetComponent<Rigidbody2D>().drag = upright ? 1 : 6.5f;
+                    limb.GetComponent<Rigidbody2D>().gravityScale = 0;
+                }
+            }
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled)
+                return;
+
+            if (!InFlight)
+            {
+                StartFlying();
+                foreach (var limb in person.Limbs)
+                    if (limb.GetComponent<Flight>())
+                        if (!limb.GetComponent<Flight>().InFlight)
+                            limb.GetComponent<Flight>().StartFlying();
+            }
+            else
+            {
+                StopFlying();
+                foreach (var limb in person.Limbs)
+                    if (limb.GetComponent<Flight>())
+                        if (limb.GetComponent<Flight>().InFlight)
+                            limb.GetComponent<Flight>().StopFlying();
+            }
+        }
+
+        [SkipSerialisation]
+        public class FlightHeld : MonoBehaviour, Messages.IOnDrop
+        {
+            public float initialGravity;
+
+            public void OnDrop(GripBehaviour grip)
+            {
+                GetComponent<Rigidbody2D>().gravityScale = initialGravity;
+                Destroy(this);
             }
         }
     }
