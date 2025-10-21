@@ -10,6 +10,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using static FunLittleGames.Linkage.Linkage;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -921,7 +922,11 @@ namespace Mod
 
                 VisionBeam.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Vision Beam.png")).EnablePower();
 
-                Phase.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Phase.png")).EnablePower();
+                Phase.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Phase.png"));
+
+                Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
+
+                person.Limbs[1].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[1].gameObject);
 
                 foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
                 {
@@ -936,7 +941,7 @@ namespace Mod
 
                     if (Limbs.gameObject.name.Contains("LowerArm"))
                     {
-                        EMPHand.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/EMP Touch.png"));
+                        EMPHand.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/EMP Touch.png")).EnablePower();
                     }
 
                     if (Limbs.name.Contains("UpperBody"))
@@ -946,12 +951,12 @@ namespace Mod
 
                     Limbs.IsAndroid = true;
 
-                    Limbs.ImpactDamageMultiplier *= 0.01f;
-                    Limbs.ImpactPainMultiplier = 0;
-                    Limbs.BreakingThreshold *= 10000;
+                    Limbs.ImpactDamageMultiplier *= 0.05f;
+                    Limbs.ImpactPainMultiplier = 0.01f;
+                    Limbs.BreakingThreshold *= 100;
                     Limbs.ImmuneToDamage = true;
-                    Limbs.InitialHealth = 1000;
-                    Limbs.Health = 1000;
+                    Limbs.InitialHealth = 250;
+                    Limbs.Health = 250;
 
                     Limbs.PhysicalBehaviour.Properties = PhysicalProperty.Incredible;
 
@@ -959,9 +964,11 @@ namespace Mod
                     {
                         if (Limbs.name == limb2.name)
                         {
-                            Limbs.BaseStrength = limb2.BaseStrength;
-                            Limbs.PhysicalBehaviour.TrueInitialMass = limb2.PhysicalBehaviour.rigidbody.mass;
-                            Limbs.PhysicalBehaviour.rigidbody.mass = limb2.PhysicalBehaviour.rigidbody.mass;
+                            Limbs.BaseStrength = limb2.BaseStrength / 10;
+                            Limbs.StrengthMultipliers = limb2.StrengthMultipliers;
+                            Limbs.PhysicalBehaviour.InitialMass = limb2.PhysicalBehaviour.InitialMass * 10;
+                            Limbs.PhysicalBehaviour.TrueInitialMass = limb2.PhysicalBehaviour.TrueInitialMass * 10;
+                            Limbs.PhysicalBehaviour.rigidbody.mass = limb2.PhysicalBehaviour.rigidbody.mass * 10;
                         }
                     }
                 }
@@ -1505,6 +1512,49 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
                 ChestRepulsor.SetPower(person, person.Limbs[1], null, new Color32(230, 0, 0, 200)).EnablePower();
+                var g = ModAPIPlus.LimbGlowSprites("Art/Skins/Ultron Bot/");
+                Summoning.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Summoning.png"), null, new List<List<Sprite>> { ModAPIPlus.LimbSprites("Art/Skins/Ultron Bot/") }, clone => 
+                {
+                    var person2 = clone.GetComponent<PersonBehaviour>();
+
+                    var ultt = UltronBot.SetBot(person2, g, false, true, ColorPlus.Teal);
+                    ultt.Inactive = false;
+
+                    foreach (var limb in person2.Limbs)
+                    {
+                        limb.IsAndroid = true;
+
+                        limb.ImpactPainMultiplier = 0;
+                        limb.InitialHealth = 1000;
+                        limb.Health = 1000;
+
+                        limb.PhysicalBehaviour.Properties = PhysicalProperty.AndroidArmour;
+
+                        foreach (var limb2 in ModAPI.FindSpawnable("Android").Prefab.GetComponent<PersonBehaviour>().Limbs)
+                        {
+                            if (limb.name == limb2.name)
+                            {
+                                limb.SkinMaterialHandler.renderer.material = limb2.SkinMaterialHandler.renderer.material;
+                                limb.BaseStrength = limb2.BaseStrength;
+                                limb.FakeUprightForce = limb2.FakeUprightForce;
+                                limb.PhysicalBehaviour.TrueInitialMass = limb2.PhysicalBehaviour.TrueInitialMass;
+                                limb.PhysicalBehaviour.InitialMass = limb2.PhysicalBehaviour.InitialMass;
+                                limb.PhysicalBehaviour.rigidbody.mass = limb2.PhysicalBehaviour.rigidbody.mass;
+                            }
+                        }
+
+                        if (limb.name.Contains("LowerArm"))
+                        {
+                            Repulsor.SetPower(person2, limb, null, new Color32(230, 0, 0, 200)).EnablePower();
+                            limb.gameObject.AddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+                        }
+
+                        if (limb.name.Contains("Foot"))
+                        {
+                            Thruster.SetPower(person2, limb, null, new Color32(230, 0, 0, 200), new Color32(230, 0, 0, 200), true).EnablePower();
+                        }
+                    }
+                }, false).EnablePower();
 
                 foreach (var limb in person.Limbs)
                 {
@@ -1524,10 +1574,11 @@ namespace Mod
                         if(limb.name == limb2.name)
                         {
                             limb.SkinMaterialHandler.renderer.material = limb2.SkinMaterialHandler.renderer.material;
-                            limb.BaseStrength = limb2.BaseStrength;
-                            limb.FakeUprightForce = limb2.FakeUprightForce;
-                            limb.PhysicalBehaviour.TrueInitialMass = limb2.PhysicalBehaviour.rigidbody.mass;
-                            limb.PhysicalBehaviour.rigidbody.mass = limb2.PhysicalBehaviour.rigidbody.mass;
+                            limb.BaseStrength = limb2.BaseStrength / 10;
+                            limb.StrengthMultipliers = limb2.StrengthMultipliers;
+                            limb.PhysicalBehaviour.InitialMass = limb2.PhysicalBehaviour.InitialMass * 10;
+                            limb.PhysicalBehaviour.TrueInitialMass = limb2.PhysicalBehaviour.TrueInitialMass * 10;
+                            limb.PhysicalBehaviour.rigidbody.mass = limb2.PhysicalBehaviour.rigidbody.mass * 10;
                         }
                     }
 
@@ -1861,6 +1912,361 @@ namespace Mod
         }
     }
 
+    public class Summoning : Power, Mod.ModAPIPlus.IUse2
+    {
+        public PersonBehaviour person;
+        public GameObject prefab;
+        public string pfxname;
+        public List<List<Sprite>> cloneSprite;
+        public List<GameObject> clones = new List<GameObject>();
+        public Action<GameObject> edit;
+        bool weak;
+
+        public float RingRadius = 7;
+        public float ArrivalStrength = 10f;
+        public float ArrivalMaxSpeed = 15f;
+        public float ArrivalStopThreshold = 0.25f;
+
+        public static Summoning SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon, GameObject prefab, List<List<Sprite>> cloneSprite, Action<GameObject> edit = null, bool weak = false)
+        {
+            var power = Limb.gameObject.AddComponent<Summoning>();
+            power.Name = "Minions";
+            power.Description = "Allows the user to create minions by pressing H on their upper body!";
+            power.icon = icon;
+            power.prefab = prefab;
+            power.pfxname = null;
+            power.targetLimb = TargettedLimb.Body;
+            power.cloneSprite = cloneSprite;
+            power.person = Person;
+            power.weak = weak;
+            power.edit = edit;
+            return power;
+        }
+
+        public void Use2()
+        {
+            if (Enabled && person != null && person.IsAlive())
+            {
+                Debug.Log(1);
+                var spawnable = ModAPI.FindSpawnable(person.name);
+                if (spawnable == null || spawnable.Prefab == null || person.Limbs == null || person.Limbs.Length <= 2)
+                    return;
+
+                Vector3 spawnPos = GetSpawnPositionOutsideCamera(person.Limbs[2].transform.position);
+                var copy = GameObject.Instantiate(spawnable.Prefab, spawnPos, Quaternion.identity);
+                if (copy == null || copy.transform == null || transform == null || transform.root == null)
+                    return;
+                Debug.Log(2);
+                copy.transform.root.transform.localScale = transform.root.transform.localScale;
+                if (clones == null)
+                    clones = new List<GameObject>();
+                clones.Add(copy);
+                Debug.Log(3);
+                var cloneComponent = copy.GetComponentInChildren<Summoning>();
+                if (cloneComponent != null)
+                    Destroy(cloneComponent);
+                Debug.Log(4);
+                var clon = copy.gameObject.AddComponent<ClonedPerson>();
+                clon.PersonBehaviour = copy.GetComponent<PersonBehaviour>();
+                clon.clone = this;
+                clon.ParticlePrefab = !prefab ? null : prefab;
+                clon.pfxname = pfxname;
+                clon.weak = weak;
+                
+                clon.InitializeArrival(person, RingRadius, ArrivalStrength, ArrivalMaxSpeed, ArrivalStopThreshold);
+
+                edit?.Invoke(copy);
+
+                Debug.Log(5);
+                Timtam.MakeCustomSkin(copy.GetComponent<PersonBehaviour>(), cloneSprite[UnityEngine.Random.Range(0, cloneSprite.Count)], false, true);
+                Debug.Log(6);
+
+                var copyPerson = copy.GetComponent<PersonBehaviour>();
+                if (copyPerson != null && copyPerson.Limbs != null && person.Limbs != null)
+                {
+                    foreach (var limb in copyPerson.Limbs)
+                    {
+                        foreach (var limbb in person.Limbs)
+                        {
+                            if (limb != null && limbb != null && limb.Collider != null && limbb.Collider != null)
+                                Physics2D.IgnoreCollision(limb.Collider, limbb.Collider, true);
+                        }
+
+                        GameObject effect = null;
+                        if (prefab != null)
+                        {
+                            effect = Instantiate(prefab);
+                        }
+                        else if (!string.IsNullOrEmpty(pfxname))
+                        {
+                            effect = ModAPI.CreateParticleEffect(pfxname, limb.transform.position);
+                        }
+
+                        if (effect != null)
+                        {
+                            effect.transform.position = limb.transform.position;
+                            var ps = effect.GetComponent<ParticleSystem>();
+                            if (ps != null) ps.Play();
+                            var audio = effect.GetComponent<AudioSource>();
+                            if (audio != null) Destroy(audio);
+                            var lightFlash = effect.transform.Find("SpriteLightFlash");
+                            if (lightFlash != null) Destroy(lightFlash.gameObject);
+                        }
+                    }
+                    Debug.Log(7);
+                }
+
+                var clonPerson = clon.GetComponent<PersonBehaviour>();
+                if (clonPerson != null && clonPerson.Limbs != null && clones != null)
+                    foreach (var limb in clonPerson.GetComponentsInChildren<Collider2D>())
+                        if (limb != null && limb != null)
+                            foreach (var clone2 in clones)
+                                if (clone2 != null)
+                                {
+                                    var clone2Person = clone2.GetComponent<PersonBehaviour>();
+                                    if (clone2Person != null && clone2Person.Limbs != null)
+                                        foreach (var limb2 in clone2.GetComponentsInChildren<Collider2D>())
+                                            if (limb2 != null && limb2 != null)
+                                                Physics2D.IgnoreCollision(limb, limb2, true);
+                                }
+
+                foreach (var hat in copyPerson.gameObject.GetComponentsInChildren<HatBehaviour.HasHat>())
+                {
+                    foreach (var clone2 in clones)
+                    {
+                        foreach (var hat2 in clone2.gameObject.GetComponentsInChildren<HatBehaviour.HasHat>())
+                            Physics2D.IgnoreCollision(hat.hat.GetComponent<Collider2D>(), hat2.hat.GetComponent<Collider2D>(), true);
+
+                        foreach (var col in clone2.gameObject.GetComponentsInChildren<Collider2D>())
+                            Physics2D.IgnoreCollision(hat.hat.GetComponent<Collider2D>(), col.GetComponent<Collider2D>(), true);
+                    }
+                }
+            }
+        }
+
+        private static Vector3 GetSpawnPositionOutsideCamera(Vector3 fallback)
+        {
+            var cam = Camera.main;
+            if (cam == null || !cam.orthographic)
+            {
+                return fallback + new Vector3(3f, 3f, 0f);
+            }
+
+            Vector3 camPos = cam.transform.position;
+            float halfH = cam.orthographicSize;
+            float halfW = halfH * cam.aspect;
+
+            float margin = 2.5f;
+            int side = UnityEngine.Random.Range(0, 4);
+            Vector2 spawn = Vector2.zero;
+
+            switch (side)
+            {
+                case 0:
+                    spawn.x = camPos.x - halfW - margin;
+                    spawn.y = UnityEngine.Random.Range(camPos.y - halfH, camPos.y + halfH);
+                    break;
+                case 1:
+                    spawn.x = camPos.x + halfW + margin;
+                    spawn.y = UnityEngine.Random.Range(camPos.y - halfH, camPos.y + halfH);
+                    break;
+                case 2:
+                    spawn.y = camPos.y + halfH + margin;
+                    spawn.x = UnityEngine.Random.Range(camPos.x - halfW, camPos.x + halfW);
+                    break;
+                case 3:
+                    spawn.y = camPos.y - halfH - margin;
+                    spawn.x = UnityEngine.Random.Range(camPos.x - halfW, camPos.x + halfW);
+                    break;
+            }
+
+            return new Vector3(spawn.x, spawn.y, 0f);
+        }
+
+        public class ClonedPerson : MonoBehaviour
+        {
+            public Summoning clone;
+            public PersonBehaviour PersonBehaviour;
+            public GameObject ParticlePrefab;
+            public string pfxname;
+            public bool weak;
+
+            private float angle;
+
+            private bool arrivalInitialized;
+            private bool arrived;
+            private Vector2 targetCenter;
+            private float ringRadius = 3.5f;
+            private float moveStrength = 10f;
+            private float maxSpeed = 15f;
+            private float stopThreshold = 0.25f;
+
+            public void InitializeArrival(PersonBehaviour owner, float radius, float strength, float maxSpd, float stopThresh)
+            {
+                ringRadius = radius;
+                moveStrength = strength;
+                maxSpeed = Mathf.Max(0.1f, maxSpd);
+                stopThreshold = Mathf.Max(0.05f, stopThresh);
+
+                BuildIgnoreSet(owner, PersonBehaviour);
+
+                Vector2 ownerCenter = ComputeCenter(owner?.Limbs);
+
+                Vector2 chosen;
+                if (!TryFindClearRingPoint(ownerCenter, ringRadius, out chosen))
+                {
+                    float ang = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+                    chosen = ownerCenter + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * ringRadius;
+                }
+
+                angle = Mathf.Atan2(chosen.y - ownerCenter.y, chosen.x - ownerCenter.x);
+                targetCenter = chosen;
+
+                arrivalInitialized = true;
+                arrived = false;
+            }
+
+            private readonly HashSet<Collider2D> _ignoreCols = new HashSet<Collider2D>();
+            private const float DefaultClearanceRadius = 1.25f;
+            private const int MaxClearSearchAttempts = 48;
+
+            private void BuildIgnoreSet(PersonBehaviour owner, PersonBehaviour clone)
+            {
+                _ignoreCols.Clear();
+
+                if (owner?.Limbs != null)
+                {
+                    foreach (var l in owner.Limbs)
+                    {
+                        if (!l) continue;
+                        foreach (var c in l.GetComponentsInChildren<Collider2D>(true))
+                            if (c) _ignoreCols.Add(c);
+                    }
+                }
+
+                if (clone?.Limbs != null)
+                {
+                    foreach (var l in clone.Limbs)
+                    {
+                        if (!l) continue;
+                        foreach (var c in l.GetComponentsInChildren<Collider2D>(true))
+                            if (c) _ignoreCols.Add(c);
+                    }
+                }
+            }
+
+            private bool TryFindClearRingPoint(Vector2 center, float radius, out Vector2 result)
+            {
+                for (int i = 0; i < MaxClearSearchAttempts; i++)
+                {
+                    float ang = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+                    Vector2 candidate = center + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * radius;
+                    if (IsClear(candidate, DefaultClearanceRadius))
+                    {
+                        result = candidate;
+                        return true;
+                    }
+                }
+
+                int sweepSteps = 36;
+                for (int i = 0; i < sweepSteps; i++)
+                {
+                    float ang = (i / (float)sweepSteps) * Mathf.PI * 2f;
+                    Vector2 candidate = center + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * radius;
+                    if (IsClear(candidate, DefaultClearanceRadius))
+                    {
+                        result = candidate;
+                        return true;
+                    }
+                }
+
+                result = Vector2.zero;
+                return false;
+            }
+
+            private bool IsClear(Vector2 point, float clearanceRadius)
+            {
+                int mask = LayerMask.GetMask("Objects", "Bounds");
+                var hits = Physics2D.OverlapCircleAll(point, clearanceRadius, mask);
+                if (hits == null || hits.Length == 0) return true;
+
+                foreach (var h in hits)
+                {
+                    if (!h) continue;
+                    if (_ignoreCols.Contains(h)) continue;
+                    if (h.isTrigger) continue;
+                    return false;
+                }
+
+                return true;
+            }
+
+            public void FixedUpdate()
+            {
+                if (PersonBehaviour == null || clone == null || clone.person == null)
+                    return;
+
+                if (arrivalInitialized && !arrived)
+                {
+                    arrived = MoveLimbsTowardsRingTarget();
+                }
+            }
+
+            private Vector2 ComputeCenter(IEnumerable<LimbBehaviour> limbs)
+            {
+                if (limbs == null) return transform.position;
+                Vector2 sum = Vector2.zero;
+                int count = 0;
+                foreach (var l in limbs)
+                {
+                    if (l == null) continue;
+                    sum += (Vector2)l.transform.position;
+                    count++;
+                }
+                return count > 0 ? sum / count : (Vector2)transform.position;
+            }
+
+            private bool MoveLimbsTowardsRingTarget()
+            {
+                if (PersonBehaviour == null || PersonBehaviour.Limbs == null || PersonBehaviour.Limbs.Length == 0)
+                    return true;
+
+                Vector2 cloneCenter = ComputeCenter(PersonBehaviour.Limbs);
+
+                foreach (var limb in PersonBehaviour.Limbs)
+                {
+                    if (limb == null || limb.PhysicalBehaviour == null) continue;
+                    var rb = limb.PhysicalBehaviour.rigidbody;
+                    if (rb == null || rb.bodyType == RigidbodyType2D.Static) continue;
+
+                    Vector2 desiredPos = targetCenter + ((Vector2)limb.transform.position - cloneCenter);
+                    Vector2 toTarget = desiredPos - (Vector2)limb.transform.position;
+
+                    Vector2 desiredVel = toTarget * moveStrength;
+                    if (desiredVel.magnitude > maxSpeed)
+                        desiredVel = desiredVel.normalized * maxSpeed;
+
+                    rb.velocity = Vector2.Lerp(rb.velocity, desiredVel, 0.2f);
+                }
+
+                float dist = Vector2.Distance(cloneCenter, targetCenter);
+                if (dist <= stopThreshold)
+                {
+                    foreach (var limb in PersonBehaviour.Limbs)
+                    {
+                        if (limb == null || limb.PhysicalBehaviour == null) continue;
+                        var rb = limb.PhysicalBehaviour.rigidbody;
+                        if (rb == null) continue;
+                        rb.velocity *= 0.5f;
+                    }
+                    return true;
+                }
+
+                return false;
+            }
+        }
+    }
+
     public class UltronTouch : Power, Mod.ModAPIPlus.IUse2
     {
         public UltronBot bot;
@@ -2035,15 +2441,22 @@ namespace Mod
 
             foreach (var limb in person.Limbs)
             {
+                foreach (var limb2 in ModAPI.FindSpawnable("Android").Prefab.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (limb.name == limb2.name)
+                    {
+                        limb.SkinMaterialHandler.renderer.material = limb2.SkinMaterialHandler.renderer.material;
+                    }
+                }
                 limb.CirculationBehaviour.AddLiquid(limb.GetOriginalBloodType(), 10);
                 limb.CirculationBehaviour.BloodFlow = 50;
                 limb.Numbness = 0;
                 person.Heartbeat = 100;
 
-                if (limb.name.Contains("LowerArm") && ultronn == true)
+                if (limb.name.Contains("LowerArm") && Ultron)
                 {
                     Debug.Log("Enabling Ultron Touch");
-                    if (limb.TryGetComponent<UltronTouch>(out var toch))
+                    if (limb.TryGetComponent<UltronTouch>(out var toch) && toch != null)
                         toch.EnablePower();
                     else
                         UltronTouch.SetPower(person, limb, null, this).EnablePower();
@@ -2121,6 +2534,7 @@ namespace Mod
             {
                 StartCoroutine(PlaySound(Mod.Swap));
                 ModAPI.CreateParticleEffect(ParticleEffects.BigZap, person.Limbs[0].transform.position);
+                StartCoroutine(ActivateLine(person.Limbs[0].transform, otherBot.person.Limbs[0].transform));
                 otherBot.Activate(true);
                 otherBot.Ultron = true;
                 ActivateLine(person.Limbs[0].transform, otherBot.person.Limbs[0].transform);
@@ -3929,7 +4343,7 @@ namespace Mod
     public class Thruster : Power, Messages.IUse
     {
         public bool InFlight = false;
-
+        bool thruststart = false;
         public PersonBehaviour person;
 
         GameObject SpriteLightFlash;
@@ -3940,7 +4354,7 @@ namespace Mod
         public Color32 ThrustColor = new Color32(52, 204, 255, 255);
         public Color32 ThrustColor2 = new Color32(96, 210, 255, 20);
 
-        public static Thruster SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon, Color32 thrust = new Color32(), Color32 thrust2 = new Color32())
+        public static Thruster SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon, Color32 thrust = new Color32(), Color32 thrust2 = new Color32(), bool thrustOnStart = false)
         {
             var power = limb.gameObject.AddComponent<Thruster>();
             power.icon = icon;
@@ -3951,6 +4365,7 @@ namespace Mod
             power.ThrustColor = thrust.CompareRGB(new Color32()) ? power.ThrustColor : thrust;
             power.ThrustColor2 = thrust2.CompareRGB(new Color32()) ? power.ThrustColor2 : thrust2;
             power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+            power.thruststart = thrustOnStart;
             return power;
         }
 
@@ -3962,7 +4377,6 @@ namespace Mod
         public override void DisablePower()
         {
             base.DisablePower();
-            StopThrusting();
         }
 
         public override void Start()
@@ -3997,6 +4411,12 @@ namespace Mod
             }
 
             SpriteLightFlash.transform.localScale = new Vector3(0.5f, 0.3f, 0.4f);
+
+
+            if (thruststart)
+            {
+                StartThrusting();
+            }
         }
 
         public void FixedUpdate()
@@ -4009,6 +4429,7 @@ namespace Mod
                     {
                         limb.GetComponent<Rigidbody2D>().angularVelocity *= 0.94f;
                         limb.GetComponent<Rigidbody2D>().velocity *= 0.94f;
+                        limb.GetComponent<Rigidbody2D>().gravityScale = 0;
 
                         if (limb.name.Contains("Body"))
                         {
@@ -6348,7 +6769,7 @@ namespace Mod
                 {
                     foreach (var bolt in GetComponent<LimbBehaviour>().Person.transform.GetComponentsInChildren<ParticleSystem>())
                     {
-                        if (bolt.name == "bolts(Clone)")
+                        if (bolt.name == "bolts(Summoning)")
                         {
                             bolt.Stop();
                         }
@@ -6363,7 +6784,7 @@ namespace Mod
                 {
                     foreach (var bolt in GetComponent<LimbBehaviour>().Person.transform.GetComponentsInChildren<ParticleSystem>())
                     {
-                        if (bolt.name == "bolts(Clone)")
+                        if (bolt.name == "bolts(Summoning)")
                         {
                             bolt.Play();
                         }
@@ -6383,7 +6804,7 @@ namespace Mod
             {
                 foreach (var bolt in GetComponent<LimbBehaviour>().Person.transform.GetComponentsInChildren<ParticleSystem>())
                 {
-                    if (bolt.name == "bolts(Clone)")
+                    if (bolt.name == "bolts(Summoning)")
                     {
                         bolt.Stop();
                     }
@@ -6401,7 +6822,7 @@ namespace Mod
         {
             foreach (var bolt in GetComponent<LimbBehaviour>().Person.transform.GetComponentsInChildren<ParticleSystem>())
             {
-                if (bolt.name == "bolts(Clone)")
+                if (bolt.name == "bolts(Summoning)")
                 {
                     bolt.Stop();
                 }
@@ -6633,6 +7054,175 @@ namespace Mod
         }
     }
 
+    public class HatBehaviour : MonoBehaviour, Messages.IOnGripped, Messages.IOnDrop
+    {
+        public FixedJoint2D joint;
+        public bool canWear = false;
+        public Sprite WearSprite;
+        public Sprite UnwearSprite;
+        public string OriginalObjectName;
+
+        public static HatBehaviour CreateHat(LimbBehaviour targetLimb, Sprite sprite, PhysicalProperties properties)
+        {
+            var Hat = ModAPI.CreatePhysicalObject("Hat", sprite);
+            Hat.GetComponent<PhysicalBehaviour>().Properties = properties;
+            var hatbeh = HatBehaviour.AddHatStuff(targetLimb, Hat);
+            Destroy(Hat.GetComponent<BoxCollider2D>());
+            Timtam.CreateCollider(Hat.GetComponent<SpriteRenderer>());
+            return hatbeh;
+        }
+
+        public static HatBehaviour AddHatStuff(LimbBehaviour limb, GameObject hat, Sprite unweared = null)
+        {
+            var hatBehaviour = hat.AddComponent<HatBehaviour>();
+
+            hatBehaviour.joint = hat.gameObject.AddComponent<FixedJoint2D>();
+            hat.transform.localScale = limb.Person.transform.localScale;
+            hat.transform.position = limb.transform.position;
+            hat.transform.rotation = limb.transform.rotation;
+            hat.gameObject.layer = 10;
+            hatBehaviour.joint.connectedBody = limb.GetComponent<Rigidbody2D>();
+            hatBehaviour.joint.autoConfigureConnectedAnchor = false;
+            hatBehaviour.GetComponent<Rigidbody2D>().mass = 0.01f;
+            hat.GetComponent<PhysicalBehaviour>().HoldingPositions = new Vector3[1];
+            hat.GetComponent<PhysicalBehaviour>().HoldingPositions[0] = new Vector3(0, 0, 0);
+            hat.GetComponent<SpriteRenderer>().sortingLayerName = limb.GetComponent<SpriteRenderer>().sortingLayerName;
+            hat.GetComponent<SpriteRenderer>().sortingOrder = limb.GetComponent<SpriteRenderer>().sortingOrder + 1;
+            hatBehaviour.OriginalObjectName = limb.Person.name;
+            hatBehaviour.WearSprite = limb.GetComponent<SpriteRenderer>().sprite;
+            hatBehaviour.UnwearSprite = unweared;
+            limb.GetComponent<SpriteRenderer>().sprite = hatBehaviour.WearSprite;
+            hat.GetComponent<PhysicalBehaviour>().colliders = hat.GetComponents<Collider2D>();
+            //hat.AddComponent<DrawColliderzs>(); timtam smells if u see this
+            hat.AddComponent<Undraggable>();
+            foreach (var limbb in limb.Person.Limbs)
+            {
+                Physics2D.IgnoreCollision(limbb.GetComponent<Collider2D>(), hat.GetComponent<Collider2D>(), true);
+            }
+
+            return hatBehaviour;
+        }
+
+        public void Update()
+        {
+            if (joint && Time.timeScale < 0.1f)
+            {
+                transform.position = joint.connectedBody.transform.position;
+
+                transform.rotation = joint.connectedBody.transform.rotation;
+            }
+        }
+
+        public void FixedUpdate()
+        {
+            if (joint && joint.connectedBody == null)
+                Destroy(gameObject);
+
+            if (joint && joint.connectedBody != null)
+            {
+                if (!joint.connectedBody.gameObject.activeInHierarchy)
+                {
+                    Destroy(joint);
+                    canWear = true;
+                }
+            }
+
+            if (joint)
+            {
+                foreach (var limbb in joint.connectedBody.GetComponent<LimbBehaviour>().Person.Limbs)
+                {
+                    Physics2D.IgnoreCollision(limbb.GetComponent<Collider2D>(), GetComponent<Collider2D>(), true);
+                }
+            }
+
+            if (canWear == false)
+            {
+                GetComponent<Rigidbody2D>().mass = 0.01f;
+            }
+            else
+            {
+                GetComponent<Rigidbody2D>().mass = 0.1f;
+            }
+        }
+
+        public void OnGripped(GripBehaviour gripper)
+        {
+            Destroy(GetComponent<Undraggable>());
+            if (joint.connectedBody.gameObject.GetComponent<LimbBehaviour>().Person.name == OriginalObjectName && UnwearSprite != null)
+                joint.connectedBody.gameObject.GetComponent<SpriteRenderer>().sprite = UnwearSprite;
+            GetComponent<PhysicalBehaviour>().Selectable = true;
+            if (joint)
+            {
+                transform.position = joint.connectedBody.transform.position;
+                transform.rotation = joint.connectedBody.transform.rotation;
+            }
+            Destroy(joint.GetComponent<HasHat>() ? joint.GetComponent<HasHat>() : null);
+            Destroy(joint);
+        }
+
+        public void OnDrop(GripBehaviour gripper)
+        {
+            canWear = true;
+            Collider2D[] collider2Ds = new Collider2D[10];
+            Physics2D.OverlapCollider(GetComponent<Collider2D>(), new ContactFilter2D() { useTriggers = false, useLayerMask = false }, collider2Ds);
+            foreach (var hit in collider2Ds)
+                if (hit.name.Contains("Head") && hit.TryGetComponent<LimbBehaviour>(out var limb))
+                    StartCoroutine(Wear(limb));
+            transform.localScale = joint.connectedBody.transform.root.localScale;
+            transform.position = joint.connectedBody.transform.position;
+            transform.rotation = joint.connectedBody.transform.rotation;
+        }
+
+        public IEnumerator ReenableCollision(List<LimbBehaviour> limbs)
+        {
+            yield return new WaitForSeconds(1f);
+            foreach (var limb in limbs)
+            {
+                Physics2D.IgnoreCollision(limb.GetComponent<Collider2D>(), GetComponent<Collider2D>(), false);
+            }
+        }
+
+        public void OnCollisionEnter2D(Collision2D col)
+        {
+            if (col.gameObject.TryGetComponent<LimbBehaviour>(out var limb) && canWear == true && joint == null)
+                if (limb.name == "Head")
+                    StartCoroutine(Wear(limb));
+
+            if (col.gameObject.GetComponent<HatBehaviour>())
+                Physics2D.IgnoreCollision(col.collider, GetComponent<Collider2D>());
+        }
+
+        public IEnumerator Wear(LimbBehaviour limb)
+        {
+            yield return new WaitForEndOfFrame();
+            foreach (var limbb in limb.Person.Limbs)
+            {
+                Physics2D.IgnoreCollision(limbb.GetComponent<Collider2D>(), GetComponent<Collider2D>(), true);
+            }
+            if (limb.Person.name == OriginalObjectName && WearSprite != null)
+                limb.GetComponent<SpriteRenderer>().sprite = WearSprite;
+            yield return null;
+            transform.localScale = limb.Person.transform.localScale;
+            transform.position = limb.transform.position;
+            transform.rotation = limb.transform.rotation;
+            joint = gameObject.AddComponent<FixedJoint2D>();
+            joint.connectedBody = limb.GetComponent<Rigidbody2D>();
+            gameObject.AddComponent<Undraggable>();
+            GetComponent<PhysicalBehaviour>().Selectable = false;
+            GetComponent<Rigidbody2D>().mass = 0.001f;
+            GetComponent<SpriteRenderer>().sortingLayerName = limb.GetComponent<SpriteRenderer>().sortingLayerName;
+            GetComponent<SpriteRenderer>().sortingOrder = limb.GetComponent<SpriteRenderer>().sortingOrder + 1;
+            limb.gameObject.AddComponent<HasHat>().hat = this;
+            canWear = false;
+        }
+
+        [SkipSerialisation]
+        public class HasHat : MonoBehaviour
+        {
+            public HatBehaviour hat;
+        }
+    }
+
     public class AlternateMouseActivator : MonoBehaviour
     {
         public void Update()
@@ -6819,7 +7409,7 @@ namespace Mod
                 Smoke.GetComponent<ParticleSystem>().Play();
                 person.gameObject.SetActive(false);
 
-                var limbStatusObjects = Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.name == "Limb status(Clone)");
+                var limbStatusObjects = Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.name == "Limb status(Summoning)");
 
                 foreach (var status in limbStatusObjects)
                 {
@@ -6868,7 +7458,7 @@ namespace Mod
                         }
                     }
 
-                    var limbStatusObjects = Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.name == "Limb status(Clone)");
+                    var limbStatusObjects = Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.name == "Limb status(Summoning)");
 
                     foreach (var status in limbStatusObjects)
                     {
