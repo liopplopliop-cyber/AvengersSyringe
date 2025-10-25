@@ -10,7 +10,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static FunLittleGames.Linkage.Linkage;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -700,6 +699,8 @@ namespace Mod
             //Category
             ModAPI.RegisterCategory(CategoryName, "Category for Nova's Avengers Mod", ModAPI.LoadSprite("icon.png"));
 
+
+
              //Tony Stark
             ModAPIPlus.CreateHuman("Tony Stark (Iron Man)", "", "Tony Stark", "Iron Man", (Instance) =>
             {
@@ -709,6 +710,29 @@ namespace Mod
 
                 Nanotech.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Nanotech.png")).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+
+                void IronSkin(string Name, string Display = null)
+                {
+                    menu.AddFakeButton(Display??Name, ModAPI.LoadSprite("Art/Thumbnails/"+ Name + ".png"), null, IronSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/"+ Name + "/"), person));
+                }
+
+                IronSkin("Bleeding Edge");
+                IronSkin("Extremis");
+                IronSkin("Iron Man Battle Damaged");
+                IronSkin("Iron Man EMH");
+                IronSkin("Model 1");
+                IronSkin("Model 4");
+                IronSkin("Model 39");
+                IronSkin("Model 43");
+                IronSkin("Model 70");
+                IronSkin("MVC2");
+                IronSkin("Prime");
+                IronSkin("Rivals Tony");
+                IronSkin("Silver Centurion");
+                IronSkin("Stealth Iron Man");
+                IronSkin("Superior Iron Man");
+                IronSkin("Superior Iron Man Maskless");
+                IronSkin("Thorbuster");
             }, "a");
 
             //Steve Rogers
@@ -1417,7 +1441,7 @@ namespace Mod
             ModAPIPlus.CreateHuman("Skarr", "I'm not my father. I'm worse.", "Skarr", "Skarr", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
-
+                
                 var menu = Instance.GetComponent<TextureMenu>();
                 if (Instance.transform.localScale.x > 0)
                 {
@@ -3572,7 +3596,7 @@ namespace Mod
 
 
     }
-
+    
     public class HulkRoar : Power
     {
         public AudioClip Roar = Mod.HulkRoarSound;
@@ -4461,7 +4485,7 @@ namespace Mod
                 if (limb.TryGetComponent<Thruster>(out var thrus) && thrus != this)
                         thrus.StopThrusting();
 
-                limb.GetComponent<Rigidbody2D>().gravityScale = gravity;
+                limb.GetComponent<Rigidbody2D>().gravityScale = 1;
             }
         }
 
