@@ -819,6 +819,7 @@ namespace Mod
                 menu.AddFakeButton("Maestro Hulk", ModAPI.LoadSprite("Art/Thumbnails/Maestro.png"), null, HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Maestro/"), person));
                 menu.AddFakeButton("First Apearance Hulk", ModAPI.LoadSprite("Art/Thumbnails/First Apearance Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/First Apearance Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/First Apearance Hulk/"), person));
                 menu.AddFakeButton("Gray Hulk", ModAPI.LoadSprite("Art/Thumbnails/Gray Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Gray Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Gray Hulk/"), person));
+                menu.AddFakeButton("Joe Fixit", ModAPI.LoadSprite("Art/Thumbnails/Joe Fixit.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Joe Fixit/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Joe Fixit/"), person));
                 menu.AddFakeButton("Gladiator Hulk", ModAPI.LoadSprite("Art/Thumbnails/Gladiator.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Gladiator/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Gladiator/"), person));
                 menu.AddFakeButton("Professor Hulk", ModAPI.LoadSprite("Art/Thumbnails/Professor Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Professor Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Professor Hulk/"), person));
                 menu.AddFakeButton("Smart Hulk", ModAPI.LoadSprite("Art/Thumbnails/Smart Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Smart Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Smart Hulk/"), person));
@@ -1027,6 +1028,30 @@ namespace Mod
                 person.Limbs[11].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[11].gameObject);
             }, "a");
 
+            //Wasp
+            ModAPIPlus.CreateHuman("Wasp", "", "Wasp", "Wasp", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
+                Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
+
+                person.GetComponent<SpeedHealing>().EnablePower();
+                person.GetComponent<SuperMass>().EnablePower();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                 menu.AddButton("EMH", ModAPI.LoadSprite("Art/Thumbnails/Wasp EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp EMH/"));
+
+                 SizeChange.SetPower(person, person.Limbs[11], null, 3, "Grow").EnablePower();
+                SizeChange.SetPower(person, person.Limbs[11], null, 0.1f);
+                SizeChange.SetPower(person, person.Limbs[13], null, 3, "Grow");
+                SizeChange.SetPower(person, person.Limbs[13], null, 0.1f).EnablePower();
+
+                person.Limbs[13].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[13].gameObject);
+                person.Limbs[11].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[11].gameObject);
+            }, "a");
+
             //Captain Marvel
             ModAPIPlus.CreateHuman("Captain Marvel", "", "Captain Marvel", "Captain Marvel", (Instance) =>
             {
@@ -1146,6 +1171,28 @@ namespace Mod
 
             }, "a");
 
+            //Shuri
+            ModAPIPlus.CreateHuman("Shuri", "", "Shuri", "Shuri", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
+
+                person.GetComponent<SpeedHealing>().EnablePower();
+                person.GetComponent<SuperMass>().EnablePower();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (Limbs.name.Contains("LowerArm"))
+                    {
+                        Claws.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Claw.png"), ModAPI.LoadSprite("Art/Objects/Claws.png")).EnablePower();
+                    }
+                }
+
+            }, "a");
+
             //Iron Spider
             ModAPIPlus.CreateHuman("Iron Spider", "With Great Power... Comes Great Responsibility. <color=\"yellow\">\n \n- Activate arm to shoot webs \n- Activate with custom activator (typically H) to change web type (Normal, Connector, Grapple, Electric, Webshot, None)", "Iron Spider", "Iron Spider", (Instance) =>
             {
@@ -1226,6 +1273,22 @@ namespace Mod
 
             }, "a");
 
+            //Ironheart
+            ModAPIPlus.CreateHuman("Ironheart", "My whole life has been older people telling me what I can't do. Now I'm doing it.", "Ironheart", "Ironheart", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
+
+                person.GetComponent<SpeedHealing>().EnablePower();
+                person.GetComponent<SuperMass>().EnablePower();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                menu.AddButton("Model 2", ModAPI.LoadSprite("Art/Thumbnails/Ironheart Model 2.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ironheart Model 2/"));
+
+            }, "a");
+
             //Ms. Marvel
             ModAPIPlus.CreateHuman("Ms. Marvel", "", "Ms. Marvel", "Ms. Marvel", (Instance) =>
             {
@@ -1264,6 +1327,11 @@ namespace Mod
                         Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
                     }
                 }
+
+                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Kamala Kahn.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Kamala Kahn/"));
+                menu.AddButton("X-Men", ModAPI.LoadSprite("Art/Thumbnails/Ms. Marvel X-Men.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ms. Marvel X-Men/"));
+                menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Ms. Marvel MCU.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ms. Marvel MCU/"));
+
             }, "a");
 
             //Binary
