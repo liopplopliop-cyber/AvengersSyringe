@@ -3954,12 +3954,13 @@ namespace Mod
         float stretchDuration = 1f;
         public bool stretching;
 
+        List<GameObject> decals = new List<GameObject>();
         public static SizeChange SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon, float size = 0.1f, string name = "Shrink")
         {
             var power = limb.gameObject.AddComponent<SizeChange>();
             power.icon = icon;
             power.Name = name;
-            power.Description = name+"s the user";
+            power.Description = name + "s the user";
             power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
             power.Size = size;
             power.defaultSize = size;
@@ -3999,8 +4000,6 @@ namespace Mod
                 {
                     sizeChange.Stretched = false;
                 }
-
-                transform.root.GetComponent<PersonBehaviour>().Limbs[2].PhysicalBehaviour.PlayClipOnce(Mod.Shrink);
             }
             else
             {
@@ -4017,9 +4016,13 @@ namespace Mod
                 {
                     sizeChange.Stretched = true;
                 }
-
-                transform.root.GetComponent<PersonBehaviour>().Limbs[2].PhysicalBehaviour.PlayClipOnce(Mod.Shrink);
             }
+        }
+
+        public void OnDestroy()
+        {
+            foreach (var dec in decals)
+                Destroy(dec);
         }
 
         public IEnumerator SmoothScale(Transform Target, Vector2 targetScale)
@@ -4069,7 +4072,7 @@ namespace Mod
 
             var sr = target.GetComponent<SpriteRenderer>();
             if (sr == null || sr.sprite == null) yield break;
-            
+
             GameObject afterimage = new GameObject("Afterimage");
             afterimage.transform.position = target.position;
             afterimage.transform.rotation = target.rotation;
@@ -4088,7 +4091,7 @@ namespace Mod
             Color baseColor = sr.color;
             baseColor.a = 0.9f;
             aisr.color = baseColor;
-
+            decals.Add(afterimage);
             yield return StartCoroutine(FadeAndDestroy(aisr, 2f));
         }
 
@@ -4114,6 +4117,7 @@ namespace Mod
                 Color c = sr.color;
                 c.a = 0f;
                 sr.color = c;
+                decals.Remove(sr.gameObject);
                 Destroy(sr.gameObject);
             }
         }
