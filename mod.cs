@@ -759,6 +759,7 @@ namespace Mod
                 IronSkin("Superior Iron Man");
                 IronSkin("Superior Iron Man Maskless");
                 IronSkin("Thorbuster");
+                IronSkin("Mark 50");
             }, "a");
 
             //Steve Rogers
