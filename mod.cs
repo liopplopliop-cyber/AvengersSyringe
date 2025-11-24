@@ -766,7 +766,7 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1, 5);
 
                 person.GetComponent<SpeedHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
@@ -795,11 +795,11 @@ namespace Mod
             }, "a");
 
             //Thor
-            ModAPIPlus.CreateHuman("Thor", "", "Thor", "Thor", (Instance) =>
+            ModAPIPlus.CreateHuman("Thor Odinson", "", "Thor", "Thor", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 4, 5);
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 3, 2);
 
                 person.GetComponent<SpeedHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
@@ -834,8 +834,7 @@ namespace Mod
                     }
                 }
 
-                ElectricAura.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Lightning.png")).EnablePower();
-                ThunderFlight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Lightning.png")).EnablePower();
+                ElectricAuraFlight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Lightning.png")).EnablePower();
 
                 Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
 
@@ -1165,7 +1164,7 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1, 2).EnablePower();
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 0.5f, 2).EnablePower();
 
                 foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
                 {
@@ -2036,75 +2035,321 @@ namespace Mod
         }
     }
 
-    public class ThunderFlight : Power, Messages.IUse
+    public class ElectricAuraFlight : Power, Messages.IUse
     {
-        public bool InFlight = false;
+        public bool AuraActive;
+        public List<GameObject> GlowObjects = new List<GameObject>();
+        public List<ParticleSystem> AuraBoltObjects = new List<ParticleSystem>();
+        bool canSwitchAura = true;
+        public Color auraColor = new Color(0.5f, 0.5f, 0.8f, 1);
+        public float outlineOffset = 0.01f;
+        Vector2[] outlineOffsets = new Vector2[]
+        {
+            new Vector2(-1, 0), new Vector2(1, 0), new Vector2(0, -1), new Vector2(0, 1),
+            new Vector2(-1, -1), new Vector2(-1, 1), new Vector2(1, -1), new Vector2(1, 1)
+        };
 
-        public ParticleSystem ParticleSystem;
-
+        public bool InFlight;
         public PersonBehaviour person;
-        float gravity;
-        float ogbasestrength = 8.5f;
+        public ParticleSystem FlightParticleSystem;
+        float storedGravity;
+        float storedArmStrength = 8.5f;
         bool upright = true;
 
-        public static ThunderFlight SetPower(PersonBehaviour Person, LimbBehaviour TargetLimb, Sprite icon)
+        public static Power SetPower(PersonBehaviour person, LimbBehaviour attachLimb, Sprite icon)
         {
-            var power = TargetLimb.gameObject.AddComponent<ThunderFlight>();
-            power.person = Person;
-            power.Name = "Flight";
-            power.Description = "Allows the user to fly through the air";
+            var power = attachLimb.gameObject.AddComponent<ElectricAuraFlight>();
+            power.person = person;
+            power.Name = "Electric Aura Flight";
+            power.Description =
+                "Envelops user in an electrical aura and grants flight.\nActivating toggles both effects.\nUser becomes impervious to electricity and charges objects on impact while active.";
             power.icon = icon;
-            power.targetLimb = TargettedLimb.Body;
+            power.targetLimb = TargettedLimb.Head;
 
-            foreach (var limb in Person.Limbs)
+            foreach (var limb in person.Limbs)
             {
-                if (!limb.gameObject.GetComponent<LFlightLimb>())
+                var newProps = GameObject.Instantiate(limb.PhysicalBehaviour.Properties);
+                newProps.Conducting = false;
+                limb.PhysicalBehaviour.Properties = newProps;
+                limb.PhysicalBehaviour.ForceNoCharge = true;
+
+                if (limb.name == "Head")
                 {
-                    limb.gameObject.AddComponent<LFlightLimb>().flight = power;
+                    var glowEye = new GameObject("Eyes");
+                    glowEye.transform.SetParent(limb.transform);
+                    glowEye.transform.localPosition = Vector3.zero;
+                    glowEye.transform.localRotation = Quaternion.identity;
+                    glowEye.transform.localScale = Vector3.one;
+                    var srEye = glowEye.AddComponent<SpriteRenderer>();
+                    srEye.sprite = Mod.Eye;
+                    srEye.sortingLayerName = limb.SkinMaterialHandler.renderer.sortingLayerName;
+                    srEye.sortingOrder = limb.SkinMaterialHandler.renderer.sortingOrder + 1;
+                    srEye.material = ModAPI.FindMaterial("VeryBright");
+                    srEye.color = new Color(0, 0.5f, 1, 0f);
+                    power.GlowObjects.Add(glowEye);
+                }
+
+                power.CreateOutlineGlow(limb.gameObject,
+                    limb.GetComponent<SpriteRenderer>().sprite,
+                    limb.GetComponent<SpriteRenderer>().sortingLayerName,
+                    limb.GetComponent<SpriteRenderer>().sortingOrder - 2,
+                    new Color(0, 0.5f, 1, 0f),
+                    "AuraOutline");
+
+                var boltPrefab = ModAPI.FindSpawnable("Particle Projector").Prefab.transform.FindChild("bolts").gameObject;
+                var boltObj = Instantiate(boltPrefab, limb.transform);
+                boltObj.transform.localPosition = Vector2.zero;
+                boltObj.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+                var main = boltObj.GetComponent<ParticleSystem>().main;
+                main.startColor = power.auraColor;
+                if (boltObj.transform.childCount > 0)
+                {
+                    for (int i = 0; i < boltObj.transform.childCount; i++)
+                    {
+                        var ps = boltObj.transform.GetChild(i).GetComponent<ParticleSystem>();
+                        if (ps != null)
+                        {
+                            var m = ps.main;
+                            m.startColor = power.auraColor;
+                        }
+                    }
+                }
+                power.AuraBoltObjects.Add(boltObj.GetComponent<ParticleSystem>());
+
+                if (!limb.gameObject.GetComponent<AuraChargeLimb>())
+                {
+                    limb.gameObject.AddComponent<AuraChargeLimb>().parentPower = power;
+                }
+
+                if (!limb.gameObject.GetComponent<FlightImpactLimb>())
+                {
+                    limb.gameObject.AddComponent<FlightImpactLimb>().flightPower = power;
                 }
             }
-
-            var Lightning = Instantiate(ModAPI.FindSpawnable("Particle Projector").Prefab.transform.Find("bolts").gameObject, Person.Limbs[2].transform);
-            var mainPS = Lightning.GetComponent<ParticleSystem>();
-            //mainPS.startColor = Color.blue;
-            mainPS.emissionRate = 10;
-            var childPS = Lightning.transform.childCount > 0 ? Lightning.transform.GetChild(0).GetComponent<ParticleSystem>() : null;
-            if (childPS) childPS.startColor = Color.cyan;
-            Lightning.transform.localPosition = Vector2.zero;
-            Lightning.transform.localScale = new Vector3(1f, 1f, 1f);
-
-            power.ParticleSystem = mainPS;
 
             return power;
         }
 
-        public void FixedUpdate()
+        void CreateOutlineGlow(GameObject limb, Sprite sprite, string sortingLayer, int sortingOrder, Color color, string name)
+        {
+            foreach (var off in outlineOffsets)
+            {
+                var glow = new GameObject(name);
+                glow.transform.SetParent(limb.transform);
+                glow.transform.localPosition = new Vector3(off.x * outlineOffset, off.y * outlineOffset, 0f);
+                glow.transform.localRotation = Quaternion.identity;
+                glow.transform.localScale = Vector3.one;
+
+                var sr = glow.AddComponent<SpriteRenderer>();
+                sr.sprite = sprite;
+                sr.sortingLayerName = sortingLayer;
+                sr.sortingOrder = sortingOrder;
+                sr.material = ModAPI.FindMaterial("VeryBright");
+                sr.color = color;
+
+                GlowObjects.Add(glow);
+            }
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled) return;
+
+            if (!InFlight || !AuraActive)
+            {
+                StartFlight();
+                EnableAura();
+            }
+            else
+            {
+                DisableAura();
+                StopFlight();
+            }
+        }
+
+        void EnableAura()
+        {
+            if (!canSwitchAura) return;
+
+            RebuildGlowSprites();
+
+            foreach (var ps in AuraBoltObjects)
+                ps.Play();
+
+            foreach (var glow in GlowObjects)
+                StartCoroutine(ColorOverTime(glow,
+                    new Color(auraColor.r, auraColor.g, auraColor.b, 15),
+                    new Color(auraColor.r, auraColor.g, auraColor.b, 0)));
+
+            AuraActive = true;
+        }
+
+        void DisableAura()
+        {
+            if (!AuraActive) return;
+
+            foreach (var ps in AuraBoltObjects)
+                ps.Stop();
+
+            foreach (var glow in GlowObjects)
+                StartCoroutine(ColorOverTime(glow,
+                    new Color(auraColor.r, auraColor.g, auraColor.b, 0),
+                    new Color(auraColor.r, auraColor.g, auraColor.b, 15)));
+
+            AuraActive = false;
+        }
+
+        void RebuildGlowSprites()
+        {
+            foreach (var g in GlowObjects) Destroy(g);
+            GlowObjects.Clear();
+
+            foreach (var limb in person.Limbs)
+            {
+                CreateOutlineGlow(limb.gameObject,
+                    limb.GetComponent<SpriteRenderer>().sprite,
+                    limb.GetComponent<SpriteRenderer>().sortingLayerName,
+                    limb.GetComponent<SpriteRenderer>().sortingOrder - 1,
+                    new Color(auraColor.r, auraColor.g, auraColor.b, 0),
+                    "AuraFlame");
+            }
+        }
+
+        void StartFlight()
+        {
+            upright = false;
+            if (InFlight) return;
+
+            if (FlightParticleSystem) FlightParticleSystem.Play();
+            person.OverridePoseIndex = 8;
+            InFlight = true;
+
+            foreach (var limb in person.Limbs)
+            {
+                if (!limb.gameObject.activeSelf) continue;
+
+                if (limb.name.Contains("Arm"))
+                {
+                    storedArmStrength = limb.BaseStrength;
+                    limb.BaseStrength = 0;
+                }
+
+                GripBehaviour grip;
+                if (limb.TryGetComponent<GripBehaviour>(out grip))
+                {
+                    if (grip.CurrentlyHolding &&
+                        !grip.CurrentlyHolding.gameObject.GetComponent<LFlightHeld>())
+                    {
+                        var held = grip.CurrentlyHolding.gameObject.AddComponent<LFlightHeld>();
+                        held.initialGravity = grip.CurrentlyHolding.rigidbody.gravityScale;
+                        grip.CurrentlyHolding.rigidbody.gravityScale = 0;
+                    }
+                }
+
+                Cape cape;
+                if (limb.TryGetComponent<Cape>(out cape))
+                {
+                    foreach (var part in cape.capePoints)
+                    {
+                        var rb = part.GetComponent<Rigidbody2D>();
+                        rb.drag = 5;
+                        rb.gravityScale = 0;
+                    }
+                }
+
+                DynamicCloth cloth;
+                if (limb.TryGetComponent<DynamicCloth>(out cloth))
+                {
+                    foreach (var part in cloth.capePoints)
+                    {
+                        var rb = part.GetComponent<Rigidbody2D>();
+                        rb.drag = 5;
+                        rb.gravityScale = 0;
+                    }
+                }
+
+                storedGravity = limb.GetComponent<PhysicalBehaviour>().InitialGravityScale;
+                limb.GetComponent<Rigidbody2D>().gravityScale = 0;
+            }
+        }
+
+        void StopFlight()
+        {
+            InFlight = false;
+            person.OverridePoseIndex = -1;
+            if (FlightParticleSystem) FlightParticleSystem.Stop();
+
+            foreach (var limb in person.Limbs)
+            {
+                if (!limb.gameObject.activeSelf) continue;
+
+                if (limb.name.Contains("Arm"))
+                    limb.BaseStrength = storedArmStrength;
+
+                GripBehaviour grip;
+                if (limb.TryGetComponent<GripBehaviour>(out grip))
+                {
+                    if (grip.CurrentlyHolding &&
+                        grip.CurrentlyHolding.gameObject.TryGetComponent<LFlightHeld>(out var held))
+                    {
+                        held.OnDrop(grip);
+                    }
+                }
+
+                Cape cape;
+                if (limb.TryGetComponent<Cape>(out cape))
+                {
+                    foreach (var part in cape.capePoints)
+                        part.GetComponent<Rigidbody2D>().gravityScale = 1;
+                }
+
+                DynamicCloth cloth;
+                if (limb.TryGetComponent<DynamicCloth>(out cloth))
+                {
+                    foreach (var part in cloth.capePoints)
+                    {
+                        var rb = part.GetComponent<Rigidbody2D>();
+                        rb.drag = 0.25f;
+                        rb.gravityScale = 1;
+                    }
+                }
+
+                limb.GetComponent<Rigidbody2D>().drag = 0;
+                limb.GetComponent<Rigidbody2D>().gravityScale = storedGravity;
+            }
+        }
+
+        void FixedUpdate()
         {
             foreach (var limb in person.Limbs)
-                limb.gameObject.GetComponent<Rigidbody2D>().drag = Mathf.Lerp(limb.gameObject.GetComponent<Rigidbody2D>().drag, InFlight ? upright ? 1 : 6.5f : 0, 0.1f);
+            {
+                var rb = limb.GetComponent<Rigidbody2D>();
+                rb.drag = Mathf.Lerp(rb.drag, InFlight ? (upright ? 1f : 6.5f) : 0f, 0.1f);
+            }
 
             if (InFlight)
             {
                 if (person.Braindead)
-                    StopFlying();
+                {
+                    StopFlight();
+                    return;
+                }
 
                 foreach (var limb in person.Limbs)
                 {
-                    if (!limb.gameObject.activeSelf)
-                        continue;
+                    if (!limb.gameObject.activeSelf) continue;
+                    var rb = limb.GetComponent<Rigidbody2D>();
+                    if (rb.bodyType == RigidbodyType2D.Static) continue;
 
-                    if (limb.GetComponent<Rigidbody2D>().bodyType != RigidbodyType2D.Static)
+                    rb.angularVelocity *= 0.98f;
+                    rb.velocity *= 0.98f;
+
+                    if (limb.name.Contains("Body") && upright)
                     {
-                        limb.GetComponent<Rigidbody2D>().angularVelocity *= 0.98f;
-                        limb.GetComponent<Rigidbody2D>().velocity *= 0.98f;
-
-                        if (limb.name.Contains("Body") && upright)
-                        {
-                            float num2 = limb.gameObject.GetComponent<PhysicalBehaviour>().rigidbody.mass / 1.5f;
-                            float num3 = 10 * Mathf.Clamp(limb.gameObject.GetComponent<PhysicalBehaviour>().Charge, 1f, 5f) * num2 * num2;
-                            limb.gameObject.GetComponent<PhysicalBehaviour>().rigidbody.angularVelocity *= Mathf.Pow(0.5f, 1f);
-                            limb.gameObject.GetComponent<Rigidbody2D>().AddTorque(Mathf.DeltaAngle(limb.transform.eulerAngles.z, 0f) * num3);
-                        }
+                        float massFactor = limb.gameObject.GetComponent<PhysicalBehaviour>().rigidbody.mass / 1.5f;
+                        float torqueFactor = 10 * Mathf.Clamp(limb.gameObject.GetComponent<PhysicalBehaviour>().Charge, 1f, 5f) * massFactor * massFactor;
+                        limb.gameObject.GetComponent<PhysicalBehaviour>().rigidbody.angularVelocity *= 0.5f;
+                        rb.AddTorque(Mathf.DeltaAngle(limb.transform.eulerAngles.z, 0f) * torqueFactor);
                     }
                 }
             }
@@ -2112,140 +2357,96 @@ namespace Mod
 
         public override void DisablePower()
         {
-            if (InFlight)
-                StopFlying();
-
+            if (AuraActive) DisableAura();
+            if (InFlight) StopFlight();
             base.DisablePower();
         }
 
-        public void StopFlying()
+        public void OnDestroy()
         {
-            InFlight = false;
-            person.OverridePoseIndex = -1;
-            ParticleSystem.Stop();
-            foreach (var limb in person.Limbs)
+            foreach (var ps in AuraBoltObjects)
             {
-                if (!limb.gameObject.activeSelf)
-                    continue;
-
-                if (limb.name.Contains("Arm"))
-                    limb.BaseStrength = ogbasestrength;
-
-                if (limb.TryGetComponent<GripBehaviour>(out var grip))
-                    if (grip.CurrentlyHolding && grip.CurrentlyHolding.gameObject.TryGetComponent<LFlightHeld>(out var fh))
-                        fh.OnDrop(grip);
-
-                if (limb.TryGetComponent<Cape>(out var cape))
-                    foreach (var part in cape.capePoints)
-                        part.GetComponent<Rigidbody2D>().gravityScale = 1;
-
-                if (limb.GetComponent<Flight>())
-                    if (limb.GetComponent<Flight>().InFlight)
-                        limb.GetComponent<Flight>().StopFlying();
-
-                if (limb.TryGetComponent<DynamicCloth>(out var cloth))
-                    foreach (var part in cloth.capePoints)
-                    {
-                        part.GetComponent<Rigidbody2D>().drag = 0.25f;
-                        part.GetComponent<Rigidbody2D>().gravityScale = 1;
-                    }
-
-                limb.GetComponent<Rigidbody2D>().drag = 0;
-                limb.GetComponent<Rigidbody2D>().gravityScale = gravity;
+                if (ps) ps.Stop();
+            }
+            foreach (var g in GlowObjects)
+            {
+                if (g) Destroy(g);
             }
         }
 
-        public void StunFlying()
+        IEnumerator ColorOverTime(GameObject obj, Color target, Color origin)
         {
-            InFlight = false;
-            person.OverridePoseIndex = -1;
-            foreach (var limb in person.Limbs)
+            canSwitchAura = false;
+            float duration = 1f;
+            float t = 0f;
+            var sr = obj.GetComponent<SpriteRenderer>();
+            while (t < duration)
             {
-                if (!limb.gameObject.activeSelf)
-                    continue;
-
-                if (limb.name.Contains("Arm"))
-                    limb.BaseStrength = ogbasestrength;
-
-                if (limb.TryGetComponent<GripBehaviour>(out var grip))
-                    if (grip.CurrentlyHolding && grip.CurrentlyHolding.gameObject.TryGetComponent<LFlightHeld>(out var fh))
-                        fh.OnDrop(grip);
-
-
-                if (limb.GetComponent<ThunderFlight>())
-                    if (limb.GetComponent<ThunderFlight>().InFlight)
-                        limb.GetComponent<ThunderFlight>().StunFlying();
-
-                limb.GetComponent<Rigidbody2D>().drag = 0;
+                sr.color = Color.Lerp(origin, target, t / duration);
+                t += Time.deltaTime;
+                yield return null;
             }
+            sr.color = target;
+            canSwitchAura = true;
         }
 
-        public void StartFlying()
+        public class AuraChargeLimb : MonoBehaviour
         {
-            upright = false;
-            if (!InFlight)
+            public ElectricAuraFlight parentPower;
+            public void OnCollisionEnter2D(Collision2D col)
             {
-                ParticleSystem.Play();
-                person.OverridePoseIndex = 8;
-                InFlight = true;
-                foreach (var limb in person.Limbs)
+                if (parentPower != null &&
+                    parentPower.AuraActive &&
+                    col.collider.TryGetComponent<PhysicalBehaviour>(out var phys) &&
+                    col.relativeVelocity.magnitude > 3f)
                 {
-                    if (!limb.gameObject.activeSelf)
-                        continue;
-
-                    if (limb.name.Contains("Arm"))
-                    {
-                        ogbasestrength = limb.BaseStrength;
-                        limb.BaseStrength = 0;
-                    }
-
-                    if (limb.TryGetComponent<GripBehaviour>(out var grip))
-                        if (grip.CurrentlyHolding && !grip.CurrentlyHolding.gameObject.GetComponent<LFlightHeld>())
-                        {
-                            grip.CurrentlyHolding.gameObject.AddComponent<LFlightHeld>().initialGravity = grip.CurrentlyHolding.rigidbody.gravityScale;
-                            grip.CurrentlyHolding.rigidbody.gravityScale = 0;
-                        }
-
-                    if (limb.TryGetComponent<Cape>(out var cape))
-                        foreach (var part in cape.capePoints)
-                        {
-                            part.GetComponent<Rigidbody2D>().drag = 5;
-                            part.GetComponent<Rigidbody2D>().gravityScale = 0;
-                        }
-
-                    if (limb.TryGetComponent<DynamicCloth>(out var cloth))
-                        foreach (var part in cloth.capePoints)
-                        {
-                            part.GetComponent<Rigidbody2D>().drag = 5;
-                            part.GetComponent<Rigidbody2D>().gravityScale = 0;
-                        }
-
-                    gravity = limb.GetComponent<PhysicalBehaviour>().InitialGravityScale;
-                    limb.GetComponent<Rigidbody2D>().gravityScale = 0;
+                    phys.charge += 10;
                 }
             }
         }
 
-        public void Use(ActivationPropagation activation)
+        public class FlightImpactLimb : MonoBehaviour
         {
-            if (!Enabled)
-                return;
+            public ElectricAuraFlight flightPower;
+            bool cooldown;
 
-            if (!InFlight)
+            public void OnCollisionEnter2D(Collision2D collision)
             {
-                StartFlying();
-                foreach (var limb in person.Limbs)
-                    if (limb.GetComponent<ThunderFlight>())
-                        if (!limb.GetComponent<ThunderFlight>().InFlight)
-                            limb.GetComponent<ThunderFlight>().StartFlying();
+                if (flightPower == null) return;
+                if (flightPower.InFlight &&
+                    !cooldown &&
+                    collision.rigidbody != null &&
+                    collision.rigidbody.mass > 0.01f &&
+                    collision.rigidbody.bodyType != RigidbodyType2D.Static &&
+                    collision.rigidbody.velocity.magnitude > GetComponent<Rigidbody2D>().velocity.magnitude &&
+                    collision.relativeVelocity.magnitude > 15f)
+                {
+                    flightPower.StopFlight();
+                    StartCoroutine(Knockout(Mathf.Clamp(
+                        collision.relativeVelocity.magnitude * collision.rigidbody.mass * 0.5f,
+                        0.7f,
+                        Settings.main.Get<float>("KnockoutTime"))));
+                }
             }
-            else
+
+            public void FixedUpdate()
             {
-                StopFlying();
-                foreach (var limb in person.Limbs)
-                    if (limb.GetComponent<ThunderFlight>())
-                        if (limb.GetComponent<ThunderFlight>().InFlight)
-                            limb.GetComponent<ThunderFlight>().StopFlying();
+                if (cooldown)
+                {
+                    if (GetComponent<Rigidbody2D>().velocity.magnitude < 3f)
+                    {
+                        flightPower.StartFlight();
+                    }
+                }
+            }
+
+            IEnumerator Knockout(float time)
+            {
+                cooldown = true;
+                yield return new WaitForSeconds(time * 0.7f);
+                flightPower.StartFlight();
+                yield return new WaitForSeconds(time * 0.3f);
+                cooldown = false;
             }
         }
 
@@ -2253,47 +2454,10 @@ namespace Mod
         public class LFlightHeld : MonoBehaviour, Messages.IOnDrop
         {
             public float initialGravity;
-
             public void OnDrop(GripBehaviour grip)
             {
                 GetComponent<Rigidbody2D>().gravityScale = initialGravity;
                 Destroy(this);
-            }
-        }
-
-        public class LFlightLimb : MonoBehaviour
-        {
-            public ThunderFlight flight;
-
-            bool onCooldown = false;
-
-            public void OnCollisionEnter2D(Collision2D collision)
-            {
-                if (flight.InFlight && !onCooldown && collision.rigidbody.mass > 0.01f && collision.rigidbody.bodyType != RigidbodyType2D.Static && collision.rigidbody.velocity.magnitude > GetComponent<Rigidbody2D>().velocity.magnitude && collision.relativeVelocity.magnitude > 15)
-                {
-                    flight.StunFlying();
-                    StartCoroutine(Knockout(Mathf.Clamp(collision.relativeVelocity.magnitude * collision.rigidbody.mass * 0.5f, 0.7f, Settings.main.Get<float>("KnockoutTime"))));
-                }
-            }
-
-            public void FixedUpdate()
-            {
-                if (onCooldown)
-                {
-                    if (GetComponent<Rigidbody2D>().velocity.magnitude < 3f)
-                    {
-                        flight.StartFlying();
-                    }
-                }
-            }
-
-            public IEnumerator Knockout(float time)
-            {
-                onCooldown = true;
-                yield return new WaitForSeconds(time * 0.7f);
-                flight.StartFlying();
-                yield return new WaitForSeconds(time * 0.3f);
-                onCooldown = false;
             }
         }
     }
@@ -4571,7 +4735,7 @@ namespace Mod
                 else
                 {
                     hadStrength = false;
-                    SuperMass.SetPower(Person, null, 20, 40).EnablePower();
+                    SuperMass.SetPower(Person, null, 10, 30).EnablePower();
                 }
 
                 //Person.Limbs[2].PhysicalBehaviour.PlayClipOnce(TransformationSound);
@@ -9000,218 +9164,6 @@ namespace Mod
         }
     }
 
-    public class ElectricAura : Power, Messages.IUse
-    {
-        public bool FlameIsOn = false;
-        public List<GameObject> GlowObjects = new List<GameObject>();
-        public List<ParticleSystem> BoltObjects = new List<ParticleSystem>();
-        bool CanSwitch = true;
-        public Color32 color;
-
-        public float outlineOffset = 0.01f;
-
-        Vector2[] offsets = new Vector2[]
-        {
-        new Vector2(-1, 0),
-        new Vector2(1, 0),
-        new Vector2(0, -1),
-        new Vector2(0, 1),
-        new Vector2(-1, -1),
-        new Vector2(-1, 1),
-        new Vector2(1, -1),
-        new Vector2(1, 1)
-        };
-
-        public static Power SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
-        {
-            var power = Limb.gameObject.AddComponent<ElectricAura>();
-            power.Name = "Electric Aura";
-            power.Description = "When the head is activated the user will become enveloped in an electrical yellow aura<color=\"yellow\">\nThis power also makes the user impervious to electricity, and charges anything touching it.";
-            power.icon = icon;
-            power.targetLimb = TargettedLimb.Head;
-
-            foreach (var limb in Person.Limbs)
-            {
-                var newprops = GameObject.Instantiate(limb.PhysicalBehaviour.Properties);
-                newprops.Conducting = false;
-                limb.PhysicalBehaviour.Properties = newprops;
-                power.color = Color.cyan;
-
-                if (limb.name == "Head")
-                {
-                    GameObject glow = new GameObject("Eyes");
-                    glow.transform.SetParent(limb.transform);
-                    glow.transform.localPosition = Vector3.zero;
-                    glow.transform.localRotation = Quaternion.identity;
-                    glow.transform.localScale = Vector3.one;
-
-                    SpriteRenderer sr = glow.AddComponent<SpriteRenderer>();
-                    sr.sprite = Mod.Eye;
-                    sr.sortingLayerName = limb.SkinMaterialHandler.renderer.sortingLayerName;
-                    sr.sortingOrder = limb.SkinMaterialHandler.renderer.sortingOrder + 1;
-                    sr.material = ModAPI.FindMaterial("VeryBright");
-                    sr.color = new Color(0, 0.5f, 1, 0f);
-
-                    power.GlowObjects.Add(glow);
-                }
-
-                power.CreateOutlineGlow(limb.gameObject, limb.GetComponent<SpriteRenderer>().sprite, limb.GetComponent<SpriteRenderer>().sortingLayerName, limb.GetComponent<SpriteRenderer>().sortingOrder - 2, new Color(0, 0.5f, 1, 0f), "TenShroud");
-            }
-
-            foreach (var limb in Person.Limbs)
-            {
-                limb.PhysicalBehaviour.ForceNoCharge = true;
-
-                foreach (var limbb in Person.Limbs)
-                {
-                    var newprops = GameObject.Instantiate(limb.PhysicalBehaviour.Properties);
-                    newprops.Conducting = false;
-                    limb.PhysicalBehaviour.Properties = newprops;
-                    power.color = Color.cyan;
-                }
-
-                var bolt = Instantiate(ModAPI.FindSpawnable("Particle Projector").Prefab.transform.FindChild("bolts").gameObject);
-                bolt.transform.parent = limb.transform;
-                bolt.transform.GetChild(0).gameObject.GetComponent<ParticleSystem>().startColor = Color.cyan;
-                bolt.transform.GetChild(1).gameObject.GetComponent<ParticleSystem>().startColor = Color.cyan;
-                var boltmain = bolt.GetComponent<ParticleSystem>().main;
-                boltmain.startColor = Color.cyan;
-                bolt.transform.localPosition = Vector2.zero;
-                bolt.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
-                power.BoltObjects.Add(bolt.GetComponent<ParticleSystem>());
-            }
-
-            return power;
-        }
-
-        void CreateOutlineGlow(GameObject limb, Sprite sprite, string sortingLayer, int sortingOrder, Color color, string name)
-        {
-            foreach (var off in offsets)
-            {
-                Vector3 localPos = new Vector3(off.x * outlineOffset, off.y * outlineOffset, 0f);
-
-                GameObject glow = new GameObject(name);
-                glow.transform.SetParent(limb.transform);
-                glow.transform.localPosition = localPos;
-                glow.transform.localRotation = Quaternion.identity;
-                glow.transform.localScale = Vector3.one;
-
-                SpriteRenderer sr = glow.AddComponent<SpriteRenderer>();
-                sr.sprite = sprite;
-                sr.sortingLayerName = sortingLayer;
-                sr.sortingOrder = sortingOrder;
-                sr.material = ModAPI.FindMaterial("VeryBright");
-                sr.color = color;
-
-                GlowObjects.Add(glow);
-            }
-        }
-
-        public void Use(ActivationPropagation activation)
-        {
-            if (Enabled && CanSwitch)
-            {
-                foreach (var flame in GlowObjects)
-                {
-                    Destroy(flame);
-                }
-                GlowObjects.Clear();
-
-                foreach (var limb in GetComponent<LimbBehaviour>().Person.Limbs)
-                {
-                    CreateOutlineGlow(limb.gameObject, limb.GetComponent<SpriteRenderer>().sprite, limb.GetComponent<SpriteRenderer>().sortingLayerName, limb.GetComponent<SpriteRenderer>().sortingOrder - 1, new Color32(color.r, color.g, color.b, 0), "GlowFlame");
-                }
-
-                if (FlameIsOn)
-                {
-                    foreach (var bolt in BoltObjects)
-                    {
-                        bolt.Stop();
-                    }
-                    foreach (var glow in GlowObjects)
-                    {
-                        StartCoroutine(ColorOverTime(glow, new Color32(color.r, color.g, color.b, 0), new Color32(color.r, color.g, color.b, 15)));
-                    }
-                    FlameIsOn = false;
-                }
-                else
-                {
-                    foreach (var bolt in BoltObjects)
-                    {
-                        bolt.Play();
-                    }
-                    foreach (var glow in GlowObjects)
-                    {
-                        StartCoroutine(ColorOverTime(glow, new Color32(color.r, color.g, color.b, 15), new Color32(color.r, color.g, color.b, 0)));
-                    }
-                    FlameIsOn = true;
-                }
-            }
-        }
-
-        public override void DisablePower()
-        {
-            if (FlameIsOn)
-            {
-                foreach (var bolt in BoltObjects)
-                {
-                    bolt.Stop();
-                }
-                foreach (var glow in GlowObjects)
-                {
-                    StartCoroutine(ColorOverTime(glow, new Color32(color.r, color.g, color.b, 0), new Color32(color.r, color.g, color.b, 15)));
-                }
-            }
-
-            base.DisablePower();
-        }
-
-        public void OnDestroy()
-        {
-            foreach (var bolt in GetComponent<LimbBehaviour>().Person.transform.GetComponentsInChildren<ParticleSystem>())
-            {
-                if (bolt.name == "bolts(Summoning)")
-                {
-                    bolt.Stop();
-                }
-            }
-            foreach (var glow in GlowObjects)
-            {
-                Destroy(glow);
-            }
-        }
-
-        IEnumerator ColorOverTime(GameObject AffectedObject, Color newColor, Color OriginalColor)
-        {
-            CanSwitch = false;
-            var duration = 1f;
-            float elapsedTime = 0;
-
-            SpriteRenderer sr = AffectedObject.GetComponent<SpriteRenderer>();
-            while (elapsedTime < duration)
-            {
-                sr.color = Color.Lerp(OriginalColor, newColor, (elapsedTime / duration));
-                elapsedTime += Time.deltaTime;
-                yield return null;
-            }
-            sr.color = newColor;
-            CanSwitch = true;
-        }
-
-        public class FlightLimb : MonoBehaviour
-        {
-            ElectricAura parentPower;
-
-            public void OnCollisionEnter2D(Collision2D col)
-            {
-                if (col.collider.TryGetComponent<PhysicalBehaviour>(out var phys) && col.relativeVelocity.magnitude > 3 && parentPower.FlameIsOn)
-                {
-                    phys.charge += 10;
-                }
-            }
-        }
-    }
-
     public class Grabber : MonoBehaviour, Messages.IUse
     {
         public bool CanGrab;
@@ -11514,10 +11466,10 @@ namespace Mod
 
             foreach (var limb in GetComponent<PersonBehaviour>().Limbs)
             {
-                limb.BaseStrength *= NewMass >= 1 ? (NewMass * 10) < 15 ? NewMass * 10 : NewMass * 5 : 1;
+                limb.BaseStrength *= NewMass > 1 ? (NewMass * 10) < 15 ? NewMass * 10 : NewMass * 5 : NewMass + 1.5f;
 
                 if (limb.FakeUprightForce > 0)
-                    limb.FakeUprightForce *= NewMass >= 1 ? NewMass < 15 ? NewMass : (NewMass / 2) : 1;
+                    limb.FakeUprightForce *= NewMass > 1 ? NewMass < 15 ? NewMass + 5 : (NewMass * 0.75f) : NewMass + NewMass;
 
                 if (limb.GetComponent<Rigidbody2D>())
                     limb.GetComponent<Rigidbody2D>().mass = NewMass;
