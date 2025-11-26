@@ -1933,7 +1933,7 @@ namespace Mod
             }, "2");
 
             //Cap's Shield
-            ModAPIPlus.CreateObject("Rod", "Cap's Shield", "", "Cap's Shield", "Cap's Shield", (Instance) =>
+            ModAPIPlus.CreateObject("Rod", "Captain America's Shield", "", "Cap's Shield", "Cap's Shield", (Instance) =>
             {
                     {
                         Instance.GetComponent<SpriteRenderer>().sprite = ModAPI.LoadSprite("Art/Objects/Cap's Shield.png");
@@ -2463,7 +2463,7 @@ namespace Mod
         }
     }
 
-    public class Hammer : Summonable, Messages.IOnGripped, Messages.IOnDrop
+    public class Hammer : Summonable, Messages.IOnGripped, Messages.IOnDrop, Mod.ModAPIPlus.IUse2
     {
         bool useable = false;
         bool isHeld = false;
@@ -2488,6 +2488,8 @@ namespace Mod
         public Transform target;
 
         public bool GettingTarget;
+
+        public float otherCooldown = 0f;
 
         public override void Start()
         {
@@ -2693,9 +2695,27 @@ namespace Mod
             base.FixedUpdate();
         }
 
+        public override void Use2()
+        {
+            if(isHeld)
+            {
+                StopHold();
+            }
+            else
+            {
+                StartHold();
+            }
+        }
+
         private void Update()
         {
             lightningToolEntityBehaviour.transform.position = transform.position;
+
+            if (otherCooldown > 0f)
+            {
+                otherCooldown -= Time.unscaledDeltaTime;
+            }
+
 
             if (physicalBehaviour.StartedBeingUsedContinuously())
             {
@@ -2731,9 +2751,90 @@ namespace Mod
             }
             else if (dist > 1)
             {
-                Debug.Log("nigger");
-                //Debug.DrawLine(base.transform.position, base.transform.position + delta, Color.red, 2f);
                 StartCoroutine(lightning());
+            }
+        }
+
+        public void OnCollisionEnter2D(Collision2D col)
+        {
+            if (otherCooldown > 0f)
+            {
+                return;
+            }
+
+            if (col.collider.name.ToLower().Contains("captain") && col.collider.name.ToLower().Contains("shield") && col.relativeVelocity.magnitude > 5)
+            {
+                otherCooldown = 1f;
+
+                CameraShakeBehaviour.main.Shake(55 / 5, transform.position);
+
+                var emp = Instantiate(ModAPI.FindSpawnable("EMP Generator").Prefab.GetComponent<EMPBehaviour>().Effect);
+
+                emp.transform.position = transform.position;
+                emp.transform.localScale = Vector3.one;
+                var main = emp.GetComponent<ParticleSystem>().main;
+                main.startColor = new Color(0.8f, 0.8f, 1, 1);
+                var n = main.startLifetime;
+                n.constantMax *= 0.5f;
+                main.simulationSpeed *= 1.5f;
+                emp.transform.GetChild(0).GetComponent<ParticleSystem>().startColor = new Color(0.8f, 0.8f, 1, 1);
+                var imp = ModAPI.FindSpawnable("Power Hammer").Prefab.GetComponent<PowerHammerBehaviour>().ImpactClips;
+                StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position ,imp[UnityEngine.Random.Range(0, imp.Length)]));
+
+                Mod.ModAPIPlus.SetPFXColors(ModAPI.CreateParticleEffect(ParticleEffects.BigExplosion, transform.position), new Color(0.8f, 0.8f, 1, 1));
+                
+                Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, 10);
+
+                foreach (var coll in cols)
+                {
+                    if (coll.TryGetComponent<LimbBehaviour>(out var limb))
+                    {
+                        limb.Person.ShockLevel = 55;
+                        int rand = UnityEngine.Random.Range(0, Mathf.RoundToInt(100 / (55 / 45)));
+                        if (rand == 1)
+                        {
+                            limb.Person.SeizureTime = rand;
+                        }
+                    }
+                }
+
+                var colliders = Physics2D.OverlapCircleAll(transform.position, 20f);
+
+                foreach (var collider in colliders)
+                {
+                    if (!collider.attachedRigidbody)
+                        continue;
+
+                    if (collider.TryGetComponent<DamagableMachineryBehaviour>(out var da))
+                    {
+                        da.ForceBreak();
+                    }
+
+                    if (collider.TryGetComponent<LimbBehaviour>(out var limb))
+                    {
+                        limb.Damage(25 * (55 / 60) / Vector2.Distance(limb.transform.position, transform.position));
+
+                        collider.attachedRigidbody?.AddForce((collider.transform.position - transform.position).normalized * 40f / Mathf.Clamp(Vector2.Distance(transform.position, transform.position), 0.1f, 100) * (55 / 45));
+                    }
+                    else if (collider.TryGetComponent<DestroyableBehaviour>(out var dest))
+                    {
+                        float rand = UnityEngine.Random.Range(0, 10 * Vector2.Distance(collider.transform.position, transform.position));
+                        Debug.Log(rand);
+
+                        if (rand <= 5f)
+                        {
+                            dest.Break();
+                        }
+
+                        collider.attachedRigidbody?.AddForce((collider.transform.position - transform.position).normalized * 35f / Mathf.Clamp(Vector2.Distance(transform.position, transform.position), 0.1f, 100) * (55 / 45));
+
+                    }
+                    else if (limb == null && !collider.name.Contains("Cape"))
+                    {
+                        collider.attachedRigidbody?.AddForce((collider.transform.position - transform.position).normalized * 35f / Mathf.Clamp(Vector2.Distance(transform.position, transform.position), 0.1f, 100) * (55 / 45));
+                    }
+
+                }
             }
         }
 
@@ -4016,18 +4117,19 @@ namespace Mod
 
             if (charge < 40)
             {
-                if (GetComponent<LimbBehaviour>().ImmuneToDamage)
-                    foreach (var limb in person.Limbs)
-                        limb.ImmuneToDamage = false;
-            }
-            else
-            {
-                if(!GetComponent<LimbBehaviour>().ImmuneToDamage)
+
+                if (!GetComponent<LimbBehaviour>().ImmuneToDamage)
                     foreach (var limb in person.Limbs)
                     {
                         limb.ImmuneToDamage = true;
                         limb.CirculationBehaviour.ImmuneToDamage = true;
                     }
+            }
+            else
+            {
+                if (GetComponent<LimbBehaviour>().ImmuneToDamage)
+                    foreach (var limb in person.Limbs)
+                        limb.ImmuneToDamage = false;
             }
 
             foreach (var glow in glows)
@@ -11467,10 +11569,10 @@ namespace Mod
 
             foreach (var limb in GetComponent<PersonBehaviour>().Limbs)
             {
-                limb.BaseStrength *= NewMass > 1 ? (NewMass * 10) < 15 ? NewMass * 10 : NewMass * 5 : NewMass + 1.5f;
+                limb.BaseStrength *= NewMass > 1 ? (NewMass * 10) < 15 ? NewMass * 10 : NewMass * 5 : NewMass * 7;
 
                 if (limb.FakeUprightForce > 0)
-                    limb.FakeUprightForce *= NewMass > 1 ? NewMass < 15 ? NewMass + 5 : (NewMass * 0.75f) : NewMass + NewMass;
+                    limb.FakeUprightForce *= NewMass > 1 ? NewMass < 15 ? NewMass + 10 : (NewMass * 0.75f) : NewMass * 15;
 
                 if (limb.GetComponent<Rigidbody2D>())
                     limb.GetComponent<Rigidbody2D>().mass = NewMass;
