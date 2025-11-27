@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -9,7 +10,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static Mod.Hammer;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -194,6 +194,9 @@ namespace Mod
         public static Sprite carnageTailEnd = ModAPI.LoadSprite("Art/Skins/Monster Carnage/TailEnd.png");
         public static List<Sprite> Hulk = ModAPIPlus.LimbSprites("Art/Skins/Hulk/");
 
+        public static Texture2D Bifrost = ModAPI.LoadTexture("Art/Objects/Bifrost.png");
+        public static Texture2D Whip = ModAPI.LoadTexture("Art/Objects/Whip.png");
+
         #endregion
 
         #region LoadSounds
@@ -233,6 +236,10 @@ namespace Mod
         public static AudioClip Winder = ModAPI.LoadSound("Sounds/Winder.wav");
         public static AudioClip Vibrate = ModAPI.LoadSound("Sounds/Vibrate.wav");
         public static AudioClip Cloth = ModAPI.LoadSound("Sounds/Cloth.wav");
+
+        public static AudioClip Hammer = ModAPI.LoadSound("Sounds/Hammer.wav");
+        public static AudioClip Bifrosty = ModAPI.LoadSound("Sounds/Bifrosty.wav");
+        public static AudioClip Whipy = ModAPI.LoadSound("Sounds/Whip.wav");
         #endregion
 
         #region LoadOther
@@ -767,10 +774,12 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1, 5);
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1.1f, 25);
 
                 person.GetComponent<SpeedHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
+
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
 
                 person.gameObject.AddComponent<Hammer.Worthy>();
 
@@ -800,7 +809,7 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 3, 2);
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 4, 12);
 
                 person.GetComponent<SpeedHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
@@ -810,18 +819,22 @@ namespace Mod
                 foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
                 {
                     Limbs.ImmuneToDamage = true;
+
                     if (Limbs.gameObject.name.Contains("ArmFront"))
                     {
                         Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
-                    }
-                    if (Limbs.gameObject.name.Contains("ArmFront"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 2;
                     }
 
                     if (Limbs.name.Contains("UpperBody"))
                     {
                         Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.name.Contains("Head"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 2;
                     }
 
                     if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
@@ -836,6 +849,7 @@ namespace Mod
                 }
 
                 ElectricAuraFlight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Lightning.png")).EnablePower();
+                BifrostTeleportation.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Lightning.png")).EnablePower();
 
                 Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
 
@@ -1123,18 +1137,20 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 0.5f, 15);
 
                 person.GetComponent<SpeedHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
 
+                Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
 
                 foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
                 {
-                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    if (Limbs.gameObject.name.Contains("LowerArm"))
                     {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                        MagicWhip.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Magic Whip.png")).EnablePower();
                     }
+
                     if (Limbs.gameObject.name.Contains("ArmFront"))
                     {
                         Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
@@ -1156,8 +1172,13 @@ namespace Mod
                     }
                 }
 
-                Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Doctor Strange/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Doctor Strange/CapeThing.png"));
 
+                /*
+                var inst = Instantiate(ModAPI.FindSpawnable("[Nova's Avengers Mod] Dr. Strange's Cape").Prefab);
+                CatalogBehaviour.PerformMod(ModAPI.FindSpawnable("[Nova's Avengers Mod] Dr. Strange's Cape"), inst);
+                inst.transform.position = person.Limbs[1].transform.position;
+                inst.GetComponent<HatBehaviour>().StartCoroutine(inst.GetComponent<HatBehaviour>().Wear(person.Limbs[1]));
+                */
             }, "a");
 
             //Black Panther
@@ -1165,7 +1186,7 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 0.5f, 2).EnablePower();
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 0.5f, 10).EnablePower();
 
                 foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
                 {
@@ -1220,6 +1241,8 @@ namespace Mod
                         Claws.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Claw.png"), ModAPI.LoadSprite("Art/Objects/Claws.png")).EnablePower();
                     }
                 }
+
+                EnergyExplosion.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Energy Explosion.png"), new Color(0.6f, 0.5f, 0.2f, 1f), ModAPIPlus.LimbGlowSprites("Art/Skins/Black Panther/")).EnablePower();
 
             }, "a");
 
@@ -1924,6 +1947,20 @@ namespace Mod
 
             #region Objects
 
+            //Dr. Strange's Cape
+            ModAPIPlus.CreateObject("Brick", "Dr. Strange's Cape", "", "DrStrangesCape", "DrStrangesCape", (Instance) =>
+            {
+                Instance.transform.localScale = Vector3.one;
+
+                var phys = Instance.GetComponent<PhysicalBehaviour>();
+                phys.Properties = PhysicalProperty.Soap;
+                var hat = HatBehaviour.AddHatStuffNoLimb("UpperBody", Instance);
+
+                var cloth = DynamicCloth.CreateCloth(Instance, ModAPI.LoadTexture("Art/Objects/Cape.png"), new Vector2(-6, 3f) * ModAPI.PixelSize);
+
+                Instance.gameObject.layer = 9;
+            }, "z", true);
+
             //Tesseract
             ModAPIPlus.CreateObject("Rod", "Tesseract", "", "Tesseract", "Tesseract", (Instance) =>
             {
@@ -1956,6 +1993,7 @@ namespace Mod
             {
                 Instance.AddComponent<Hammer>();
             }, "2");
+
             #endregion
 
             //Settings
@@ -1982,6 +2020,7 @@ namespace Mod
 
             ModAPI.Register<AlternateMouseActivator>();
             ModAPI.Register<CategoryButtonEditor>();
+            ModAPI.Register<BifrostTeleportation.BifrostTeleportHandler>();
             ModAPI.RegisterLiquid(TBLiquid.ID, new TBLiquid());
             ModAPI.OnItemSpawned += AddLimbLogger;
         }
@@ -2036,6 +2075,771 @@ namespace Mod
         }
     }
 
+    public class MagicWhip : Power, Messages.IUse
+    {
+        public DistanceJoint2D whipJoint;
+
+        private LineRenderer _whipLine;
+        private GameObject _whipGO;
+        private Coroutine _whipRoutine;
+        private Rigidbody2D _selfRb;
+
+        private Rigidbody2D _targetRb;
+        private Vector2 _targetLocalAnchor;
+        private Vector2 _staticWorldAnchor;
+        private bool _hasDynamicTarget;
+
+        bool extending = false;
+
+        private const float RayDistance = 14f;
+        private const int LineSegments = 20;
+        private const float ExtendDuration = 0.18f;
+        private const float PullDuration = 1.25f;
+        private const float InitialWobble = 0.25f;
+        private const float SustainWobble = 0.05f;
+        private const float MinDistance = 0.35f;
+        private const float PullForce = 5f;
+
+        public static MagicWhip SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
+        {
+            var power = Limb.gameObject.AddComponent<MagicWhip>();
+            power.Name = "Magic Whip";
+            power.Description = "Shoot a whip that latches to moving targets and pulls them toward you.";
+            power.icon = icon;
+
+            if (power.name.Contains("Front"))
+            {
+                power.targetLimb = TargettedLimb.FrontArm;
+            }
+            else
+            {
+                power.targetLimb = TargettedLimb.BackArm;
+            }
+
+            return power;
+        }
+
+        public override void Start()
+        {
+            base.Start();
+            _selfRb = GetComponent<Rigidbody2D>();
+            if (_selfRb == null)
+            {
+                _selfRb = gameObject.AddComponent<Rigidbody2D>();
+            }
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if(extending) return;
+
+            if (whipJoint != null)
+            {
+                DestroyWhip();
+                return;
+            }
+            extending = true;
+            var origin = (Vector2)transform.position;
+            var dir = -(Vector2)transform.up;
+
+            RaycastHit2D[] hits = Physics2D.RaycastAll(origin, dir, RayDistance);
+            RaycastHit2D chosen = new RaycastHit2D();
+            foreach (var hit in hits)
+            {
+                if (hit.collider == null) continue;
+                if (hit.transform == null) continue;
+                if (hit.transform.root == transform.root) continue;
+                if (hit.rigidbody && hit.rigidbody.bodyType != RigidbodyType2D.Dynamic) continue;
+
+                if (hit.collider.GetComponent<PhysicalBehaviour>())
+                {
+                    chosen = hit;
+                    break;
+                }
+            }
+
+            if (chosen.collider == null)
+            {
+                return;
+            }
+
+            StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Whipy));
+
+            _whipLine = CreateLineRenderer(out _whipGO);
+            if (_whipRoutine != null) StopCoroutine(_whipRoutine);
+            _whipRoutine = StartCoroutine(ShootWhip(chosen));
+        }
+
+        private LineRenderer CreateLineRenderer(out GameObject holder)
+        {
+            ModAPI.CreateParticleEffect("Flash", transform.position);
+
+            holder = new GameObject("MagicWhipLine");
+            holder.transform.SetParent(null, false);
+            var lr = holder.AddComponent<LineRenderer>();
+            lr.useWorldSpace = true;
+
+            lr.positionCount = LineSegments;
+            lr.textureMode = LineTextureMode.Tile;
+            lr.alignment = LineAlignment.TransformZ;
+            lr.numCapVertices = 4;
+            lr.numCornerVertices = 4;
+
+            var curve = new AnimationCurve();
+            curve.AddKey(0f, 0.08f);
+            curve.AddKey(0.5f, 0.12f);
+            curve.AddKey(1f, 0.08f);
+            lr.widthCurve = curve;
+
+            Material mat = UnityEngine.Object.Instantiate(ModAPI.FindMaterial("VeryBright"));
+
+            lr.material = mat;
+
+            Texture2D tex = Mod.Whip;
+            if (tex != null)
+            {
+                tex.wrapMode = TextureWrapMode.Repeat;
+                lr.material.mainTexture = tex;
+            }
+
+            lr.sortingLayerName = Layers.Sorting.Top;
+            lr.sortingOrder = 10;
+            lr.startColor = Color.white;
+            lr.endColor = Color.white;
+
+            Vector3 p = transform.position;
+            for (int i = 0; i < LineSegments; i++) lr.SetPosition(i, p);
+            return lr;
+        }
+
+        private IEnumerator ShootWhip(RaycastHit2D hit)
+        {
+            _targetRb = hit.rigidbody;
+            _hasDynamicTarget = _targetRb != null && _targetRb.bodyType == RigidbodyType2D.Dynamic;
+            if (_hasDynamicTarget)
+            {
+                _targetLocalAnchor = _targetRb.transform.InverseTransformPoint(hit.point);
+            }
+            else
+            {
+                _staticWorldAnchor = hit.point;
+                _targetRb = null;
+            }
+
+            float elapsed = 0f;
+
+            while (elapsed < ExtendDuration)
+            {
+                if (_hasDynamicTarget && (_targetRb == null || !_targetRb || !_targetRb.gameObject.activeInHierarchy))
+                {
+                    DestroyWhip();
+                    yield break;
+                }
+
+                elapsed += Time.deltaTime;
+                float p = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, ExtendDuration));
+                float eased = Mathf.SmoothStep(0f, 1f, p);
+
+                Vector3 curStart = transform.position;
+                Vector3 curEnd = _hasDynamicTarget
+                    ? (Vector3)_targetRb.transform.TransformPoint(_targetLocalAnchor)
+                    : (Vector3)_staticWorldAnchor;
+
+                Vector3 tip = Vector3.Lerp(curStart, curEnd, eased);
+                float amp = Mathf.Lerp(InitialWobble, SustainWobble, p);
+                UpdateLine(curStart, tip, amp);
+                yield return null;
+            }
+
+            if (_hasDynamicTarget && (_targetRb == null || !_targetRb || !_targetRb.gameObject.activeInHierarchy))
+            {
+                DestroyWhip();
+                yield break;
+            }
+
+            whipJoint = gameObject.AddComponent<DistanceJoint2D>();
+            whipJoint.enableCollision = false;
+            whipJoint.autoConfigureConnectedAnchor = false;
+            whipJoint.autoConfigureDistance = false;
+            whipJoint.maxDistanceOnly = true;
+            ModAPI.CreateParticleEffect("Flash", _hasDynamicTarget ? _targetRb.transform.position : (Vector3)_staticWorldAnchor);
+
+            if (_hasDynamicTarget)
+            {
+                whipJoint.connectedBody = _targetRb;
+                whipJoint.connectedAnchor = _targetLocalAnchor;
+            }
+            else
+            {
+                whipJoint.connectedBody = null;
+                whipJoint.connectedAnchor = _staticWorldAnchor;
+            }
+
+            whipJoint.anchor = Vector2.zero;
+
+            Vector2 curEnd2D = _hasDynamicTarget
+                ? (Vector2)_targetRb.transform.TransformPoint(_targetLocalAnchor)
+                : _staticWorldAnchor;
+            float initialDist = Vector2.Distance((Vector2)transform.position, curEnd2D);
+            whipJoint.distance = initialDist;
+            extending = false;
+
+            yield return StartCoroutine(PullRoutine());
+
+            while (whipJoint != null)
+            {
+                if (_hasDynamicTarget && (whipJoint.connectedBody == null || !whipJoint.connectedBody || !whipJoint.connectedBody.gameObject.activeInHierarchy))
+                {
+                    DestroyWhip();
+                    yield break;
+                }
+
+                Vector3 end = GetJointWorldAnchor();
+                UpdateLine(transform.position, end, SustainWobble * 0.45f);
+                yield return null;
+            }
+        }
+
+        private IEnumerator PullRoutine()
+        {
+            if (whipJoint == null) yield break;
+
+            float elapsed = 0f;
+            float startDist = whipJoint.distance;
+
+            while (whipJoint != null && elapsed < PullDuration)
+            {
+                if (_hasDynamicTarget && (whipJoint.connectedBody == null || !whipJoint.connectedBody || !whipJoint.connectedBody.gameObject.activeInHierarchy))
+                {
+                    DestroyWhip();
+                    yield break;
+                }
+
+                elapsed += Time.deltaTime;
+                float k = Mathf.Clamp01(elapsed / PullDuration);
+
+                whipJoint.distance = Mathf.Lerp(startDist, MinDistance, k);
+
+                Vector2 endPos = (Vector2)GetJointWorldAnchor();
+                Vector2 selfPos = (Vector2)transform.position;
+                Vector2 dir = selfPos - endPos;
+
+                if (whipJoint.connectedBody != null)
+                {
+                    whipJoint.connectedBody.AddForce(dir.normalized * PullForce, ForceMode2D.Force);
+                }
+
+                if (_selfRb != null)
+                {
+                    _selfRb.AddForce(-dir.normalized * (PullForce * 0.5f), ForceMode2D.Force);
+                }
+
+                UpdateLine(transform.position, endPos, Mathf.Lerp(SustainWobble, SustainWobble * 0.25f, k));
+                yield return null;
+            }
+        }
+
+        private Vector3 GetJointWorldAnchor()
+        {
+            if (whipJoint == null) return transform.position;
+            if (whipJoint.connectedBody != null)
+            {
+                return whipJoint.connectedBody.transform.TransformPoint(whipJoint.connectedAnchor);
+            }
+            return whipJoint.connectedAnchor;
+        }
+
+        private void UpdateLine(Vector3 start, Vector3 end, float amplitude)
+        {
+            if (_whipLine == null) return;
+
+            Vector3 delta = end - start;
+            float len = delta.magnitude;
+            Vector3 dir = len > 0.0001f ? delta / len : Vector3.up;
+            Vector3 normal = new Vector3(-dir.y, dir.x, 0f);
+
+            for (int i = 0; i < LineSegments; i++)
+            {
+                float t = (float)i / (LineSegments - 1);
+                Vector3 pos = Vector3.Lerp(start, end, t);
+                
+                float wave = Mathf.Sin(t * Mathf.PI);
+                float noise = Mathf.PerlinNoise(Time.time * 10f, t * 3.3f) - 0.5f;
+                Vector3 offset = normal * (wave * amplitude + noise * amplitude * 0.5f);
+                _whipLine.SetPosition(i, pos + offset);
+            }
+
+            if (_whipLine.material != null && _whipLine.material.mainTexture != null)
+            {
+                float tiling = Mathf.Max(1f, len * 2f);
+                _whipLine.material.mainTextureScale = new Vector2(tiling, 1f);
+            }
+
+            if (_whipGO != null)
+            {
+                _whipGO.transform.position = (start + end) * 0.5f;
+            }
+        }
+
+        private void DestroyWhip()
+        {
+            if (_whipRoutine != null)
+            {
+                StopCoroutine(_whipRoutine);
+                _whipRoutine = null;
+            }
+
+            if (whipJoint != null)
+            {
+                UnityEngine.Object.Destroy(whipJoint);
+                whipJoint = null;
+            }
+
+            if (_whipGO != null)
+            {
+                UnityEngine.Object.Destroy(_whipGO);
+                _whipGO = null;
+                _whipLine = null;
+            }
+
+            _targetRb = null;
+            _hasDynamicTarget = false;
+        }
+
+        private void OnDestroy()
+        {
+            DestroyWhip();
+        }
+    }
+
+    public class BifrostTeleportation : Power, Mod.ModAPIPlus.IUse2
+    {
+        public static BifrostTeleportation SetPower(PersonBehaviour person, LimbBehaviour attachLimb, Sprite icon)
+        {
+            var power = attachLimb.gameObject.AddComponent<BifrostTeleportation>();
+            power.Name = "Bifrost Teleportation";
+            power.Description = "Grants teleportation abilities via the bifrost.";
+            power.icon = icon;
+            power.targetLimb = TargettedLimb.Head;
+
+            return power;
+        }
+
+        public void Use2()
+        {
+            if (!Enabled)
+                return;
+
+            Vector2 center = (Vector2)transform.position;
+            const float radius = 3f;
+
+            Collider2D[] hits = Physics2D.OverlapCircleAll(center, radius);
+
+            var toTeleport = new List<Transform>();
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                var col = hits[i];
+                if (col == null) continue;
+
+                Rigidbody2D phys = col.GetComponent<Rigidbody2D>();
+
+                if (phys == null || transform.root.name.Contains("WORLD") || phys.bodyType != RigidbodyType2D.Dynamic) continue;
+
+                Transform t = phys.transform;
+                if(!toTeleport.Contains(t))
+                    toTeleport.Add(t);
+                
+            }
+
+            FindObjectOfType<BifrostTeleportHandler>().Teleport(toTeleport);
+        }
+
+        public class BifrostTeleportHandler : MonoBehaviour
+        {
+            public BifrostTeleportation CurrentUser;
+            public List<Transform> toTeleport;
+            public bool Teleporting;
+
+            private LineRenderer bifrostLine;
+            private LineRenderer previewLine;
+
+            private const float PreviewWidth = 0.1f;
+            private const float BeamMaxWidth = 0.9f;
+            private const float BeamInDuration = 0.5f;
+            private const float BeamOutDuration = 0.5f;
+            private const float BetweenBeamsPause = 0.5f;
+            private const float RayDownDistance = 15f;
+
+            public void Start()
+            {
+                bifrostLine = new GameObject("BifrostLine").AddComponent<LineRenderer>();
+                previewLine = new GameObject("PreviewLine").AddComponent<LineRenderer>();
+
+                bifrostLine.useWorldSpace = true;
+                previewLine.useWorldSpace = true;
+
+                bifrostLine.positionCount = 2;
+                previewLine.positionCount = 2;
+
+                var brightMat = Instantiate(ModAPI.FindMaterial("VeryBright"));
+                if (brightMat != null)
+                {
+                    bifrostLine.material = brightMat;
+                    bifrostLine.textureMode = LineTextureMode.Tile;
+                    if (Mod.Bifrost != null)
+                    {
+                        bifrostLine.material.mainTexture = Mod.Bifrost;
+                        bifrostLine.material.mainTexture.wrapMode = TextureWrapMode.Repeat;
+                    }
+                }
+
+                var defaultMat = Instantiate(ModAPI.FindMaterial("Sprites-Default"));
+                if (defaultMat != null)
+                {
+                    previewLine.material = defaultMat;
+                }
+
+                bifrostLine.sortingLayerName = Layers.Sorting.Top;
+                previewLine.sortingLayerName = Layers.Sorting.Top;
+
+                bifrostLine.numCornerVertices = 8;
+                bifrostLine.numCapVertices = 8;
+                bifrostLine.startColor = new Color(1f, 1f, 1f, 0f);
+                bifrostLine.endColor = new Color(1f, 1f, 1f, 0f);
+                bifrostLine.startWidth = 0f;
+                bifrostLine.endWidth = 0f;
+
+                previewLine.numCornerVertices = 4;
+                previewLine.numCapVertices = 4;
+                previewLine.startWidth = PreviewWidth;
+                previewLine.endWidth = PreviewWidth;
+                previewLine.startColor = new Color(0f, 1f, 0f, 1f);
+                previewLine.endColor = new Color(0f, 1f, 0f, 1f);
+
+                previewLine.enabled = false;
+                bifrostLine.enabled = false;
+            }
+
+            public void Teleport(List<Transform> teleportin)
+            {
+                if (Teleporting || teleportin == null || teleportin.Count == 0)
+                    return;
+
+                toTeleport = teleportin.Where(t => t != null).ToList();
+                if (toTeleport.Count == 0)
+                    return;
+
+                Teleporting = true;
+                previewLine.enabled = true;
+            }
+
+            public void FixedUpdate()
+            {
+                if(bifrostLine.enabled)
+                {
+                    CameraShakeBehaviour.main.Shake(bifrostLine.startWidth / 3, transform.position, 0f);
+                }
+            }
+
+            public void Update()
+            {
+                if (!Teleporting || toTeleport == null || toTeleport.Count == 0)
+                    return;
+
+                var cam = Camera.main;
+                if (cam == null)
+                    return;
+
+                Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
+                mousePos.z = 0f;
+
+                SetPreviewAtX(mousePos.x);
+
+                var overCol = Physics2D.OverlapPoint(mousePos);
+
+                if (overCol != null)
+                {
+                    previewLine.startColor = Color.red;
+                    previewLine.endColor = Color.red;
+                }
+                else
+                {
+                    previewLine.startColor = new Color(0f, 1f, 0f, 1f);
+                    previewLine.endColor = new Color(0f, 1f, 0f, 1f);
+                }
+
+                if (Input.GetMouseButtonDown(0))
+                {
+                    if (overCol != null)
+                    {
+                        try { UISoundBehaviour.Main.Error(); } catch { }
+                        ModAPI.Notify("Must not be inside of an object!");
+                        return;
+                    }
+
+                    var hit = Physics2D.Raycast(mousePos, Vector2.down, RayDownDistance);
+                    Vector2 targetPoint = hit.collider != null ? hit.point : (Vector2)mousePos;
+
+                    previewLine.enabled = false;
+                    StartCoroutine(StartTeleport(targetPoint));
+                    return;
+                }
+
+                if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
+                {
+                    Teleporting = false;
+                    previewLine.enabled = false;
+                    toTeleport = null;
+                }
+            }
+
+            public IEnumerator StartTeleport(Vector2 point)
+            {
+                Teleporting = false;
+                previewLine.enabled = false;
+                bifrostLine.enabled = true;
+
+                var roots = GetUniqueRoots(toTeleport);
+                if (roots.Count == 0)
+                {
+                    bifrostLine.enabled = false;
+                    yield break;
+                }
+
+                Vector3 originCenter = ComputePhysicsCenter(roots);
+
+                StartCoroutine(Mod.ModAPIPlus.PlaySound(originCenter, Mod.Bifrosty));
+
+                SetupBeamAtX(originCenter.x);
+                yield return AnimateBeam(0f, BeamMaxWidth, 0f, 1f, BeamInDuration);
+
+                Transform originalParent = transform.parent;
+                Transform selfRoot = transform.root;
+                bool containsSelfRoot = roots.Contains(selfRoot);
+                if (containsSelfRoot)
+                {
+                    transform.SetParent(null, true);
+                }
+
+                var rbCache = new Dictionary<Rigidbody2D, (Vector2 vel, float angVel)>();
+                var allRBs = CollectRigidbodies(roots);
+                foreach (var rb in allRBs)
+                {
+                    if (rb == null) continue;
+                    rbCache[rb] = (rb.velocity, rb.angularVelocity);
+                }
+
+                var deactivated = new List<GameObject>();
+                foreach (var r in roots)
+                {
+                    var go = r.gameObject;
+                    if (go != null && go.activeSelf)
+                    {
+                        go.SetActive(false);
+                        deactivated.Add(go);
+                    }
+                }
+
+                yield return AnimateBeam(BeamMaxWidth, 0f, 0.5f, 0f, BeamOutDuration);
+                yield return new WaitForSeconds(BetweenBeamsPause);
+
+                SetupBeamAtX(point.x);
+                yield return AnimateBeam(0f, BeamMaxWidth, 0f, 0.5f, BeamInDuration);
+
+                StartCoroutine(Mod.ModAPIPlus.PlaySound(point, Mod.Bifrosty));
+
+                Vector3 delta = (Vector3)point - originCenter;
+                ApplyDeltaToRigidbodies(allRBs, delta);
+
+                foreach (var go in deactivated)
+                {
+                    if (go != null) go.SetActive(true);
+                }
+                foreach (var kv in rbCache)
+                {
+                    var rb = kv.Key;
+                    if (rb == null) continue;
+                    rb.velocity = kv.Value.vel;
+                    rb.angularVelocity = kv.Value.angVel;
+                }
+
+                if (containsSelfRoot)
+                {
+                    transform.SetParent(originalParent, true);
+                }
+
+                foreach (var r in roots)
+                {
+                    if (r.TryGetComponent<PersonBehaviour>(out var person))
+                    {
+                        foreach (var limb1 in person.Limbs)
+                            foreach (var limb2 in person.Limbs)
+                                Physics2D.IgnoreCollision(limb1.GetComponent<Collider2D>(), limb2.GetComponent<Collider2D>(), true);
+                    }
+                }
+
+                yield return AnimateBeam(BeamMaxWidth, 0f, 0.5f, 0f, BeamOutDuration);
+                bifrostLine.enabled = false;
+
+                toTeleport = null;
+            }
+
+            private void SetPreviewAtX(float x)
+            {
+                const float YExtent = 10000f;
+                previewLine.SetPosition(0, new Vector3(x, +YExtent, 0f));
+                previewLine.SetPosition(1, new Vector3(x, -YExtent, 0f));
+            }
+
+            private void SetupBeamAtX(float x)
+            {
+                const float YExtent = 10000f;
+                bifrostLine.SetPosition(0, new Vector3(x, +YExtent, 0f));
+                bifrostLine.SetPosition(1, new Vector3(x, -YExtent, 0f));
+                bifrostLine.startWidth = 0f;
+                bifrostLine.endWidth = 0f;
+                var c0 = bifrostLine.startColor; c0.a = 0f;
+                var c1 = bifrostLine.endColor; c1.a = 0f;
+                bifrostLine.startColor = c0;
+                bifrostLine.endColor = c1;
+            }
+
+            private IEnumerator AnimateBeam(float fromWidth, float toWidth, float fromAlpha, float toAlpha, float duration)
+            {
+                float t = 0f;
+                float texOffset = 0f;
+                const float scrollSpeed = 3.5f;
+
+                bifrostLine.startWidth = fromWidth;
+                bifrostLine.endWidth = fromWidth;
+                var sc = bifrostLine.startColor; sc.a = fromAlpha;
+                var ec = bifrostLine.endColor; ec.a = fromAlpha;
+                bifrostLine.startColor = sc;
+                bifrostLine.endColor = ec;
+
+                while (t < duration)
+                {
+                    t += Time.deltaTime;
+                    float k = Mathf.Clamp01(t / duration);
+                    float w = Mathf.Lerp(fromWidth, toWidth, k);
+                    float a = Mathf.Lerp(fromAlpha, toAlpha, k);
+
+                    bifrostLine.startWidth = w;
+                    bifrostLine.endWidth = w;
+
+                    sc.a = a; ec.a = a;
+                    bifrostLine.startColor = sc;
+                    bifrostLine.endColor = ec;
+
+                    texOffset += Time.deltaTime * scrollSpeed;
+                    try
+                    {
+                        if (bifrostLine.material != null && bifrostLine.material.mainTexture != null)
+                        {
+                            bifrostLine.material.mainTextureOffset = new Vector2(texOffset * 2, texOffset);
+                        }
+                    }
+                    catch { }
+
+                    yield return null;
+                }
+            }
+
+            private static List<Transform> GetUniqueRoots(List<Transform> transforms)
+            {
+                var set = new HashSet<Transform>();
+                var list = new List<Transform>();
+                if (transforms == null) return list;
+
+                for (int i = 0; i < transforms.Count; i++)
+                {
+                    var t = transforms[i];
+                    if (t == null) continue;
+                    var root = t.root;
+                    if (root == null) continue;
+                    if (set.Add(root))
+                    {
+                        list.Add(root);
+                    }
+                }
+                return list;
+            }
+
+            private static List<Rigidbody2D> CollectRigidbodies(List<Transform> roots)
+            {
+                var rbs = new List<Rigidbody2D>();
+                foreach (var r in roots)
+                {
+                    if (r == null) continue;
+                    rbs.AddRange(r.GetComponentsInChildren<Rigidbody2D>(true));
+                }
+                return rbs;
+            }
+
+            private static Vector3 ComputePhysicsCenter(List<Transform> roots)
+            {
+                var rbs = CollectRigidbodies(roots);
+                if (rbs.Count == 0)
+                {
+                    return ComputeCenter(roots);
+                }
+
+                Vector2 sum = Vector2.zero;
+                int count = 0;
+
+                for (int i = 0; i < rbs.Count; i++)
+                {
+                    var rb = rbs[i];
+                    if (rb == null) continue;
+
+                    var col = rb.GetComponent<Collider2D>();
+                    if (col != null)
+                    {
+                        sum += (Vector2)col.bounds.center;
+                    }
+                    else
+                    {
+                        sum += rb.position;
+                    }
+                    count++;
+                }
+
+                return count > 0 ? sum / count : Vector2.zero;
+            }
+
+            private static void ApplyDeltaToRigidbodies(List<Rigidbody2D> rbs, Vector3 delta)
+            {
+                if (rbs == null || rbs.Count == 0) return;
+                var d2 = (Vector2)delta;
+
+                for (int i = 0; i < rbs.Count; i++)
+                {
+                    var rb = rbs[i];
+                    if (rb == null) continue;
+
+                    rb.position += d2;
+
+                    var t = rb.transform;
+                    if (t != null) t.position += delta;
+                }
+            }
+
+            private static Vector3 ComputeCenter(IEnumerable<Transform> transforms)
+            {
+                Vector3 sum = Vector3.zero;
+                int count = 0;
+                foreach (var t in transforms)
+                {
+                    if (t == null) continue;
+                    sum += t.position;
+                    count++;
+                }
+                return count > 0 ? sum / count : Vector3.zero;
+            }
+        }
+    }
+
     public class ElectricAuraFlight : Power, Messages.IUse
     {
         public bool AuraActive;
@@ -2065,7 +2869,7 @@ namespace Mod
             power.Description =
                 "Envelops user in an electrical aura and grants flight.\nActivating toggles both effects.\nUser becomes impervious to electricity and charges objects on impact while active.";
             power.icon = icon;
-            power.targetLimb = TargettedLimb.Head;
+            power.targetLimb = TargettedLimb.Body;
 
             foreach (var limb in person.Limbs)
             {
@@ -2778,8 +3582,7 @@ namespace Mod
                 n.constantMax *= 0.5f;
                 main.simulationSpeed *= 1.5f;
                 emp.transform.GetChild(0).GetComponent<ParticleSystem>().startColor = new Color(0.8f, 0.8f, 1, 1);
-                var imp = ModAPI.FindSpawnable("Power Hammer").Prefab.GetComponent<PowerHammerBehaviour>().ImpactClips;
-                StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position ,imp[UnityEngine.Random.Range(0, imp.Length)]));
+                StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position , FindObjectOfType<LightningToolEntityBehaviour>().Thunder.PickRandom()));
 
                 Mod.ModAPIPlus.SetPFXColors(ModAPI.CreateParticleEffect(ParticleEffects.BigExplosion, transform.position), new Color(0.8f, 0.8f, 1, 1));
                 
@@ -2904,7 +3707,7 @@ namespace Mod
     {
         bool summoning = false;
         PhysicalBehaviour phys;
-        HammerSummon hammerSummoner;
+        Hammer.HammerSummon hammerSummoner;
 
         public float followDistance = 1.5f;
         public float damping = 0.3f;
@@ -2919,6 +3722,8 @@ namespace Mod
         {
             if(phys.beingHeldByGripper)
                 return;
+
+            StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Hammer));
 
             phys.rigidbody.gravityScale = 0;
             hammerSummoner = summoner;
@@ -3006,7 +3811,7 @@ namespace Mod
             hammerSummoner = null;
             phys.rigidbody.gravityScale = 1;
 
-            if (gripper.TryGetComponent<HammerSummon>(out var hammerSummon))
+            if (gripper.TryGetComponent<Hammer.HammerSummon>(out var hammerSummon))
             {
                 hammerSummon.summonable = this;
             }
@@ -4155,11 +4960,14 @@ namespace Mod
             emp.transform.position = transform.position;
             emp.transform.localScale = Vector3.one * (harmless?0.07f:0.1f);
             var main = emp.GetComponent<ParticleSystem>().main;
-            main.startColor = color;
+            //main.startColor = color;
             var n = main.startLifetime;
             n.constantMax *= 0.5f;
             main.simulationSpeed *= 1.5f;
-            emp.transform.GetChild(0).GetComponent<ParticleSystem>().startColor = color;
+            foreach(var childPFX in emp.GetComponentsInChildren<ParticleSystem>())
+                if(childPFX != emp.GetComponent<ParticleSystem>())
+                    childPFX.startColor = color;
+
             var imp = ModAPI.FindSpawnable("Power Hammer").Prefab.GetComponent<PowerHammerBehaviour>().ImpactClips;
             StartCoroutine(PlaySound(imp[UnityEngine.Random.Range(0, imp.Length)]));
 
@@ -9477,12 +10285,16 @@ namespace Mod
         public Sprite WearSprite;
         public Sprite UnwearSprite;
         public string OriginalObjectName;
+        public string LimbName;
 
-        public static HatBehaviour CreateHat(LimbBehaviour targetLimb, Sprite sprite, PhysicalProperties properties)
+        public UnityEvent OnWear = new UnityEvent();
+        public UnityEvent OnUnwear = new UnityEvent();
+
+        public static HatBehaviour CreateHat(LimbBehaviour targetLimb, Sprite sprite, PhysicalProperties properties, Sprite HatHead = null)
         {
             var Hat = ModAPI.CreatePhysicalObject("Hat", sprite);
             Hat.GetComponent<PhysicalBehaviour>().Properties = properties;
-            var hatbeh = HatBehaviour.AddHatStuff(targetLimb, Hat);
+            var hatbeh = HatBehaviour.AddHatStuff(targetLimb, Hat, HatHead);
             Destroy(Hat.GetComponent<BoxCollider2D>());
             Timtam.CreateCollider(Hat.GetComponent<SpriteRenderer>());
             return hatbeh;
@@ -9492,6 +10304,7 @@ namespace Mod
         {
             var hatBehaviour = hat.AddComponent<HatBehaviour>();
 
+            hatBehaviour.LimbName = limb.name;
             hatBehaviour.joint = hat.gameObject.AddComponent<FixedJoint2D>();
             hat.transform.localScale = limb.Person.transform.localScale;
             hat.transform.position = limb.transform.position;
@@ -9515,6 +10328,20 @@ namespace Mod
             {
                 Physics2D.IgnoreCollision(limbb.GetComponent<Collider2D>(), hat.GetComponent<Collider2D>(), true);
             }
+
+            return hatBehaviour;
+        }
+
+        public static HatBehaviour AddHatStuffNoLimb(string limbName, GameObject hat)
+        {
+            var hatBehaviour = hat.AddComponent<HatBehaviour>();
+
+            hatBehaviour.LimbName = limbName;
+            hat.gameObject.layer = 10;
+            hatBehaviour.GetComponent<Rigidbody2D>().mass = 0.01f;
+            hat.GetComponent<PhysicalBehaviour>().HoldingPositions = new Vector3[1];
+            hat.GetComponent<PhysicalBehaviour>().HoldingPositions[0] = new Vector3(0, 0, 0);
+            hat.GetComponent<PhysicalBehaviour>().colliders = hat.GetComponents<Collider2D>();
 
             return hatBehaviour;
         }
@@ -9569,6 +10396,7 @@ namespace Mod
             GetComponent<PhysicalBehaviour>().Selectable = true;
             if (joint)
             {
+                OnUnwear.Invoke();
                 transform.position = joint.connectedBody.transform.position;
                 transform.rotation = joint.connectedBody.transform.rotation;
             }
@@ -9581,12 +10409,19 @@ namespace Mod
             canWear = true;
             Collider2D[] collider2Ds = new Collider2D[10];
             Physics2D.OverlapCollider(GetComponent<Collider2D>(), new ContactFilter2D() { useTriggers = false, useLayerMask = false }, collider2Ds);
+            bool foundHead = false;
             foreach (var hit in collider2Ds)
-                if (hit.name.Contains("Head") && hit.TryGetComponent<LimbBehaviour>(out var limb))
+                if (hit.name.Contains(LimbName) && hit.TryGetComponent<LimbBehaviour>(out var limb))
+                {
+                    foundHead = true;
                     StartCoroutine(Wear(limb));
-            transform.localScale = joint.connectedBody.transform.root.localScale;
-            transform.position = joint.connectedBody.transform.position;
-            transform.rotation = joint.connectedBody.transform.rotation;
+                    transform.localScale = joint.connectedBody.transform.root.localScale;
+                    transform.position = joint.connectedBody.transform.position;
+                    transform.rotation = joint.connectedBody.transform.rotation;
+                    break;
+                }
+            if (!foundHead)
+                StartCoroutine(ReenableCollision(joint.connectedBody.GetComponent<LimbBehaviour>().Person.Limbs.ToList()));
         }
 
         public IEnumerator ReenableCollision(List<LimbBehaviour> limbs)
@@ -9601,7 +10436,7 @@ namespace Mod
         public void OnCollisionEnter2D(Collision2D col)
         {
             if (col.gameObject.TryGetComponent<LimbBehaviour>(out var limb) && canWear == true && joint == null)
-                if (limb.name == "Head")
+                if (limb.name == LimbName)
                     StartCoroutine(Wear(limb));
 
             if (col.gameObject.GetComponent<HatBehaviour>())
@@ -9630,6 +10465,7 @@ namespace Mod
             GetComponent<SpriteRenderer>().sortingOrder = limb.GetComponent<SpriteRenderer>().sortingOrder + 1;
             limb.gameObject.AddComponent<HasHat>().hat = this;
             canWear = false;
+            OnWear.Invoke();
         }
 
         [SkipSerialisation]
@@ -11199,45 +12035,6 @@ namespace Mod
         }
     }
 
-    public class FighterLimb : MonoBehaviour
-    {
-        public bool CanFight = false;
-        public float strength = 1;
-        public bool Shake = false;
-
-        public void OnCollisionEnter2D(Collision2D col)
-        {
-            if (CanFight)
-            {
-                if (col.relativeVelocity.magnitude > 2)
-                {
-                    if (Shake)
-                    {
-                        if (CameraShakeBehaviour.main != null)
-                        {
-                            CameraShakeBehaviour.main.Shake(col.relativeVelocity.magnitude * 0.1f, col.contacts[0].point, 1);
-                        }
-                        ModAPI.CreateParticleEffect("Vapor", col.contacts[0].point);
-                    }
-
-                    if (col.collider != null && col.collider.gameObject != null && col.collider.gameObject.TryGetComponent<LimbBehaviour>(out var limb))
-                    {
-                        limb.Damage(col.relativeVelocity.magnitude * strength);
-                        if (col.relativeVelocity.magnitude > 10 / strength)
-                        {
-                            var effect = ModAPI.CreateParticleEffect("BloodExplosion", col.contacts[0].point);
-                            var ps = effect != null ? effect.GetComponent<ParticleSystem>() : null;
-                            if (ps != null && limb.CirculationBehaviour != null)
-                            {
-                                ps.startColor = limb.CirculationBehaviour.GetComputedColor();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     public class Fighter : Power
     {
         public static Power SetPower(PersonBehaviour Person, Sprite icon, float strength = 0.5f, bool shake = false)
@@ -11290,6 +12087,39 @@ namespace Mod
             foreach (var f in GetComponentsInChildren<FighterLimb>())
             {
                 f.CanFight = false;
+            }
+        }
+
+        public class FighterLimb : MonoBehaviour
+        {
+            public bool CanFight = false;
+            public float strength = 1;
+            public bool Shake = false;
+
+            public void OnCollisionEnter2D(Collision2D col)
+            {
+                if (CanFight)
+                {
+                    if (col.relativeVelocity.magnitude > 2 && col.rigidbody.bodyType == RigidbodyType2D.Dynamic)
+                    {
+                        if (Shake)
+                            CameraShakeBehaviour.main.Shake(col.relativeVelocity.magnitude * 0.1f, col.contacts[0].point, 1);
+
+                        ModAPI.CreateParticleEffect("Vapor", col.contacts[0].point);
+
+                        if (col.collider != null && col.collider.gameObject != null && col.collider.gameObject.TryGetComponent<LimbBehaviour>(out var limb))
+                        {
+                            limb.Damage(col.relativeVelocity.magnitude * strength);
+                            if (col.relativeVelocity.magnitude > 10 / strength)
+                            {
+                                var effect = ModAPI.CreateParticleEffect("BloodExplosion", col.contacts[0].point);
+                                var ps = effect != null ? effect.GetComponent<ParticleSystem>() : null;
+                                if (ps != null && limb.CirculationBehaviour != null)
+                                    ps.startColor = limb.CirculationBehaviour.GetComputedColor();
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -11569,10 +12399,10 @@ namespace Mod
 
             foreach (var limb in GetComponent<PersonBehaviour>().Limbs)
             {
-                limb.BaseStrength *= NewMass > 1 ? (NewMass * 10) < 15 ? NewMass * 10 : NewMass * 5 : NewMass * 7;
+                limb.BaseStrength *= NewMass > 1 ? (NewMass * 10) < 15 ? NewMass * 10 : NewMass * 5 : NewMass * 6;
 
                 if (limb.FakeUprightForce > 0)
-                    limb.FakeUprightForce *= NewMass > 1 ? NewMass < 15 ? NewMass + 10 : (NewMass * 0.75f) : NewMass * 15;
+                    limb.FakeUprightForce *= NewMass > 1 ? NewMass < 15 ? NewMass + 10 : (NewMass * 0.75f) : NewMass * 10;
 
                 if (limb.GetComponent<Rigidbody2D>())
                     limb.GetComponent<Rigidbody2D>().mass = NewMass;
@@ -11723,6 +12553,7 @@ namespace Mod
 
             FixedJoint2D firstJoint = cape.capePoints[0].AddComponent<FixedJoint2D>();
             firstJoint.connectedBody = cape.GetComponent<Rigidbody2D>();
+            firstJoint.autoConfigureConnectedAnchor = false;
 
             for (int i = 0; i < cape.numberOfPoints - 1; i++)
             {
