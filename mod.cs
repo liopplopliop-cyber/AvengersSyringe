@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -196,6 +195,7 @@ namespace Mod
 
         public static Texture2D Bifrost = ModAPI.LoadTexture("Art/Objects/Bifrost.png");
         public static Texture2D Whip = ModAPI.LoadTexture("Art/Objects/Whip.png");
+        public static Sprite Arrow = ModAPI.LoadSprite("Art/UI/Arrow.png");
 
         #endregion
 
@@ -240,6 +240,9 @@ namespace Mod
         public static AudioClip Hammer = ModAPI.LoadSound("Sounds/Hammer.wav");
         public static AudioClip Bifrosty = ModAPI.LoadSound("Sounds/Bifrosty.wav");
         public static AudioClip Whipy = ModAPI.LoadSound("Sounds/Whip.wav");
+        public static AudioClip Teleport = ModAPI.LoadSound("Sounds/Teleport.wav");
+        public static AudioClip MagicShoot = ModAPI.LoadSound("Sounds/Projectile.wav");
+        public static AudioClip Clock = ModAPI.LoadSound("Sounds/Clock.wav");
         #endregion
 
         #region LoadOther
@@ -700,6 +703,7 @@ namespace Mod
             Settings.main.AddSetting("UI Size", "Adjust the UI scale if it is incorrect", "UISize", 0.9f, typeof(float), 0.5f, 1.5f);
             Settings.main.AddSetting("Capes", "When disabled, no characters will spawn with capes", "UseCapes", true, typeof(bool));
             Settings.main.AddSetting("Stronger healing", "Automatically enables the Speed Healing power on entities using the slower varient.", "SpeedHeal", false, typeof(bool));
+            Settings.main.AddSetting("Flight Stun", "Adjust the duration that a character is stunned when hit while flying", "KnockoutTime", 1.5f, typeof(float), 0f, 5f);
             Settings.main.AddSetting("Durability", "Changes the damage dampening on speed healing and super strength, divides impact damage variable by whatever is inputted in this setting, and stacks if it has both strength and healing.", "DamDamp", 10, typeof(int), 1, 40);
             Settings.main.AddSetting("Ultron Body Swapping", "Toggles whether Ultron can swap bodies when killed automatically", "UltronSwapping", true, typeof(bool));
             Settings.main.AddSetting("Default Web Type", "(1 = normal, 2 = connector, 3 = grapple, 4 = electric, 5 = webshot, 6 = none)", "DefaultWeb", 1, typeof(int), 1, 6);
@@ -724,6 +728,10 @@ namespace Mod
             AbilityMenus.MenuPrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/spidermenu"), "Ability Menus");
             TextureMenu.MenuPrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/spidermenu"), "Skin Menu");
             FakeNotifDissapearer.Start = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/hovername"), "HoverName");
+            Portaller.PortalPrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "portal");
+            MagicProjectile.ProjectilePrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Projectile");
+            Telekinesis.RunePrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Rune");
+            TimeFreeze.RunePrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "TimeRune");
             #endregion
         }
 
@@ -1148,7 +1156,13 @@ namespace Mod
                 {
                     if (Limbs.gameObject.name.Contains("LowerArm"))
                     {
-                        MagicWhip.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Magic Whip.png")).EnablePower();
+                        MagicWhip.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Magic Whip.png"));
+                        Portaller.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Portal.png"));
+                        MagicProjectile.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Projectile.png")).EnablePower();
+                        TimeFreeze.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Projectile.png"));
+                        Telekinesis.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Projectile.png"));
+                        MysticFist.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Projectile.png"));
+                        Limbs.gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(Limbs.gameObject);
                     }
 
                     if (Limbs.gameObject.name.Contains("ArmFront"))
@@ -1171,7 +1185,6 @@ namespace Mod
                         Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
                     }
                 }
-
 
                 /*
                 var inst = Instantiate(ModAPI.FindSpawnable("[Nova's Avengers Mod] Dr. Strange's Cape").Prefab);
@@ -2075,6 +2088,862 @@ namespace Mod
         }
     }
 
+    public class MysticFist : Power, Mod.ModAPIPlus.IUse2
+    {
+        GameObject PFX;
+
+        bool Punching = false;
+
+        public static MysticFist SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
+        {
+            var power = Limb.gameObject.AddComponent<MysticFist>();
+            power.Name = "Mystic Fist";
+            power.Description = "Blocks most projectile attacks, and stuns enemies on impact.";
+            power.icon = icon;
+            power.targetLimb = power.name.Contains("Front") ? TargettedLimb.FrontArm : TargettedLimb.BackArm;
+
+            power.PFX = Instantiate(Telekinesis.RunePrefab);
+            power.PFX.GetComponent<ParticleSystem>().Stop();
+            power.PFX.transform.SetParent(Limb.transform, false);
+            foreach (var ps in power.PFX.GetComponentsInChildren<ParticleSystem>())
+            {
+                ps.transform.localScale = Vector3.one * 0.25f;
+            }
+            power.PFX.transform.localPosition = new Vector3(0, -0.2f, 0);
+            return power;
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+            Punching = false;
+            PFX.GetComponent<ParticleSystem>().Stop();
+        }
+
+        public void Use2()
+        {
+            if(!Enabled) return;
+            Punching = !Punching;
+            if(!Punching)
+            {
+                PFX.GetComponent<ParticleSystem>().Stop();
+            }else
+            {
+                PFX.GetComponent<ParticleSystem>().Play();
+            }
+        }
+
+        private static readonly Collider2D[] _overlapBuf = new Collider2D[64];
+        private static readonly List<LineRenderer> _tracerCache = new List<LineRenderer>(64);
+        private static readonly HashSet<int> _processedIds = new HashSet<int>();
+        private float _nextScanTime;
+        private float _nextTracerRefreshTime;
+        private const float ScanInterval = 0.05f;
+        private const float TracerRefreshInterval = 0.25f;
+
+        public void Update()
+        {
+            if (!Enabled || !Punching) return;
+
+            CheckBulletTracersFast();
+        }
+
+        private void CheckBulletTracersFast()
+        {
+            const float radius = 7f;
+            float radiusSqr = radius * radius;
+            Vector3 center3 = transform.position;
+            Vector2 center = center3;
+
+            // 1) Collider-based quick scan (NonAlloc to avoid GC)
+            int count = Physics2D.OverlapCircleNonAlloc(center, radius, _overlapBuf);
+            if (count > 0)
+            {
+                _processedIds.Clear();
+
+                for (int i = 0; i < count; i++)
+                {
+                    var c = _overlapBuf[i];
+                    if (!c) continue;
+
+                    // BlasterboltBehaviour
+                    if (c.TryGetComponent<BlasterboltBehaviour>(out var bb) || c.GetComponentInParent<BlasterboltBehaviour>())
+                    {
+                        if (bb && _processedIds.Add(bb.gameObject.GetInstanceID()))
+                        {
+                            Vector3 p = bb.transform.position;
+                            if ((p - center3).sqrMagnitude <= radiusSqr)
+                            {
+                                ModAPI.CreateParticleEffect("Flash", p);
+                                Destroy(bb.gameObject);
+                            }
+                        }
+                    }
+
+                    // ProjectileBehaviour
+                    if (c.TryGetComponent<ProjectileBehaviour>(out var pj) || c.GetComponentInParent<ProjectileBehaviour>())
+                    {
+                        if (pj && _processedIds.Add(pj.gameObject.GetInstanceID()))
+                        {
+                            Vector3 p = pj.transform.position;
+                            if ((p - center3).sqrMagnitude <= radiusSqr)
+                            {
+                                ModAPI.CreateParticleEffect("Flash", p);
+                                Destroy(pj.gameObject);
+                            }
+                        }
+                    }
+
+                    // MagicProjectile.MagicProj
+                    if (c.TryGetComponent<MagicProjectile.MagicProj>(out var mp) || c.GetComponentInParent<MagicProjectile.MagicProj>())
+                    {
+                        if (mp && _processedIds.Add(mp.gameObject.GetInstanceID()))
+                        {
+                            Vector3 p = mp.transform.position;
+                            if ((p - center3).sqrMagnitude <= radiusSqr)
+                            {
+                                ModAPI.CreateParticleEffect("Flash", p);
+                                Destroy(mp.gameObject);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2) Tracer (LineRenderer) handling: cache and check segments near us
+            if (Time.time >= _nextTracerRefreshTime)
+            {
+                _nextTracerRefreshTime = Time.time + TracerRefreshInterval;
+                RebuildTracerCache();
+            }
+
+            if (_tracerCache.Count == 0)
+                return;
+
+            for (int i = _tracerCache.Count - 1; i >= 0; i--)
+            {
+                var lr = _tracerCache[i];
+                if (!lr)
+                {
+                    _tracerCache.RemoveAt(i);
+                    continue;
+                }
+
+                int pc = lr.positionCount;
+                if (pc < 2) continue;
+
+                bool world = lr.useWorldSpace;
+                int startIdx = Mathf.Max(0, pc - 1 - 6);
+                Vector3 prev = GetWorldPos(lr, startIdx, world);
+
+                for (int p = startIdx + 1; p < pc; p++)
+                {
+                    Vector3 cur = GetWorldPos(lr, p, world);
+                    Vector3 seg = cur - prev;
+                    float segLenSqr = seg.sqrMagnitude;
+                    if (segLenSqr > 0.0001f)
+                    {
+                        float t = Vector3.Dot(center3 - prev, seg) / segLenSqr;
+                        t = Mathf.Clamp01(t);
+                        Vector3 closest = prev + seg * t;
+
+                        if ((closest - center3).sqrMagnitude <= radiusSqr)
+                        {
+                            ModAPI.CreateParticleEffect("Flash", closest);
+                            Destroy(lr.gameObject);
+                            _tracerCache.RemoveAt(i);
+                            break;
+                        }
+                    }
+
+                    prev = cur;
+                }
+            }
+        }
+
+        private static void RebuildTracerCache()
+        {
+            // Refresh the cache infrequently to avoid per-frame allocations/costs.
+            // PoolableSizeHelper objects are searched here, not every scan.
+            var helpers = UnityEngine.Object.FindObjectsOfType<PoolableSizeHelper>(false);
+            _tracerCache.Clear();
+            for (int i = 0; i < helpers.Length; i++)
+            {
+                var h = helpers[i];
+                if (!h) continue;
+                if (h.name != "Tracer poolable(Clone)") continue;
+                if (h.TryGetComponent<LineRenderer>(out var lr) && lr)
+                {
+                    _tracerCache.Add(lr);
+                }
+            }
+        }
+
+        private static Vector3 GetWorldPos(LineRenderer lr, int index, bool world)
+        {
+            var raw = lr.GetPosition(index);
+            return world ? raw : lr.transform.TransformPoint(raw);
+        }
+
+        public void OnCollisionEnter2D(Collision2D col)
+        {
+            if (!Enabled || !Punching)
+                return;
+
+            Vector2 relativeVelocity = col.relativeVelocity;
+
+            float impactStrength = relativeVelocity.magnitude * 2;
+
+            if (col.gameObject.GetComponent<Rigidbody2D>() && col.relativeVelocity.magnitude > 3)
+            {
+                Vector2 directionToThisObject = (GetComponent<Rigidbody2D>().position - col.rigidbody.position).normalized;
+
+                float dotProduct = Vector2.Dot(relativeVelocity, directionToThisObject);
+
+                if (dotProduct > 0)
+                {
+                    col.gameObject.GetComponent<Rigidbody2D>().velocity += -relativeVelocity.normalized * impactStrength;
+                    CameraShakeBehaviour.main.Shake(7, base.transform.position);
+                    if (col.gameObject.GetComponent<PhysicalBehaviour>())
+                        col.gameObject.GetComponent<PhysicalBehaviour>().charge += impactStrength / 10;
+                    ModAPI.CreateParticleEffect("Flash", base.transform.position);
+                }
+
+            }
+        }
+    }
+
+    public class TimeFreeze : Power, Messages.IUse
+    {
+        public static GameObject RunePrefab;
+
+        public Transform Stopped;
+        public GameObject PFX;
+
+        public static TimeFreeze SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
+        {
+            var power = Limb.gameObject.AddComponent<TimeFreeze>();
+            power.Name = "Time Freeze";
+            power.Description = "Freezes any object the user aims at, velocity builds on the victim";
+            power.icon = icon;
+
+            if (power.name.Contains("Front"))
+            {
+                power.targetLimb = TargettedLimb.FrontArm;
+            }
+            else
+            {
+                power.targetLimb = TargettedLimb.BackArm;
+            }
+
+            power.PFX = Instantiate(RunePrefab);
+            power.PFX.GetComponent<ParticleSystem>().Stop();
+
+            return power;
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+
+            if (Stopped != null)
+            {
+                foreach (var physicalBehaviour in Stopped.GetComponentsInChildren<PhysicalBehaviour>())
+                {
+                    var freeze = physicalBehaviour.GetComponent<FreezeBehaviour2>();
+                    if (freeze != null)
+                    {
+                        Destroy(freeze);
+                    }
+                }
+                PFX.GetComponent<ParticleSystem>().Stop();
+                Stopped = null;
+            }
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled)
+                return;
+
+            if(Stopped != null)
+            {
+                foreach (var physicalBehaviour in Stopped.GetComponentsInChildren<PhysicalBehaviour>())
+                {
+                    var freeze = physicalBehaviour.GetComponent<FreezeBehaviour2>();
+                    if (freeze != null)
+                    {
+                        Destroy(freeze);
+                    }
+                }
+                PFX.GetComponent<ParticleSystem>().Stop();
+                Stopped = null;
+                return;
+            }
+
+            var origin = (Vector2)transform.position;
+            var dir = -(Vector2)transform.up;
+
+            RaycastHit2D[] hits = Physics2D.RaycastAll(origin, dir, 10);
+            RaycastHit2D chosen = new RaycastHit2D();
+            foreach (var hit in hits)
+            {
+                if (hit.collider == null) continue;
+                if (hit.transform == null) continue;
+                if (hit.transform.root == transform.root) continue;
+                if (hit.rigidbody && hit.rigidbody.bodyType != RigidbodyType2D.Dynamic) continue;
+
+                if (hit.collider.GetComponent<PhysicalBehaviour>())
+                {
+                    chosen = hit;
+                    break;
+                }
+            }
+
+            if (chosen.collider == null)
+            {
+                return;
+            }
+
+            StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Clock));
+
+            Stopped = chosen.transform.root;
+
+            Vector2 pfxPos = Vector2.zero;
+
+            List<PhysicalBehaviour> colliders = Stopped.GetComponentsInChildren<PhysicalBehaviour>().ToList();
+
+            foreach (var physicalBehaviour in colliders)
+            {
+                pfxPos += (Vector2)physicalBehaviour.transform.position;
+
+                if (physicalBehaviour.GetComponent<FreezeBehaviour2>() == null)
+                {
+                    physicalBehaviour.gameObject.AddComponent<FreezeBehaviour2>();
+                }
+            }
+
+            pfxPos /= colliders.Count;
+
+            PFX.transform.position = pfxPos;
+
+            PFX.GetComponent<ParticleSystem>().Play();
+        }
+
+    }
+
+    public class FreezeBehaviour2 : MonoBehaviour
+    {
+        private Rigidbody2D rb;
+        public Vector2 velocity;
+        public float angularVelocity;
+        private LineRenderer lineRenderer;
+        Transform[] arrows;
+        Transform LastArrow;
+
+        public void Start()
+        {
+            rb = GetComponent<Rigidbody2D>();
+
+            if (rb.bodyType == RigidbodyType2D.Static)
+                return;
+
+            velocity = rb.velocity;
+            angularVelocity = rb.angularVelocity;
+            FreezeStackController.RequestFreeze(rb);
+
+            var line = new GameObject("RenderThing");
+            line.AddComponent<ExistInDetailView>();
+            line.transform.parent = transform;
+            line.transform.localPosition = Vector2.zero;
+            line.transform.localScale = Vector2.one;
+            lineRenderer = line.gameObject.AddComponent<LineRenderer>();
+            lineRenderer.positionCount = 2;
+            lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+            lineRenderer.widthMultiplier = 0.05f;
+            lineRenderer.startColor = new Color(1f, 1f, 1f, 0.05f);
+            lineRenderer.endColor = new Color(1f, 1f, 1f, 0.05f);
+            lineRenderer.useWorldSpace = true;
+            lineRenderer.sortingLayerName = "Top";
+
+            var lastArrow = new GameObject("aa");
+            lastArrow.name = "LastArrow";
+            lastArrow.transform.SetParent(line.transform);
+            lastArrow.transform.localScale = new Vector3(0.35f, 0.35f, 0.35f);
+            lastArrow.AddComponent<SpriteRenderer>().sprite = Mod.Arrow;
+            lastArrow.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+            lastArrow.GetComponent<SpriteRenderer>().material = new Material(Shader.Find("Sprites/Default")) { color = Color.gray };
+            lastArrow.GetComponent<SpriteRenderer>().sortingOrder = 5;
+            Destroy(lastArrow.GetComponent<Collider>());
+            LastArrow = lastArrow.transform;
+
+            for (int i = 0; i < 1; i++)
+            {
+                var arrow = new GameObject("a");
+                arrow.name = "ArrowHead";
+                arrow.transform.SetParent(line.transform);
+                arrow.transform.localScale = new Vector3(0.22f, 0.22f, 0.22f);
+                arrow.AddComponent<SpriteRenderer>().sprite = Mod.Arrow;
+                arrow.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                arrow.GetComponent<SpriteRenderer>().material = new Material(Shader.Find("Sprites/Default")) { color = Color.gray };
+                arrow.GetComponent<SpriteRenderer>().sortingOrder = 5;
+                arrow.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 0.6f);
+                Destroy(arrow.GetComponent<Collider>());
+            }
+
+            Vector3 start = transform.position;
+            Vector3 dir = velocity.normalized;
+            float lineLength = velocity.magnitude * 0.05f + 0.2f;
+            Vector3 end = start + dir * lineLength;
+            lineRenderer.SetPosition(0, start);
+            lineRenderer.SetPosition(1, end);
+        }
+
+        private void Update()
+        {
+            if (lineRenderer != null)
+            {
+                Vector3 start = transform.position;
+                Vector3 dir = velocity.normalized;
+                float lineLength = velocity.magnitude * 0.05f + 0.2f;
+                Vector3 end = start + dir * lineLength;
+                lineRenderer.SetPosition(0, start);
+                lineRenderer.SetPosition(1, Vector3.Lerp(lineRenderer.GetPosition(1), end, Time.time * 0.0001f));
+
+                if (LastArrow != null && lineRenderer != null)
+                {
+                    end = lineRenderer.GetPosition(1);
+                    LastArrow.position = end;
+                    if (velocity.sqrMagnitude > 0.0001f)
+                    {
+                        float angle = Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg - 90f;
+                        LastArrow.rotation = Quaternion.Euler(0, 0, angle);
+                    }
+                }
+
+                if (arrows == null)
+                {
+                    arrows = lineRenderer.transform.GetComponentsInChildren<SpriteRenderer>().Select(mr => mr.transform).ToArray();
+                }
+
+                float arrowSpeed = Mathf.Max(velocity.magnitude * 0.1f, 0.2f);
+                float t = Time.time * arrowSpeed;
+                for (int i = 0; i < arrows.Length; i++)
+                {
+                    if (arrows[i] != LastArrow)
+                    {
+                        float offset = ((float)i / arrows.Length + t) % 1f;
+                        Vector3 arrowPos = Vector3.Lerp(start, end, offset);
+                        arrows[i].position = arrowPos;
+                        arrows[i].rotation = Quaternion.LookRotation(Vector3.forward, dir);
+                    }
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (rb)
+            {
+                FreezeStackController.RequestUnfreeze(rb);
+                rb.velocity = velocity;
+                rb.angularVelocity = angularVelocity;
+            }
+            if (lineRenderer != null && lineRenderer.transform)
+            {
+                Destroy(lineRenderer.transform.gameObject);
+            }
+        }
+
+        public void OnCollisionEnter2D(Collision2D col)
+        {
+            velocity += col.relativeVelocity;
+        }
+    }
+
+    public class Telekinesis : Power
+    {
+        public static GameObject RunePrefab;
+
+        public float rayDistance = 10f;
+        public float forceMagnitude = 10f;
+        public LayerMask layerMask;
+        public float holdDistance = 4f;
+        public float closeDistanceThreshold = 0.1f;
+        bool doing;
+        private LimbBehaviour limb;
+        GameObject target;
+
+        PhysicalBehaviour physicalBehaviour;
+
+        GameObject PFX;
+
+        public static Telekinesis SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
+        {
+            var power = Limb.gameObject.AddComponent<Telekinesis>();
+            power.Name = "Magic Telekinesis";
+            power.Description = "Hold the activation key to make any object in from of the user's arm float\n<color =\"yellow\">This power also suffocates any object held with telekinesis";
+            power.icon = icon;
+            power.targetLimb = power.name.Contains("Front") ? TargettedLimb.FrontArm : TargettedLimb.BackArm;
+            power.physicalBehaviour = Limb.GetComponent<PhysicalBehaviour>();
+            power.limb = Limb;
+            
+            power.PFX = Instantiate(RunePrefab);
+            power.PFX.GetComponent<ParticleSystem>().Stop();
+
+            return power;
+        }
+
+        public void Use2ContinuousStart()
+        {
+            if (!Enabled)
+                return;
+            doing = true;
+            layerMask = LayerMask.GetMask("Objects");
+            RaycastHit2D hit = Physics2D.Raycast(transform.position, -transform.up, rayDistance, layerMask);
+            
+            if (hit.collider != null)
+            {
+                if (target != hit.collider.gameObject && hit.collider.gameObject.GetComponent<Rigidbody2D>().bodyType != RigidbodyType2D.Static)
+                {
+                    target = hit.collider.gameObject;
+                    PFX.GetComponent<ParticleSystem>().Play();
+                }
+            }
+            else
+            {
+                target = null;
+            }
+        }
+
+        public void Use2Continuous()
+        {
+            if (!Enabled)
+                return;
+
+            if (target != null)
+            {
+                Rigidbody2D rb = target.GetComponent<Rigidbody2D>();
+                PFX.transform.position = target.transform.position;
+                if (rb != null && rb.bodyType != RigidbodyType2D.Static)
+                {
+                    Vector2 targetPosition = (Vector3)transform.position + (-transform.up * holdDistance);
+                    Vector2 direction = targetPosition - rb.position;
+                    float distance = direction.magnitude;
+
+                    float adjustedForceMagnitude = Mathf.Lerp(0, (target.GetComponent<Rigidbody2D>().mass) + forceMagnitude, distance / closeDistanceThreshold);
+                    adjustedForceMagnitude = Mathf.Clamp(adjustedForceMagnitude, 0, (target.GetComponent<Rigidbody2D>().mass) + forceMagnitude);
+
+                    if (target.TryGetComponent<LimbBehaviour>(out var limb))
+                    {
+                        rb.velocity = direction.normalized * adjustedForceMagnitude * 4;
+
+                        limb.Person.OxygenLevel -= 0.1f;
+                    }
+                    else
+                    {
+                        rb.velocity = direction.normalized * adjustedForceMagnitude;
+                    }
+                }
+            }
+            else
+            {
+                layerMask = LayerMask.GetMask("Objects");
+                RaycastHit2D[] hits = Physics2D.RaycastAll(transform.position, -transform.up, rayDistance, layerMask);
+                foreach (var hit in hits)
+                {
+                    if (hit.collider.transform.root != transform.root && hit.collider.gameObject.GetComponent<Rigidbody2D>().bodyType != RigidbodyType2D.Static && !hit.collider.GetComponent<HatBehaviour>())
+                    {
+                        if (hit.collider.GetComponent<LimbBehaviour>())
+                        {
+                            if (hit.collider.name.Contains("Body"))
+                                this.target = hit.collider.gameObject;
+                        }
+                        else
+                        {
+                            this.target = hit.collider.gameObject;
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+
+        public void Use2ContinuousEnd()
+        {
+            target = null;
+            doing = false;
+            PFX.GetComponent<ParticleSystem>().Stop();
+        }
+
+        public void Update()
+        {
+            if(physicalBehaviour.StartedBeingUsedContinuously())
+                Use2ContinuousStart();
+            if (physicalBehaviour.IsBeingUsedContinuously())
+                Use2Continuous();
+            if (physicalBehaviour.StoppedBeingUsedContinuously())
+                Use2ContinuousEnd();
+        }
+
+        public void FixedUpdate()
+        {
+            if (doing)
+            {
+                if (!SelectionController.Main.SelectedObjects.Contains(physicalBehaviour))
+                    Use2ContinuousEnd();
+            }
+        }
+    }
+
+    public class MagicProjectile : Power, Messages.IUse
+    {
+        public static GameObject ProjectilePrefab;
+
+        public static MagicProjectile SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
+        {
+            var power = Limb.gameObject.AddComponent<MagicProjectile>();
+            power.Name = "Magic Projectile";
+            power.Description = "Create a projectile that can be launched at anything to damage it.";
+            power.icon = icon;
+
+            if (power.name.Contains("Front"))
+            {
+                power.targetLimb = TargettedLimb.FrontArm;
+            }
+            else
+            {
+                power.targetLimb = TargettedLimb.BackArm;
+            }
+
+            return power;
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled)
+                return;
+
+            StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.MagicShoot));
+
+            var bullet = Instantiate(ProjectilePrefab);
+            bullet.AddComponent<MagicProj>().projectile = this;
+            bullet.transform.position = transform.position + -transform.up;
+            bullet.transform.rotation = transform.rotation;
+        }
+
+        public class MagicProj : MonoBehaviour
+        {
+            public MagicProjectile projectile;
+            public float speed = 35;
+
+            private bool _shooting;
+            private float _hoverOffset = 0.75f;
+            private float _hoverLerpDuration = 0.25f;
+            private float _hoverTime = 1.5f;
+
+            private void Start()
+            {
+                StartCoroutine(PrepareAndShoot());
+            }
+
+            private IEnumerator PrepareAndShoot()
+            {
+                Vector3 startPos = transform.position;
+
+                float t = 0f;
+                while (t < _hoverLerpDuration)
+                {
+                    t += Time.deltaTime;
+                    float u = Mathf.Clamp01(t / _hoverLerpDuration);
+                    transform.position = Vector3.Lerp(startPos, projectile.transform.position + (-projectile.transform.up * _hoverOffset), u);
+                    transform.rotation = Quaternion.Lerp(transform.rotation, projectile.transform.rotation, u);
+                    yield return null;
+                }
+
+                float wait = _hoverTime;
+                while (wait > 0f)
+                {
+                    wait -= Time.deltaTime;
+                    transform.position = projectile.transform.position + (-projectile.transform.up * _hoverOffset);
+                    transform.rotation = projectile.transform.rotation;
+                    yield return null;
+                }
+
+                _shooting = true;
+            }
+
+            public void Update()
+            {
+                if (_shooting)
+                {
+                    // Move forward
+                    Vector3 dir = -transform.up;
+                    transform.position += dir * speed * Time.deltaTime;
+
+                    // Check collision just ahead
+                    RaycastHit2D hit = Physics2D.Raycast(transform.position, dir, 0.1f);
+                    if (hit.collider != null && hit.transform.root != projectile.transform.root)
+                    {
+                        Hit();
+                    }
+                }
+            }
+
+            public void Hit()
+            {
+                ExplosionCreator.Explode(transform.position, 7);
+                Destroy(gameObject);
+            }
+        }
+    }
+
+    public class Portaller : Power, Messages.IUse, Mod.ModAPIPlus.IUse2
+    {
+        public static GameObject PortalPrefab;
+
+        public GameObject Portal1;
+        public GameObject Portal2;
+
+        bool OnFirstPortal = true;
+
+        public List<Transform> cooldowned= new List<Transform>();
+
+        public static Portaller SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
+        {
+            var power = Limb.gameObject.AddComponent<Portaller>();
+            power.Name = "Magic Portal";
+            power.Description = "Create a portal that teleports objects to a designated location.";
+            power.icon = icon;
+
+            if (power.name.Contains("Front"))
+            {
+                power.targetLimb = TargettedLimb.FrontArm;
+            }
+            else
+            {
+                power.targetLimb = TargettedLimb.BackArm;
+            }
+
+            return power;
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled)
+                return;
+
+            if (Portal1 == null)
+            {
+                Portal1 = Instantiate(PortalPrefab);
+                Portal1.AddComponent<Portal>().parentPower = this;
+                Portal1.transform.position = transform.position + -transform.up * 1.5f;
+                Portal1.transform.localScale = Vector3.one * 0.75f;
+                Portal1.transform.rotation = Quaternion.Euler(89, 0, 0);
+                Portal1.transform.GetChild(0).transform.localScale = Vector3.one;
+                Portal1.transform.GetChild(1).transform.localScale = Vector3.one;
+            }
+            else if (Portal2 == null)
+            {
+                Portal2 = Instantiate(PortalPrefab);
+                Portal2.AddComponent<Portal>().parentPower = this;
+                Portal2.transform.position = transform.position + -transform.up * 1.5f;
+                Portal2.transform.localScale = Vector3.one * 0.75f;
+                Portal2.transform.rotation = Quaternion.Euler(89, 0, 0);
+                Portal2.transform.GetChild(0).transform.localScale = Vector3.one;
+                Portal2.transform.GetChild(1).transform.localScale = Vector3.one;
+            }
+            else 
+            { 
+                if (OnFirstPortal)
+                {
+                    Portal1.SetActive(false);
+                    Portal1.transform.position = transform.position + -transform.up * 1.5f;
+                    Portal1.SetActive(true);
+                    OnFirstPortal = false;
+                }
+                else
+                {
+                    Portal2.SetActive(false);
+                    Portal2.transform.position = transform.position + -transform.up * 1.5f;
+                    Portal2.SetActive(true);
+                    OnFirstPortal = true;
+                }
+            }
+        }
+
+        public void Use2()
+        {
+            Destroy(Portal1);
+            Destroy(Portal2);
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+
+            Destroy(Portal1);
+            Destroy(Portal2);
+        }
+
+        public class Portal : MonoBehaviour
+        {
+            public Portaller parentPower;
+
+            public void Start()
+            {
+                gameObject.layer = Layers.Objects;
+                gameObject.AddComponent<DebrisComponent>();
+                var col = gameObject.AddComponent<BoxCollider2D>();
+                col.size = new Vector2(2, 2);
+                col.isTrigger = true;
+            }
+
+            public void OnTriggerEnter2D(Collider2D collision)
+            {
+                var otherPortal = parentPower.Portal1 == gameObject ? parentPower.Portal2 : parentPower.Portal1;
+                if (otherPortal == null) return;
+
+                var root = collision.transform.root;
+                if (root == null) return;
+
+                if (parentPower.cooldowned.Contains(root)) return;
+
+                if (root == otherPortal.transform.root) return;
+
+                StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Teleport));
+
+                foreach (var ph in root.GetComponentsInChildren<PhysicalBehaviour>())
+                {
+                    ModAPI.CreateParticleEffect("Flash", ph.transform.position);
+                }
+
+                Vector3 offsetFromPortal = root.position - transform.position;
+
+                Quaternion originalRotation = root.rotation;
+
+                CameraShakeBehaviour.main.Shake(1, transform.position, 0.5f);
+
+                root.position = otherPortal.transform.position + offsetFromPortal;
+                root.rotation = originalRotation;
+
+                foreach (var ph in root.GetComponentsInChildren<PhysicalBehaviour>())
+                {
+                    ModAPI.CreateParticleEffect("Flash", ph.transform.position);
+                }
+
+                StartCoroutine(TempCooldown(root));
+            }
+
+            private IEnumerator TempCooldown(Transform target)
+            {
+                parentPower.cooldowned.Add(target);
+                yield return new WaitForSeconds(0.5f);
+                parentPower.cooldowned.Remove(target);
+            }
+        }
+    }
+
     public class MagicWhip : Power, Messages.IUse
     {
         public DistanceJoint2D whipJoint;
@@ -2097,7 +2966,7 @@ namespace Mod
         private const float PullDuration = 1.25f;
         private const float InitialWobble = 0.25f;
         private const float SustainWobble = 0.05f;
-        private const float MinDistance = 0.35f;
+        private const float MinDistance = 1f;
         private const float PullForce = 5f;
 
         public static MagicWhip SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
@@ -2131,14 +3000,13 @@ namespace Mod
 
         public void Use(ActivationPropagation activation)
         {
-            if(extending) return;
+            if(extending || !Enabled) return;
 
             if (whipJoint != null)
             {
                 DestroyWhip();
                 return;
             }
-            extending = true;
             var origin = (Vector2)transform.position;
             var dir = -(Vector2)transform.up;
 
@@ -2164,6 +3032,8 @@ namespace Mod
             }
 
             StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Whipy));
+
+            extending = true;
 
             _whipLine = CreateLineRenderer(out _whipGO);
             if (_whipRoutine != null) StopCoroutine(_whipRoutine);
@@ -2275,6 +3145,8 @@ namespace Mod
                 whipJoint.connectedAnchor = _staticWorldAnchor;
             }
 
+            extending = false;
+
             whipJoint.anchor = Vector2.zero;
 
             Vector2 curEnd2D = _hasDynamicTarget
@@ -2282,8 +3154,7 @@ namespace Mod
                 : _staticWorldAnchor;
             float initialDist = Vector2.Distance((Vector2)transform.position, curEnd2D);
             whipJoint.distance = initialDist;
-            extending = false;
-
+            
             yield return StartCoroutine(PullRoutine());
 
             while (whipJoint != null)
@@ -2407,6 +3278,11 @@ namespace Mod
         }
 
         private void OnDestroy()
+        {
+            DestroyWhip();
+        }
+
+        public void OnJointBreak()
         {
             DestroyWhip();
         }
@@ -2846,7 +3722,7 @@ namespace Mod
         public List<GameObject> GlowObjects = new List<GameObject>();
         public List<ParticleSystem> AuraBoltObjects = new List<ParticleSystem>();
         bool canSwitchAura = true;
-        public Color auraColor = new Color(0.5f, 0.5f, 0.8f, 1);
+        public Color auraColor = new Color(0.3f, 0.3f, 0.5f, 1);
         public float outlineOffset = 0.01f;
         Vector2[] outlineOffsets = new Vector2[]
         {
@@ -5804,6 +6680,8 @@ namespace Mod
         {
             if (!Enabled || stretching)
                 return;
+
+            StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Shrink));
 
             if (Stretched)
             {
@@ -10229,6 +11107,33 @@ namespace Mod
         public TargettedLimb targetPowers;
         public List<Power> powers = new List<Power>();
 
+        public TextMeshProUGUI text;
+
+        public void Start()
+        {
+            foreach (var power in transform.root.GetComponentsInChildren<Power>())
+            {
+                if (power.targetLimb == targetPowers)
+                    if (!powers.Contains(power))
+                        powers.Add(power);
+            }
+
+            var textTr = Instantiate(FakeNotifDissapearer.Start);
+            text = textTr.GetComponentInChildren<TextMeshProUGUI>();
+            text.text = powers.FirstOrDefault(p => p.Enabled).Name;
+
+            textTr.GetComponent<GraphicRaycaster>().enabled = false;
+            textTr.transform.parent = transform;
+
+            if(transform.root.localScale.x < 0)
+                textTr.transform.localScale = new Vector3(-0.4f, 0.4f, 0.4f);
+            else
+                textTr.transform.localScale = Vector3.one * 0.4f;
+
+            textTr.AddComponent<ExistInDetailView>();
+            textTr.gameObject.AddComponent<TextObject>();
+        }
+
         public void Swap()
         {
             foreach (var power in transform.root.GetComponentsInChildren<Power>())
@@ -10267,13 +11172,24 @@ namespace Mod
                     FakeNotifDissapearer.CreateNotification(powers[nextIndex].Name, transform.position);
 
                     Debug.Log(powers[nextIndex].Name);
+                    text.text = powers[nextIndex].Name;
                 }
                 else
                 {
                     powers[0].EnablePower();
                     Debug.Log(powers[0].Name);
+                    text.text = powers[0].Name;
                     FakeNotifDissapearer.CreateNotification(powers[0].Name, transform.position);
                 }
+            }
+        }
+
+        public class TextObject : MonoBehaviour
+        {
+            public void Update()
+            {
+                transform.rotation = Quaternion.identity;
+                transform.position = transform.parent.position + new Vector3(0, 0.2f, 0);
             }
         }
     }
@@ -10772,6 +11688,7 @@ namespace Mod
         public static void CreateNotification(string text, Vector2 pos)
         {
             var notif = Instantiate(Start);
+            notif.GetComponent<GraphicRaycaster>().enabled = false;
             notif.GetComponentInChildren<TextMeshProUGUI>().text = text;
             notif.AddComponent<FakeNotifDissapearer>();
             notif.transform.position = pos;
