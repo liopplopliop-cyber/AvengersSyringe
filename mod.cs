@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using UnityEngine.UI.Extensions;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -158,7 +159,6 @@ namespace Mod
         public static Sprite venomIcon = ModAPI.LoadSprite("Art/UI/Icons/Venom.png");
         public static Sprite Ice = ModAPI.LoadSprite("Art/Objects/Ice.png");
         public static Sprite IceFull = ModAPI.LoadSprite("Art/Objects/IceFull.png");
-        public static Sprite Explosive = ModAPI.LoadSprite("Art/Objects/Explosive.png");
         public static Sprite Pixel = ModAPI.LoadSprite("Art/Objects/RedPixel.png");
         public static Sprite ShockGauntletSprite = ModAPI.LoadSprite("Art/Objects/ShockGauntlet.png");
         public static AudioClip BatarangCharge = ModAPI.LoadSound("Sounds/BatarangCharge.wav");
@@ -196,6 +196,12 @@ namespace Mod
         public static Texture2D Bifrost = ModAPI.LoadTexture("Art/Objects/Bifrost.png");
         public static Texture2D Whip = ModAPI.LoadTexture("Art/Objects/Whip.png");
         public static Sprite Arrow = ModAPI.LoadSprite("Art/UI/Arrow.png");
+
+        public static Sprite NormalArrow = ModAPI.LoadSprite("Art/Objects/Arrow.png");
+        public static Sprite ExplosiveArrow = ModAPI.LoadSprite("Art/Objects/BombArrow.png");
+        public static Sprite StunArrow = ModAPI.LoadSprite("Art/Objects/StunArrow.png");
+        public static Sprite ElectricArrow = ModAPI.LoadSprite("Art/Objects/ElectroArrow.png");
+        public static Sprite PunchArrow = ModAPI.LoadSprite("Art/Objects/PunchArrow.png");
 
         #endregion
 
@@ -243,6 +249,9 @@ namespace Mod
         public static AudioClip Teleport = ModAPI.LoadSound("Sounds/Teleport.wav");
         public static AudioClip MagicShoot = ModAPI.LoadSound("Sounds/Projectile.wav");
         public static AudioClip Clock = ModAPI.LoadSound("Sounds/Clock.wav");
+        public static AudioClip Bow = ModAPI.LoadSound("Sounds/Bow.wav");
+        public static AudioClip BowStart = ModAPI.LoadSound("Sounds/BowStart.wav");
+        public static AudioClip Zap = ModAPI.LoadSound("Sounds/Zap.wav");
         #endregion
 
         #region LoadOther
@@ -732,6 +741,7 @@ namespace Mod
             MagicProjectile.ProjectilePrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Projectile");
             Telekinesis.RunePrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Rune");
             TimeFreeze.RunePrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "TimeRune");
+            AstralFist.SoulRune = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "SoulRune");
             #endregion
         }
 
@@ -1056,6 +1066,62 @@ namespace Mod
                 Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Vision/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Vision/CapeThing.png"));
             }, "a");
 
+            //Doctor Strange
+            ModAPIPlus.CreateHuman("Doctor Strange", "", "Doctor Strange", "Doctor Strange", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 0.5f, 15);
+
+                person.GetComponent<SpeedHealing>().EnablePower();
+                person.GetComponent<SuperMass>().EnablePower();
+
+                Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
+                AstralProjection.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Astral Projection.png")).EnablePower();
+
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (Limbs.gameObject.name.Contains("LowerArm"))
+                    {
+                        MagicProjectile.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Projectile.png")).EnablePower();
+                        MysticFist.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/MysticFist.png"));
+                        MagicWhip.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Magic Whip.png"));
+                        Portaller.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Portal.png"));
+                        AstralFist.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/AstralFist.png"));
+                        TimeFreeze.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/TimeFreeze.png"));
+                        Telekinesis.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Telekinesis.png"));
+                        Limbs.gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(Limbs.gameObject);
+                    }
+
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.name.Contains("UpperBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
+                    }
+
+                    if (Limbs.name.Contains("LowerBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
+                    }
+                }
+
+                /*
+                var inst = Instantiate(ModAPI.FindSpawnable("[Nova's Avengers Mod] Dr. Strange's Cape").Prefab);
+                CatalogBehaviour.PerformMod(ModAPI.FindSpawnable("[Nova's Avengers Mod] Dr. Strange's Cape"), inst);
+                inst.transform.position = person.Limbs[1].transform.position;
+                inst.GetComponent<HatBehaviour>().StartCoroutine(inst.GetComponent<HatBehaviour>().Wear(person.Limbs[1]));
+                */
+            }, "a");
+
             //Antman
             ModAPIPlus.CreateHuman("Antman", "", "Antman", "Antman", (Instance) =>
             {
@@ -1138,60 +1204,6 @@ namespace Mod
                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Wonder Man Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wonder Man Casual/"));
                 menu.AddButton("No Glasses Jacket", ModAPI.LoadSprite("Art/Thumbnails/Wonder Man No Glasses Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wonder Man No Glasses Casual/"));
 
-            }, "a");
-
-            //Doctor Strange
-            ModAPIPlus.CreateHuman("Doctor Strange", "", "Doctor Strange", "Doctor Strange", (Instance) =>
-            {
-                var person = Instance.GetComponent<PersonBehaviour>();
-                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 0.5f, 15);
-
-                person.GetComponent<SpeedHealing>().EnablePower();
-                person.GetComponent<SuperMass>().EnablePower();
-
-                Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
-
-                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
-                {
-                    if (Limbs.gameObject.name.Contains("LowerArm"))
-                    {
-                        MagicWhip.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Magic Whip.png"));
-                        Portaller.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Portal.png"));
-                        MagicProjectile.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Projectile.png")).EnablePower();
-                        TimeFreeze.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Projectile.png"));
-                        Telekinesis.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Projectile.png"));
-                        MysticFist.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Projectile.png"));
-                        Limbs.gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(Limbs.gameObject);
-                    }
-
-                    if (Limbs.gameObject.name.Contains("ArmFront"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
-                    }
-
-                    if (Limbs.name.Contains("UpperBody"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
-                    }
-
-                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
-                    }
-
-                    if (Limbs.name.Contains("LowerBody"))
-                    {
-                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
-                    }
-                }
-
-                /*
-                var inst = Instantiate(ModAPI.FindSpawnable("[Nova's Avengers Mod] Dr. Strange's Cape").Prefab);
-                CatalogBehaviour.PerformMod(ModAPI.FindSpawnable("[Nova's Avengers Mod] Dr. Strange's Cape"), inst);
-                inst.transform.position = person.Limbs[1].transform.position;
-                inst.GetComponent<HatBehaviour>().StartCoroutine(inst.GetComponent<HatBehaviour>().Wear(person.Limbs[1]));
-                */
             }, "a");
 
             //Black Panther
@@ -1914,6 +1926,12 @@ namespace Mod
                     person.SetSecondBruiseColor(116, 50, 128);
                     person.SetThirdBruiseColor(74, 26, 82);
                 }
+
+                var hat = ModAPI.CreatePhysicalObject("Hat", ModAPI.LoadSprite("Art/Objects/Helmet.png"));
+
+                var hatt = HatBehaviour.AddHatStuffNoLimb("Head", hat);
+
+                hatt.Wear(person.Limbs[0]);
             }, "a");
 
             //Chitauri
@@ -1985,26 +2003,32 @@ namespace Mod
             //Cap's Shield
             ModAPIPlus.CreateObject("Rod", "Captain America's Shield", "", "Cap's Shield", "Cap's Shield", (Instance) =>
             {
-                    {
-                        Instance.GetComponent<SpriteRenderer>().sprite = ModAPI.LoadSprite("Art/Objects/Cap's Shield.png");
-                        Destroy(Instance.GetComponent<Collider2D>());
-                        Instance.AddComponent<CircleCollider2D>();
-                        Instance.GetComponent<PhysicalBehaviour>().TrueInitialMass = 1;
-                        Instance.GetComponent<SpriteRenderer>().sortingOrder += 10;
-                        Instance.GetComponent<SpriteRenderer>().sortingLayerName = "Foreground";
-                        Instance.AddComponent<ShieldBounce>();
-                        Instance.AddComponent<ShieldModeSwitch>();
+                Instance.GetComponent<SpriteRenderer>().sprite = ModAPI.LoadSprite("Art/Objects/Cap's Shield.png");
+                Destroy(Instance.GetComponent<Collider2D>());
+                Timtam.CreateCollider(Instance.GetComponent<SpriteRenderer>());
+                Instance.GetComponent<PhysicalBehaviour>().TrueInitialMass = 1;
+                Instance.GetComponent<SpriteRenderer>().sortingOrder += 10;
+                Instance.GetComponent<SpriteRenderer>().sortingLayerName = "Foreground";
+                Instance.AddComponent<ShieldBounce>();
+                Instance.AddComponent<ShieldModeSwitch>();
 
-                        Instance.GetComponent<ShieldModeSwitch>().FrontView = ModAPI.LoadSprite("Art/Objects/Cap's Shield.png");
-                        Instance.GetComponent<ShieldModeSwitch>().SideView = ModAPI.LoadSprite("Art/Objects/Cap's ShieldSide.png");
-                    }
-
-            }, "2");
+                Instance.GetComponent<ShieldModeSwitch>().FrontView = ModAPI.LoadSprite("Art/Objects/Cap's Shield.png");
+                Instance.GetComponent<ShieldModeSwitch>().SideView = ModAPI.LoadSprite("Art/Objects/Cap's ShieldSide.png");
+            }, "2", false);
 
             //Mjolnir
-            ModAPIPlus.CreateObject("Rod", "Mjolnir", "", "Mjolnir", "Mjolnir", (Instance) =>
+            ModAPIPlus.CreateObject("Brick", "Mjolnir", "", "Mjolnir", "Mjolnir", (Instance) =>
             {
+                Instance.GetComponent<PhysicalBehaviour>().Properties = PhysicalProperty.Metal;
                 Instance.AddComponent<Hammer>();
+            }, "2");
+
+            //Hawkeye's Bow
+            ModAPIPlus.CreateObject("Rod", "Hawkeye's Bow", "", "Bow", "Bow", (Instance) =>
+            {
+                Instance.AddComponent<Bow>();
+                Instance.GetComponent<PhysicalBehaviour>().Properties = PhysicalProperty.Weapon;
+
             }, "2");
 
             #endregion
@@ -2088,6 +2112,741 @@ namespace Mod
         }
     }
 
+    public class Bow : MonoBehaviour, Mod.ModAPIPlus.ISwap
+    {
+        public float LoadTime = 0.25f;
+        public float CurrentLoad = 0f;
+
+        PhysicalBehaviour phys;
+        public LineRenderer BowString;
+
+        public GameObject FakeArrow;
+
+        Transform BowPos1;
+        Transform BowPos2;
+        Transform BowPos3;
+
+        const float MaxDrawDistance = 0.45f;
+        const float FakeArrowForwardOffset = 0.3f;
+
+        public enum ArrowType
+        {
+            Normal,
+            Explosive,
+            Stun,
+            Electric,
+            Punching
+        }
+
+        public void Swap()
+        {
+            if (arrowType == ArrowType.Normal)
+                arrowType = ArrowType.Explosive;
+            else if (arrowType == ArrowType.Explosive)
+                arrowType = ArrowType.Stun;
+            else if (arrowType == ArrowType.Stun)
+                arrowType = ArrowType.Electric;
+            else if (arrowType == ArrowType.Electric)
+                arrowType = ArrowType.Punching;
+            else if (arrowType == ArrowType.Punching)
+                arrowType = ArrowType.Normal;
+
+            FakeNotifDissapearer.CreateNotification(arrowType.ToString(), transform.position);
+        }
+
+        ArrowType arrowType = ArrowType.Normal;
+
+        public void Start()
+        {
+            phys = GetComponent<PhysicalBehaviour>();
+            BowString = gameObject.AddComponent<LineRenderer>();
+            BowString.positionCount = 3;
+            BowString.startWidth = 0.01f;
+            BowString.endWidth = 0.01f;
+            BowString.material = new Material(Shader.Find("Sprites/Default"));
+            BowString.startColor = new Color(1, 1, 1, 0.7f);
+            BowString.endColor = new Color(1, 1, 1, 0.7f);
+            BowString.numCapVertices = 5;
+            BowString.numCornerVertices = 5;
+            BowString.SetPosition(0, transform.position + transform.up * 0.5f);
+            BowString.SetPosition(1, transform.position);
+            BowString.SetPosition(2, transform.position - transform.up * 0.5f);
+
+            BowString.sortingLayerName = GetComponent<SpriteRenderer>().sortingLayerName;
+            BowString.sortingOrder = GetComponent<SpriteRenderer>().sortingOrder - 1;
+
+            BowPos1 = new GameObject("bowpos1").transform;
+            BowPos1.SetParent(transform);
+            BowPos1.localPosition = new Vector2(-4, 21) * ModAPI.PixelSize;
+
+            BowPos2 = new GameObject("bowpos2").transform;
+            BowPos2.SetParent(transform);
+            BowPos2.localPosition = new Vector2(-4, -21) * ModAPI.PixelSize;
+
+            BowPos3 = new GameObject("bowpos3").transform;
+            BowPos3.SetParent(transform);
+            BowPos3.localPosition = new Vector2(-4, 0) * ModAPI.PixelSize;
+        }
+
+        public void Update()
+        {
+            BowString.SetPosition(0, BowPos1.position);
+            BowString.SetPosition(2, BowPos2.position);
+
+            if (phys.StartedBeingUsedContinuously())
+            {
+                StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.BowStart, UnityEngine.Random.Range(0.8f, 1.2f)));
+                FakeArrow = new GameObject("FakeArrow");
+                var sr = FakeArrow.AddComponent<SpriteRenderer>();
+                sr.sortingLayerName = GetComponent<SpriteRenderer>().sortingLayerName;
+                sr.sortingOrder = GetComponent<SpriteRenderer>().sortingOrder + 1;
+                sr.sprite = arrowType == ArrowType.Normal ? Mod.NormalArrow :
+                            arrowType == ArrowType.Explosive ? Mod.ExplosiveArrow :
+                            arrowType == ArrowType.Stun ? Mod.StunArrow :
+                            arrowType == ArrowType.Electric ? Mod.ElectricArrow : Mod.PunchArrow;
+                FakeArrow.transform.SetParent(transform, false);
+            }
+
+            if (phys.StoppedBeingUsedContinuously())
+            {
+                if (CurrentLoad > 0.1f)
+                {
+                    ModAPI.CreateParticleEffect("Vapor", transform.position);
+                    StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Bow, UnityEngine.Random.Range(0.8f, 1.2f)));
+
+                    var arrow = Instantiate(ModAPI.FindSpawnable("Crossbow Bolt").Prefab);
+
+                    if(transform.localScale.x < 0)
+                        arrow.transform.localScale = new Vector3(-arrow.transform.localScale.x, arrow.transform.localScale.y, arrow.transform.localScale.z);
+
+                    Physics2D.IgnoreCollision(arrow.GetComponent<Collider2D>(), GetComponent<Collider2D>());
+
+                    arrow.GetComponent<SpriteRenderer>().sprite = arrowType == ArrowType.Normal ? Mod.NormalArrow :
+                                                                arrowType == ArrowType.Explosive ? Mod.ExplosiveArrow :
+                                                                arrowType == ArrowType.Stun ? Mod.StunArrow :
+                                                                arrowType == ArrowType.Electric ? Mod.ElectricArrow : Mod.PunchArrow;
+
+                    if(arrowType == ArrowType.Explosive)
+                    {
+                        arrow.AddComponent<ExplosiveArrow>();
+                    }
+                    else if (arrowType == ArrowType.Stun)
+                    {
+                        arrow.AddComponent<ShockArrow>();
+                    }
+                    else if (arrowType == ArrowType.Electric)
+                    {
+                        arrow.AddComponent<ElectricArrow>();
+                    }
+                    else if (arrowType == ArrowType.Punching)
+                    {
+                        arrow.AddComponent<PunchArrow>();
+                    }
+
+                    var fwd = GetForward();
+                    arrow.transform.position = BowPos3.position + fwd * 0.5f;
+                    arrow.transform.rotation = transform.rotation;
+
+                    var arrowPhys = arrow.GetComponent<PhysicalBehaviour>();
+                    arrowPhys.rigidbody.velocity = (Vector3)phys.rigidbody.velocity + fwd * (60f * Mathf.Clamp01(CurrentLoad / LoadTime));
+                }
+
+                CurrentLoad = 0f;
+                if (FakeArrow != null) Destroy(FakeArrow);
+                FakeArrow = null;
+            }
+
+            if (phys.IsBeingUsedContinuously())
+            {
+                CurrentLoad += Time.deltaTime;
+                if (CurrentLoad > LoadTime) CurrentLoad = LoadTime;
+
+                UpdateStringAndArrow();
+            }
+            else
+            {
+                BowString.SetPosition(1, BowPos3.position);
+            }
+        }
+
+        private void UpdateStringAndArrow()
+        {
+            var fwd = GetForward();
+            var t = Mathf.Clamp01(CurrentLoad / LoadTime);
+
+            BowString.SetPosition(1, BowPos3.position - fwd * (MaxDrawDistance * t));
+
+            if (FakeArrow != null)
+            {
+                FakeArrow.transform.position = BowPos3.position + fwd * (FakeArrowForwardOffset - MaxDrawDistance * t);
+                FakeArrow.transform.rotation = transform.rotation;
+            }
+        }
+
+        private Vector3 GetForward()
+        {
+            return transform.right * (transform.lossyScale.x >= 0f ? 1f : -1f);
+        }
+
+        public class ExplosiveArrow : MonoBehaviour
+        {
+            private Rigidbody2D rigidbody;
+            FixedJoint2D Joint;
+            GripBehaviour holder;
+            GameObject ExplosiveActive;
+
+            public IEnumerator ToggleSpriteRenderer(GameObject obj)
+            {
+                var spriteRenderer = obj.GetComponent<SpriteRenderer>();
+                while (true)
+                {
+                    if (spriteRenderer != null)
+                    {
+                        spriteRenderer.enabled = !spriteRenderer.enabled;
+                    }
+                    yield return new WaitForSeconds(0.3f);
+                }
+            }
+
+            public void Start()
+            {
+                GetComponent<PhysicalBehaviour>().Properties = PhysicalProperty.Rod;
+                GetComponent<PhysicalBehaviour>().rigidbody.mass = 1;
+                GetComponent<PhysicalBehaviour>().TrueInitialMass = 1;
+
+                var thing2 = new GameObject("ExplosionLight");
+                thing2.transform.parent = transform;
+                thing2.transform.localPosition = new Vector2(8, 0) * ModAPI.PixelSize;
+                thing2.transform.localScale = Vector3.one;
+                thing2.transform.localRotation = Quaternion.identity;
+
+                var sr2 = thing2.AddComponent<SpriteRenderer>();
+                sr2.sprite = Mod.Pixel;
+                sr2.sortingLayerName = GetComponent<SpriteRenderer>().sortingLayerName;
+                sr2.sortingOrder = GetComponent<SpriteRenderer>().sortingOrder + 1;
+                sr2.material = ModAPI.FindMaterial("VeryBright");
+
+                thing2.SetActive(false);
+
+                ExplosiveActive = thing2;
+                StartCoroutine(ToggleSpriteRenderer(ExplosiveActive));
+                rigidbody = gameObject.GetComponent<Rigidbody2D>();
+                rigidbody.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+
+                var phys = gameObject.GetComponent<PhysicalBehaviour>();
+                phys.ForceContinuous = true;
+            }
+
+            public void OnJointBreak2D(Joint2D brokenJoint)
+            {
+                if (brokenJoint.connectedBody.gameObject.TryGetComponent<LimbBehaviour>(out var limb))
+                {
+                    foreach (var limbs in limb.Person.Limbs)
+                    {
+                        if (holder.GetComponent<LimbBehaviour>().Person != limb.Person)
+                            Physics2D.IgnoreCollision(limbs.GetComponent<Collider2D>(), gameObject.GetComponent<Collider2D>(), false);
+                    }
+                }
+
+                Joint = null;
+            }
+
+            public IEnumerator ChangeBreakForce()
+            {
+                yield return new WaitForSeconds(0.2f);
+                Joint.breakForce = 150;
+            }
+
+            public void OnCollisionEnter2D(Collision2D collision)
+            {
+                if (collision.relativeVelocity.magnitude > 6 && Joint == null)
+                {
+                    Joint = gameObject.AddComponent<FixedJoint2D>();
+                    Joint.connectedBody = collision.rigidbody;
+                    StartCoroutine(ChangeBreakForce());
+                    GetComponent<Rigidbody2D>().velocity = collision.otherRigidbody.velocity;
+
+                    StartCoroutine(Explode());
+
+                    if (collision.gameObject.TryGetComponent<LimbBehaviour>(out var limb))
+                    {
+                        limb.SkinMaterialHandler.AddDamagePoint(DamageType.Stab, Vector2.Lerp(collision.collider.transform.position, gameObject.transform.position, 0.5f), collision.relativeVelocity.magnitude);
+                        limb.Damage(collision.relativeVelocity.magnitude);
+                        ModAPI.CreateParticleEffect("BloodExplosion", collision.contacts[0].point).GetComponent<ParticleSystem>().startColor = limb.CirculationBehaviour.GetComputedColor();
+                        foreach (var limbs in limb.Person.Limbs)
+                        {
+                            if (limb.GetComponent<Collider2D>())
+                                Physics2D.IgnoreCollision(limbs.GetComponent<Collider2D>(), gameObject.GetComponent<Collider2D>(), true);
+                        }
+                    }
+                }
+            }
+
+            public IEnumerator Explode()
+            {
+                ExplosiveActive.SetActive(true);
+                ExplosiveActive.GetComponent<SpriteRenderer>().enabled = true;
+
+                StartCoroutine(PlaySound(Mod.BatarangCharge));
+
+                yield return new WaitForSeconds(2f);
+
+                ExplosionCreator.Explode(transform.position, 5);
+
+                Destroy(gameObject);
+            }
+
+            IEnumerator PlaySound(AudioClip SoundToPlay)
+            {
+                var sound = new GameObject();
+                sound.name = "SFX";
+                sound.transform.position = gameObject.transform.position;
+                sound.AddComponent<AudioSource>();
+                sound.GetComponent<AudioSource>().playOnAwake = false;
+                sound.GetComponent<AudioSource>().clip = SoundToPlay;
+                sound.GetComponent<AudioSource>().spatialBlend = 1;
+                sound.GetComponent<AudioSource>().volume = 5f;
+                sound.AddComponent<AudioDistortionFilter>().distortionLevel = 0.85f;
+                sound.AddComponent<AudioSourceTimeScaleBehaviour>();
+                sound.GetComponent<AudioSource>().Play();
+
+                yield return new WaitForSeconds(SoundToPlay.length);
+
+                Destroy(sound);
+            }
+        }
+
+        public class ShockArrow : MonoBehaviour
+        {
+            private Rigidbody2D rigidbody;
+            FixedJoint2D Joint;
+
+            public void Start()
+            {
+                rigidbody = gameObject.GetComponent<Rigidbody2D>();
+                rigidbody.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+
+                GetComponent<PhysicalBehaviour>().Properties = PhysicalProperty.Rod;
+                GetComponent<PhysicalBehaviour>().rigidbody.mass = 1;
+                GetComponent<PhysicalBehaviour>().TrueInitialMass = 1;
+
+                var phys = gameObject.GetComponent<PhysicalBehaviour>();
+                phys.ForceContinuous = true;
+            }
+
+            public void OnJointBreak2D(Joint2D brokenJoint)
+            {
+                if (brokenJoint.connectedBody.gameObject.TryGetComponent<LimbBehaviour>(out var limb))
+                {
+                    foreach (var limbs in limb.Person.Limbs)
+                    {
+                        Physics2D.IgnoreCollision(limbs.GetComponent<Collider2D>(), gameObject.GetComponent<Collider2D>(), false);
+                    }
+                }
+
+                Joint = null;
+            }
+
+            public IEnumerator ChangeBreakForce()
+            {
+                yield return new WaitForSeconds(0.2f);
+                Joint.breakForce = 150;
+            }
+
+            public void OnCollisionEnter2D(Collision2D collision)
+            {
+                if (collision.relativeVelocity.magnitude > 6 && Joint == null && collision.collider.TryGetComponent<PhysicalBehaviour>(out var phys))
+                {
+                    Joint = gameObject.AddComponent<FixedJoint2D>();
+                    Joint.connectedBody = collision.rigidbody;
+                    StartCoroutine(ChangeBreakForce());
+                    GetComponent<Rigidbody2D>().velocity = collision.otherRigidbody.velocity;
+
+                    ModAPI.CreateParticleEffect("BigZap", collision.contacts[0].point);
+                    StartCoroutine(Explode(collision.collider.GetComponent<PhysicalBehaviour>()));
+
+                    if (collision.gameObject.TryGetComponent<LimbBehaviour>(out var limb))
+                    {
+                        limb.SkinMaterialHandler.AddDamagePoint(DamageType.Stab, Vector2.Lerp(collision.collider.transform.position, gameObject.transform.position, 0.5f), collision.relativeVelocity.magnitude);
+                        limb.Damage(collision.relativeVelocity.magnitude);
+                        foreach (var limbs in limb.Person.Limbs)
+                        {
+                            if (limb.GetComponent<Collider2D>())
+                                Physics2D.IgnoreCollision(limbs.GetComponent<Collider2D>(), gameObject.GetComponent<Collider2D>(), true);
+                        }
+                    }
+                }
+            }
+
+            public IEnumerator Explode(PhysicalBehaviour target)
+            {
+                StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Zap));
+
+                var t = 0f;
+
+                while (t < 2f)
+                {
+                    t += Time.deltaTime;
+                    target.charge = 5;
+                    yield return null;
+                }
+
+                ModAPI.CreateParticleEffect("HugeZap", transform.position);
+
+                Destroy(gameObject);
+            }
+        }
+
+        public class ElectricArrow : MonoBehaviour
+        {
+            private Rigidbody2D rigidbody;
+            FixedJoint2D Joint;
+
+            public void Start()
+            {
+                GetComponent<PhysicalBehaviour>().Properties = PhysicalProperty.Rod;
+                GetComponent<PhysicalBehaviour>().rigidbody.mass = 1;
+                GetComponent<PhysicalBehaviour>().TrueInitialMass = 1;
+
+                rigidbody = gameObject.GetComponent<Rigidbody2D>();
+                rigidbody.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+
+                var phys = gameObject.GetComponent<PhysicalBehaviour>();
+                phys.ForceContinuous = true;
+            }
+
+            public void OnJointBreak2D(Joint2D brokenJoint)
+            {
+                if (brokenJoint.connectedBody.gameObject.TryGetComponent<LimbBehaviour>(out var limb))
+                {
+                    foreach (var limbs in limb.Person.Limbs)
+                    {
+                        Physics2D.IgnoreCollision(limbs.GetComponent<Collider2D>(), gameObject.GetComponent<Collider2D>(), false);
+                    }
+                }
+
+                Joint = null;
+            }
+
+            public IEnumerator ChangeBreakForce()
+            {
+                yield return new WaitForSeconds(0.2f);
+                Joint.breakForce = 150;
+            }
+
+            public void OnCollisionEnter2D(Collision2D collision)
+            {
+                if (collision.relativeVelocity.magnitude > 6 && Joint == null && collision.collider.TryGetComponent<PhysicalBehaviour>(out var phys))
+                {
+                    Joint = gameObject.AddComponent<FixedJoint2D>();
+                    Joint.connectedBody = collision.rigidbody;
+                    StartCoroutine(ChangeBreakForce());
+                    GetComponent<Rigidbody2D>().velocity = collision.otherRigidbody.velocity;
+
+                    if (collision.gameObject.TryGetComponent<DamagableMachineryBehaviour>(out var machine))
+                    {
+                        ModAPI.CreateParticleEffect("FuseBlown", collision.contacts[0].point);
+
+                        machine.ForceBreak();
+                    }
+                    else if(collision.transform.root.TryGetComponent<UltronBot>(out var bot))
+                    {
+                        ModAPI.CreateParticleEffect("FuseBlown", collision.contacts[0].point);
+
+                        if (!bot.Ultron && !bot.gameObject.name.Contains("Vision"))
+                        {
+                            bot.person.Braindead = true;
+                            bot.person.Limbs[0].BreakBone();
+                        }
+                    }
+
+                    if (collision.gameObject.TryGetComponent<LimbBehaviour>(out var limb))
+                    {
+                        limb.SkinMaterialHandler.AddDamagePoint(DamageType.Stab, Vector2.Lerp(collision.collider.transform.position, gameObject.transform.position, 0.5f), collision.relativeVelocity.magnitude);
+                        limb.Damage(collision.relativeVelocity.magnitude);
+                        foreach (var limbs in limb.Person.Limbs)
+                        {
+                            if (limb.GetComponent<Collider2D>())
+                                Physics2D.IgnoreCollision(limbs.GetComponent<Collider2D>(), gameObject.GetComponent<Collider2D>(), true);
+                        }
+                    }
+                }
+            }
+        }
+
+        public class PunchArrow : MonoBehaviour
+        {
+            public void Start()
+            {
+                GetComponent<PhysicalBehaviour>().Properties = PhysicalProperty.Insulator;
+                GetComponent<PhysicalBehaviour>().rigidbody.mass = 0.4f;
+                GetComponent<PhysicalBehaviour>().TrueInitialMass = 0.4f;
+            }
+
+            void OnCollisionEnter2D(Collision2D collision)
+            {
+                Vector2 relativeVelocity = collision.relativeVelocity;
+
+                float impactStrength = relativeVelocity.magnitude * 3;
+
+                if (collision.gameObject.GetComponent<Rigidbody2D>() && collision.relativeVelocity.magnitude > 3)
+                {
+                    Vector2 directionToThisObject = (GetComponent<Rigidbody2D>().position - collision.rigidbody.position).normalized;
+
+                    float dotProduct = Vector2.Dot(relativeVelocity, directionToThisObject);
+
+                    if (dotProduct > 0)
+                    {
+                        collision.gameObject.GetComponent<Rigidbody2D>().velocity += -relativeVelocity.normalized * impactStrength;
+                        CameraShakeBehaviour.main.Shake(6, transform.position);
+
+                        ModAPI.CreateParticleEffect("Vapor", transform.position).transform.localScale = Vector3.one * 3;
+                    }
+
+                }
+            }
+        }
+    }
+
+    public class AstralProjection : Power, Mod.ModAPIPlus.IUse2
+    {
+        public class LimbProps
+        {
+            public LimbBehaviour limb;
+            public float baseStrength;
+            public float Upright;
+        }
+
+        PersonBehaviour person;
+
+        public static GameObject SoulRune;
+        public GameObject soulOBJ;
+
+        bool OneTimeOnly = false;
+        bool Projecting = false;
+
+        List<LimbProps> originals = new List<LimbProps>();
+
+        public static AstralProjection SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon, bool oneTimeOnly = false)
+        {
+            var power = Limb.gameObject.AddComponent<AstralProjection>();
+            power.Name = "Astral Fist";
+            power.Description = "Allows the user to separate their astral form (soul) from their own body.";
+            power.icon = icon;
+            power.targetLimb = TargettedLimb.Head;
+            power.OneTimeOnly = oneTimeOnly;
+            power.person = Person;
+
+            return power;
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+            Unproject();
+        }
+
+        public override void Start()
+        {
+            base.Start();
+
+            if (OneTimeOnly)
+                Project();
+        }
+
+        public void Use2()
+        {
+            if(!Enabled) return;
+
+            if (Projecting || soulOBJ != null)
+                Unproject();
+            else if (!Projecting && soulOBJ == null)
+                Project();
+        }
+
+        public void Project()
+        {
+            if (Projecting)
+                return;
+
+            originals = new List<LimbProps>();
+
+            foreach (var limb in person.Limbs)
+            {
+                originals.Add(new LimbProps{limb = limb, baseStrength = limb.BaseStrength, Upright = limb.FakeUprightForce});
+            }
+
+            //ModAPI.CreateParticleEffect(ParticleEffects.Disintegration, person.Limbs[1].transform.position);
+            var soulOBJ = Instantiate(ModAPI.FindSpawnable("Human").Prefab);
+            soulOBJ.transform.localScale = transform.root.localScale;
+            soulOBJ.transform.position = transform.root.position;
+
+            soulOBJ.GetComponent<PersonBehaviour>().Limbs[0].gameObject.AddComponent<Projection>().projector = this;
+
+            foreach (var renderer in soulOBJ.GetComponentsInChildren<SpriteRenderer>())
+            {
+                if (renderer.TryGetComponent<PhysicalBehaviour>(out var ph))
+                {
+                    ph.rigidbody.gravityScale = 0;
+                    ph.rigidbody.drag = 5;
+                    ph.rigidbody.angularDrag = 5;
+                    ph.gameObject.layer = Layers.Debris;
+                }
+
+                foreach (var renderer2 in transform.root.GetComponentsInChildren<SpriteRenderer>())
+                    if (renderer2.gameObject.name == renderer.gameObject.name)
+                    {
+                        renderer.sprite = renderer2.sprite;
+                        renderer.color = new Color(0.1f, 0.1f, 0.9f, 0.3f);
+
+                        if (renderer2.TryGetComponent<PhysicalBehaviour>(out var ph2))
+                        {
+                            ph2.rigidbody.gravityScale = 0;
+                            ph2.rigidbody.drag = 50;
+                            ph2.rigidbody.angularDrag = 50;
+                            ph2.GetComponent<LimbBehaviour>().BaseStrength = 0;
+                            ph2.GetComponent<LimbBehaviour>().FakeUprightForce = 0;
+
+                            if (renderer.TryGetComponent<PhysicalBehaviour>(out var phh))
+                            {
+                                phh.transform.position = ph2.transform.position;
+                                phh.transform.rotation = ph2.transform.rotation;
+                                phh.transform.localScale = ph2.transform.localScale;
+                            }
+                        }
+                    }
+            }
+
+            Projecting = true;
+        }
+
+        public void Unproject()
+        {
+            if (!Projecting && soulOBJ == null)
+                return;
+
+            if (soulOBJ)
+            {
+                foreach (var limb in soulOBJ.GetComponentsInChildren<LimbBehaviour>())
+                    ModAPI.CreateParticleEffect(ParticleEffects.Vapor, limb.transform.position);
+
+                Destroy(soulOBJ);
+            }
+
+            ModAPI.CreateParticleEffect(ParticleEffects.Disintegration, person.Limbs[1].transform.position);
+
+            foreach (var limb in person.Limbs)
+            {
+                limb.PhysicalBehaviour.rigidbody.gravityScale = 1;
+                limb.PhysicalBehaviour.rigidbody.drag = 0;
+                limb.PhysicalBehaviour.rigidbody.angularDrag = 0;
+                limb.BaseStrength = originals.Find(x => x.limb == limb).baseStrength;
+            }
+
+            if (OneTimeOnly)
+                DisablePower();
+        }
+
+        public void Update()
+        {
+            if (Projecting)
+                person.Consciousness = 0;
+        }
+
+        public class Projection : MonoBehaviour, Mod.ModAPIPlus.IUse2
+        {
+            public AstralProjection projector;
+            PersonBehaviour person;
+
+            public void Start()
+            {
+                person = transform.root.GetComponent<PersonBehaviour>();
+            }
+
+            public void Use2()
+            {
+                projector.Unproject();
+            }
+
+            public void FixedUpdate()
+            {
+                if (person.Braindead == true || !person.IsAlive())
+                {
+                    projector.person.Braindead = true;
+                    projector.person.Heartbeat = 0;
+                    projector.person.Limbs[0].BreakBone();
+                    projector.person.Limbs[0].Health = 0;
+                    projector.Unproject();
+                }
+            }
+        }
+    }
+
+    public class AstralFist : Power, Mod.ModAPIPlus.IUse2
+    {
+        public static GameObject SoulRune;
+
+        GameObject PFX;
+
+        bool Punching = false;
+
+        public static AstralFist SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
+        {
+            var power = Limb.gameObject.AddComponent<AstralFist>();
+            power.Name = "Astral Fist";
+            power.Description = "Allows the user to separate a victim's astral form (soul) from their body.";
+            power.icon = icon;
+            power.targetLimb = power.name.Contains("Front") ? TargettedLimb.FrontArm : TargettedLimb.BackArm;
+
+            power.PFX = Instantiate(SoulRune);
+            power.PFX.GetComponent<ParticleSystem>().Stop();
+            power.PFX.transform.SetParent(Limb.transform, false);
+            foreach (var ps in power.PFX.GetComponentsInChildren<ParticleSystem>())
+            {
+                ps.transform.localScale = Vector3.one * 0.25f;
+            }
+            power.PFX.transform.localPosition = new Vector3(0, -0.2f, 0);
+            return power;
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+            Punching = false;
+            PFX.GetComponent<ParticleSystem>().Stop();
+        }
+
+        public void Use2()
+        {
+            if (!Enabled) return;
+            Punching = !Punching;
+            if (!Punching)
+            {
+                PFX.GetComponent<ParticleSystem>().Stop();
+            }
+            else
+            {
+                PFX.GetComponent<ParticleSystem>().Play();
+            }
+        }
+
+        public void OnCollisionEnter2D(Collision2D col)
+        {
+            if (!Enabled || !Punching)
+                return;
+
+            Vector2 relativeVelocity = col.relativeVelocity;
+
+            float impactStrength = relativeVelocity.magnitude * 2;
+
+            if (col.gameObject.TryGetComponent<LimbBehaviour>(out var limb) && col.relativeVelocity.magnitude > 3)
+            {
+                CameraShakeBehaviour.main.Shake(7, base.transform.position);
+                AstralProjection.SetPower(limb.Person, limb.Person.Limbs[0], null, true).EnablePower();
+            }
+        }
+    }
+
     public class MysticFist : Power, Mod.ModAPIPlus.IUse2
     {
         GameObject PFX;
@@ -2155,7 +2914,6 @@ namespace Mod
             Vector3 center3 = transform.position;
             Vector2 center = center3;
 
-            // 1) Collider-based quick scan (NonAlloc to avoid GC)
             int count = Physics2D.OverlapCircleNonAlloc(center, radius, _overlapBuf);
             if (count > 0)
             {
@@ -2166,7 +2924,6 @@ namespace Mod
                     var c = _overlapBuf[i];
                     if (!c) continue;
 
-                    // BlasterboltBehaviour
                     if (c.TryGetComponent<BlasterboltBehaviour>(out var bb) || c.GetComponentInParent<BlasterboltBehaviour>())
                     {
                         if (bb && _processedIds.Add(bb.gameObject.GetInstanceID()))
@@ -2180,7 +2937,6 @@ namespace Mod
                         }
                     }
 
-                    // ProjectileBehaviour
                     if (c.TryGetComponent<ProjectileBehaviour>(out var pj) || c.GetComponentInParent<ProjectileBehaviour>())
                     {
                         if (pj && _processedIds.Add(pj.gameObject.GetInstanceID()))
@@ -2194,7 +2950,6 @@ namespace Mod
                         }
                     }
 
-                    // MagicProjectile.MagicProj
                     if (c.TryGetComponent<MagicProjectile.MagicProj>(out var mp) || c.GetComponentInParent<MagicProjectile.MagicProj>())
                     {
                         if (mp && _processedIds.Add(mp.gameObject.GetInstanceID()))
@@ -2210,7 +2965,6 @@ namespace Mod
                 }
             }
 
-            // 2) Tracer (LineRenderer) handling: cache and check segments near us
             if (Time.time >= _nextTracerRefreshTime)
             {
                 _nextTracerRefreshTime = Time.time + TracerRefreshInterval;
@@ -2263,8 +3017,6 @@ namespace Mod
 
         private static void RebuildTracerCache()
         {
-            // Refresh the cache infrequently to avoid per-frame allocations/costs.
-            // PoolableSizeHelper objects are searched here, not every scan.
             var helpers = UnityEngine.Object.FindObjectsOfType<PoolableSizeHelper>(false);
             _tracerCache.Clear();
             for (int i = 0; i < helpers.Length; i++)
@@ -2340,6 +3092,23 @@ namespace Mod
             power.PFX.GetComponent<ParticleSystem>().Stop();
 
             return power;
+        }
+
+        public void OnDestroy()
+        {
+            if (Stopped != null)
+            {
+                foreach (var physicalBehaviour in Stopped.GetComponentsInChildren<PhysicalBehaviour>())
+                {
+                    var freeze = physicalBehaviour.GetComponent<FreezeBehaviour2>();
+                    if (freeze != null)
+                    {
+                        Destroy(freeze);
+                    }
+                }
+            }
+
+            Destroy(PFX);
         }
 
         public override void DisablePower()
@@ -2694,6 +3463,11 @@ namespace Mod
                     Use2ContinuousEnd();
             }
         }
+
+        public void OnDestroy()
+        {
+            Destroy(PFX);
+        }
     }
 
     public class MagicProjectile : Power, Messages.IUse
@@ -2739,7 +3513,7 @@ namespace Mod
 
             private bool _shooting;
             private float _hoverOffset = 0.75f;
-            private float _hoverLerpDuration = 0.25f;
+            private float _hoverLerpDuration = 2f;
             private float _hoverTime = 1.5f;
 
             private void Start()
@@ -2749,24 +3523,18 @@ namespace Mod
 
             private IEnumerator PrepareAndShoot()
             {
-                Vector3 startPos = transform.position;
-
                 float t = 0f;
                 while (t < _hoverLerpDuration)
                 {
                     t += Time.deltaTime;
-                    float u = Mathf.Clamp01(t / _hoverLerpDuration);
-                    transform.position = Vector3.Lerp(startPos, projectile.transform.position + (-projectile.transform.up * _hoverOffset), u);
-                    transform.rotation = Quaternion.Lerp(transform.rotation, projectile.transform.rotation, u);
-                    yield return null;
-                }
 
-                float wait = _hoverTime;
-                while (wait > 0f)
-                {
-                    wait -= Time.deltaTime;
-                    transform.position = projectile.transform.position + (-projectile.transform.up * _hoverOffset);
-                    transform.rotation = projectile.transform.rotation;
+                    Transform projTr = projectile.transform;
+                    Vector3 targetPos = projTr.position + (-projTr.up * _hoverOffset);
+                    Quaternion targetRot = projTr.rotation;
+
+                    transform.position = Vector3.Slerp(transform.position, targetPos, Time.deltaTime * 5);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 5);
+
                     yield return null;
                 }
 
@@ -11111,6 +11879,7 @@ namespace Mod
 
         public void Start()
         {
+            Debug.Log("Starting");
             foreach (var power in transform.root.GetComponentsInChildren<Power>())
             {
                 if (power.targetLimb == targetPowers)
@@ -12551,14 +13320,14 @@ namespace Mod
                 GetComponent<SpriteRenderer>().sprite = FrontView;
                 GetComponent<PhysicalBehaviour>().RefreshOutline();
                 Destroy(GetComponent<Collider2D>());
-                gameObject.AddComponent<CircleCollider2D>();
+                Timtam.CreateCollider(GetComponent<SpriteRenderer>());
             }
             else
             {
                 GetComponent<SpriteRenderer>().sprite = SideView;
                 GetComponent<PhysicalBehaviour>().RefreshOutline();
                 Destroy(GetComponent<Collider2D>());
-                gameObject.AddComponent<PolygonCollider2D>();
+                Timtam.CreateCollider(GetComponent<SpriteRenderer>());
             }
         }
 
