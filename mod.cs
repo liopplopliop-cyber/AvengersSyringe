@@ -591,6 +591,63 @@ namespace Mod
                 );
             }
 
+            public static void CreateAndroid(string name, string description, string FileName, string Thumbname, Action<GameObject> AfterSpawn = null, string OrderOverride = null)
+            {
+                var bob = new SkinsDictionary()
+                {
+                    characterName = "[" + CategoryName + "] " + name
+                };
+                bob.icons.Add(ModAPI.LoadSprite("Art/Thumbnails/" + Thumbname + ".png"));
+                Mod.skinsIcons.Add(bob);
+                ModAPI.Register(
+                    new Modification()
+                    {
+                        OriginalItem = ModAPI.FindSpawnable("Android"),
+                        NameOverride = "[" + CategoryName + "] " + name,
+                        NameToOrderByOverride = OrderOverride,
+                        DescriptionOverride = description,
+                        CategoryOverride = ModAPI.FindCategory(CategoryName),
+                        ThumbnailOverride = ModAPI.LoadSprite("Art/Thumbnails/" + Thumbname + ".png"),
+                        AfterSpawn = (Instance) =>
+                        {
+                            var person = Instance.GetComponent<PersonBehaviour>();
+                            var skin = ModAPI.LoadTexture("Art/Skins/" + FileName + "/Skin.png");
+                            person.SetBodyTextures(skin);
+
+                            var menu = Instance.AddComponent<TextureMenu>();
+                            menu.CreateUI();
+                            menu.AddButton("Default", ModAPI.LoadSprite("Art/Thumbnails/" + Thumbname + ".png"), ModAPIPlus.LimbSprites("Art/Skins/" + FileName + "/"));
+
+                            //body code thing
+                            Timtam.MakeCustomSkin(person, ModAPIPlus.LimbSprites("Art/Skins/" + FileName + "/"), false, true);
+                        }
+                        + AfterSpawn
+                        + new Action<GameObject>((Instance) =>
+                        {
+                            var menu = Instance.GetComponent<TextureMenu>();
+                            var spawnIconButton = ModAPIPlus.GetIcon("[" + CategoryName + "] " + name);
+                            foreach (var button in menu.Buttons)
+                            {
+                                if (button.GetComponent<Image>().sprite == spawnIconButton.GetComponent<Image>().sprite)
+                                {
+                                    button.GetComponent<Button>().onClick.Invoke();
+                                    menu.ChangeTexture(menu.SelectedSkin);
+                                }
+                            }
+                            var person = Instance.GetComponent<PersonBehaviour>();
+                            foreach (var limb in person.Limbs)
+                            {
+                                int index = person.Limbs.ToList().IndexOf(limb);
+                                if (index >= 4 && index <= 9)
+                                {
+                                    limb.transform.position += Vector3.right * Mathf.Sign(person.gameObject.transform.localScale.x) * ModAPI.PixelSize;
+                                }
+                            }
+                        })
+                    }
+                );
+            }
+
             public static void CreateObject(string originalObject, string name, string description, string FileName, string Thumbname, Action<GameObject> AfterSpawn = null, string OrderOverride = null, bool ChangeColsAndMass = true)
             {
                 ModAPI.Register(
@@ -711,6 +768,7 @@ namespace Mod
             Settings.main = new Settings();
             Settings.main.AddSetting("UI Size", "Adjust the UI scale if it is incorrect", "UISize", 0.9f, typeof(float), 0.5f, 1.5f);
             Settings.main.AddSetting("Capes", "When disabled, no characters will spawn with capes", "UseCapes", true, typeof(bool));
+            Settings.main.AddSetting("Legacy Mass System", "When enabled, it will force all 'stronger' characters masses to be 0.5, negating issues with characters jumping around too much", "LegacyMass", false, typeof(bool));
             Settings.main.AddSetting("Stronger healing", "Automatically enables the Speed Healing power on entities using the slower varient.", "SpeedHeal", false, typeof(bool));
             Settings.main.AddSetting("Flight Stun", "Adjust the duration that a character is stunned when hit while flying", "KnockoutTime", 1.5f, typeof(float), 0f, 5f);
             Settings.main.AddSetting("Durability", "Changes the damage dampening on speed healing and super strength, divides impact damage variable by whatever is inputted in this setting, and stacks if it has both strength and healing.", "DamDamp", 10, typeof(int), 1, 40);
@@ -828,6 +886,7 @@ namespace Mod
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
                 SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 4, 12);
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
 
                 person.GetComponent<SpeedHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
@@ -945,7 +1004,10 @@ namespace Mod
                 var person = Instance.GetComponent<PersonBehaviour>();
 
                 var menu = Instance.GetComponent<TextureMenu>();
-               
+
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
+                SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+
             }, "a");
 
             //Yelena Belova
@@ -954,6 +1016,9 @@ namespace Mod
                 var person = Instance.GetComponent<PersonBehaviour>();
 
                 var menu = Instance.GetComponent<TextureMenu>();
+
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
+                SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
 
                 menu.AddButton("Black Widow", ModAPI.LoadSprite("Art/Thumbnails/Black Widow Yelena.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Black Widow Yelena/"));
                 menu.AddButton("Thunderbolts", ModAPI.LoadSprite("Art/Thumbnails/Thunderbolts Yelena.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Thunderbolts Yelena/"));
@@ -964,6 +1029,10 @@ namespace Mod
             ModAPIPlus.CreateHuman("Hawkeye", "", "Hawkeye", "Hawkeye", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
+
+
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
+                SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
 
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("Clint Barton", ModAPI.LoadSprite("Art/Thumbnails/Clint Barton.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Clint Barton/"));
@@ -1001,7 +1070,7 @@ namespace Mod
             }, "a");
 
             //Vision
-            ModAPIPlus.CreateHuman("Vision", "", "Vision", "Vision", (Instance) =>
+            ModAPIPlus.CreateAndroid("Vision", "", "Vision", "Vision", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
@@ -1085,11 +1154,11 @@ namespace Mod
                     {
                         MagicProjectile.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Projectile.png")).EnablePower();
                         MysticFist.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/MysticFist.png"));
+                        AstralFist.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/AstralFist.png"));
                         MagicWhip.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Magic Whip.png"));
                         Portaller.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Portal.png"));
-                        AstralFist.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/AstralFist.png"));
-                        TimeFreeze.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/TimeFreeze.png"));
                         Telekinesis.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Telekinesis.png"));
+                        TimeFreeze.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/TimeFreeze.png"));
                         Limbs.gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(Limbs.gameObject);
                     }
 
@@ -1164,7 +1233,7 @@ namespace Mod
 
                  menu.AddButton("EMH", ModAPI.LoadSprite("Art/Thumbnails/Wasp EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp EMH/"));
 
-                 SizeChange.SetPower(person, person.Limbs[11], null, 3, "Grow").EnablePower();
+                SizeChange.SetPower(person, person.Limbs[11], null, 3, "Grow").EnablePower();
                 SizeChange.SetPower(person, person.Limbs[11], null, 0.1f);
                 SizeChange.SetPower(person, person.Limbs[13], null, 3, "Grow");
                 SizeChange.SetPower(person, person.Limbs[13], null, 0.1f).EnablePower();
@@ -1254,6 +1323,9 @@ namespace Mod
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
                 SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
 
+
+                EnergyExplosion.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Energy Explosion.png"), new Color(0.6f, 0.5f, 0.2f, 1f), ModAPIPlus.LimbGlowSprites("Art/Skins/Black Panther/")).EnablePower();
+
                 person.GetComponent<SpeedHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
 
@@ -1266,9 +1338,6 @@ namespace Mod
                         Claws.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Claw.png"), ModAPI.LoadSprite("Art/Objects/Claws.png")).EnablePower();
                     }
                 }
-
-                EnergyExplosion.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Energy Explosion.png"), new Color(0.6f, 0.5f, 0.2f, 1f), ModAPIPlus.LimbGlowSprites("Art/Skins/Black Panther/")).EnablePower();
-
             }, "a");
 
             //Iron Spider
@@ -1544,8 +1613,9 @@ namespace Mod
             ModAPIPlus.CreateHuman("Kate Bishop", "When I put that suit on, I thought, This is it. This is the moment I become who I'm supposed to be.", "Kate Bishop", "Kate Bishop", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
-                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
+
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
+                SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
 
                 person.GetComponent<SpeedHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
@@ -1625,6 +1695,9 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
 
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
+                SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+
                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Casual Maria Hill.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Casual Maria Hill/"));
 
             }, "a");
@@ -1673,7 +1746,7 @@ namespace Mod
             }, "a");
 
             //Ultron
-            ModAPIPlus.CreateHuman("Ultron", "", "Ultron", "Ultron", (Instance) =>
+            ModAPIPlus.CreateAndroid("Ultron", "", "Ultron", "Ultron", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
@@ -1765,10 +1838,10 @@ namespace Mod
                         Thruster.SetPower(person, limb, null, new Color32(230, 0, 0, 200), new Color32(230, 0, 0, 200)).EnablePower();
                 }
 
-            }, "a", ModAPI.LoadSprite("Art/TempForScripts/AndroidFlesh.png"), ModAPI.LoadSprite("Art/TempForScripts/AndroidBone.png"));
+            }, "a");
 
             //Ultron Bot
-            ModAPIPlus.CreateHuman("Ultron Bot", "", "Ultron Bot", "Ultron Bot", (Instance) =>
+            ModAPIPlus.CreateAndroid("Ultron Bot", "", "Ultron Bot", "Ultron Bot", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 
@@ -1810,7 +1883,7 @@ namespace Mod
                         Thruster.SetPower(person, limb, null, new Color32(230, 0, 0, 200), new Color32(230, 0, 0, 200)).EnablePower();
                 }
 
-            }, "a", ModAPI.LoadSprite("Art/TempForScripts/AndroidFlesh.png"), ModAPI.LoadSprite("Art/TempForScripts/AndroidBone.png"));
+            }, "a");
 
             //Kang
             ModAPIPlus.CreateHuman("Kang the Conquerer", "", "Kang the Conquerer", "Kang the Conquerer", (Instance) =>
@@ -2209,16 +2282,16 @@ namespace Mod
 
             if (phys.StoppedBeingUsedContinuously())
             {
-                if (CurrentLoad > 0.1f)
+                if (CurrentLoad > 0.01f)
                 {
                     ModAPI.CreateParticleEffect("Vapor", transform.position);
                     StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Bow, UnityEngine.Random.Range(0.8f, 1.2f)));
 
                     var arrow = Instantiate(ModAPI.FindSpawnable("Crossbow Bolt").Prefab);
-
-                    if(transform.localScale.x < 0)
+                    arrow.GetComponent<PhysicalBehaviour>().SpawnSpawnParticles = false;
+                    if (transform.localScale.x < 0)
                         arrow.transform.localScale = new Vector3(-arrow.transform.localScale.x, arrow.transform.localScale.y, arrow.transform.localScale.z);
-
+                    arrow.AddComponent<DebrisComponent>();
                     Physics2D.IgnoreCollision(arrow.GetComponent<Collider2D>(), GetComponent<Collider2D>());
 
                     arrow.GetComponent<SpriteRenderer>().sprite = arrowType == ArrowType.Normal ? Mod.NormalArrow :
@@ -2668,6 +2741,7 @@ namespace Mod
         {
             if (Projecting)
                 return;
+            Projecting = true;
 
             originals = new List<LimbProps>();
 
@@ -2677,7 +2751,7 @@ namespace Mod
             }
 
             //ModAPI.CreateParticleEffect(ParticleEffects.Disintegration, person.Limbs[1].transform.position);
-            var soulOBJ = Instantiate(ModAPI.FindSpawnable("Human").Prefab);
+            soulOBJ = Instantiate(ModAPI.FindSpawnable("Human").Prefab);
             soulOBJ.transform.localScale = transform.root.localScale;
             soulOBJ.transform.position = transform.root.position;
 
@@ -2687,25 +2761,26 @@ namespace Mod
             {
                 if (renderer.TryGetComponent<PhysicalBehaviour>(out var ph))
                 {
+                    ph.SpawnSpawnParticles = false;
                     ph.rigidbody.gravityScale = 0;
                     ph.rigidbody.drag = 5;
                     ph.rigidbody.angularDrag = 5;
                     ph.gameObject.layer = Layers.Debris;
+                    ph.GetComponent<LimbBehaviour>().BaseStrength /= 2;
                 }
 
                 foreach (var renderer2 in transform.root.GetComponentsInChildren<SpriteRenderer>())
                     if (renderer2.gameObject.name == renderer.gameObject.name)
                     {
                         renderer.sprite = renderer2.sprite;
-                        renderer.color = new Color(0.1f, 0.1f, 0.9f, 0.3f);
+                        renderer.color = new Color(0.7f, 0.7f, 1f, 0.3f);
 
                         if (renderer2.TryGetComponent<PhysicalBehaviour>(out var ph2))
                         {
-                            ph2.rigidbody.gravityScale = 0;
-                            ph2.rigidbody.drag = 50;
-                            ph2.rigidbody.angularDrag = 50;
                             ph2.GetComponent<LimbBehaviour>().BaseStrength = 0;
                             ph2.GetComponent<LimbBehaviour>().FakeUprightForce = 0;
+                            if(ph2.GetComponent<LimbBehaviour>().Joint)
+                                ph2.GetComponent<LimbBehaviour>().Joint.autoConfigureConnectedAnchor = false;
 
                             if (renderer.TryGetComponent<PhysicalBehaviour>(out var phh))
                             {
@@ -2716,14 +2791,14 @@ namespace Mod
                         }
                     }
             }
-
-            Projecting = true;
         }
 
         public void Unproject()
         {
-            if (!Projecting && soulOBJ == null)
+            if (!Projecting || soulOBJ == null)
                 return;
+
+            Projecting = false;
 
             if (soulOBJ)
             {
@@ -2741,6 +2816,7 @@ namespace Mod
                 limb.PhysicalBehaviour.rigidbody.drag = 0;
                 limb.PhysicalBehaviour.rigidbody.angularDrag = 0;
                 limb.BaseStrength = originals.Find(x => x.limb == limb).baseStrength;
+                limb.FakeUprightForce = originals.Find(x => x.limb == limb).Upright;
             }
 
             if (OneTimeOnly)
@@ -2841,8 +2917,14 @@ namespace Mod
 
             if (col.gameObject.TryGetComponent<LimbBehaviour>(out var limb) && col.relativeVelocity.magnitude > 3)
             {
+                Punching = false;
+                PFX.GetComponent<ParticleSystem>().Stop();
+
                 CameraShakeBehaviour.main.Shake(7, base.transform.position);
-                AstralProjection.SetPower(limb.Person, limb.Person.Limbs[0], null, true).EnablePower();
+                if (!limb.Person.GetComponentInChildren<AstralProjection>())
+                    AstralProjection.SetPower(limb.Person, limb.Person.Limbs[0], null, true).EnablePower();
+                else
+                    limb.Person.GetComponentInChildren<AstralProjection>().Project();
             }
         }
     }
@@ -13320,6 +13402,7 @@ namespace Mod
                 GetComponent<SpriteRenderer>().sprite = FrontView;
                 GetComponent<PhysicalBehaviour>().RefreshOutline();
                 Destroy(GetComponent<Collider2D>());
+                gameObject.AddComponent<PolygonCollider2D>();
                 Timtam.CreateCollider(GetComponent<SpriteRenderer>());
             }
             else
@@ -13327,6 +13410,7 @@ namespace Mod
                 GetComponent<SpriteRenderer>().sprite = SideView;
                 GetComponent<PhysicalBehaviour>().RefreshOutline();
                 Destroy(GetComponent<Collider2D>());
+                gameObject.AddComponent<PolygonCollider2D>();
                 Timtam.CreateCollider(GetComponent<SpriteRenderer>());
             }
         }
@@ -14070,9 +14154,9 @@ namespace Mod
                 limb.ImpactPainMultiplier /= strength == 1 ? strength : strength * 10;
                 limb.ShotDamageMultiplier /= strength == 1 ? strength : strength * 10;
 
-                if (limb.HasBrain)
+                if (limb.HasBrain && Settings.main.Get<bool>("LegacyMass") == false)
                 {
-                    limb.gameObject.AddComponent<FakeHead>().limb = limb;
+                    limb.gameObject.GetOrAddComponent<FakeHead>().limb = limb;
                     limb.HasBrain = false;
                 }
 
@@ -14083,16 +14167,21 @@ namespace Mod
 
             yield return new WaitForSecondsRealtime(0.2f);
 
-            foreach (var limb in GetComponent<PersonBehaviour>().Limbs)
+            if(Settings.main.Get<bool>("LegacyMass") == false)
+                foreach (var limb in GetComponent<PersonBehaviour>().Limbs)
+                {
+                    limb.BaseStrength *= NewMass > 1 ? (NewMass * 10) < 15 ? NewMass * 10 : NewMass * 5 : NewMass * 6;
+
+                    if (limb.FakeUprightForce > 0)
+                        limb.FakeUprightForce *= NewMass > 1 ? NewMass < 15 ? NewMass + 10 : (NewMass * 0.75f) : NewMass * 10;
+                }
+            else
             {
-                limb.BaseStrength *= NewMass > 1 ? (NewMass * 10) < 15 ? NewMass * 10 : NewMass * 5 : NewMass * 6;
-
-                if (limb.FakeUprightForce > 0)
-                    limb.FakeUprightForce *= NewMass > 1 ? NewMass < 15 ? NewMass + 10 : (NewMass * 0.75f) : NewMass * 10;
-
-                if (limb.GetComponent<Rigidbody2D>())
-                    limb.GetComponent<Rigidbody2D>().mass = NewMass;
-                limb.PhysicalBehaviour.TrueInitialMass = NewMass;
+                foreach (var limb in GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (limb.GetComponent<Rigidbody2D>())
+                        limb.GetComponent<Rigidbody2D>().mass = 0.5f;
+                }
             }
         }
 
