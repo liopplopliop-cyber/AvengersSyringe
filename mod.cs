@@ -843,6 +843,9 @@ namespace Mod
                 IronSkin("Superior Iron Man Maskless");
                 IronSkin("Thorbuster");
                 IronSkin("Mark 50");
+                IronSkin("Mark 6");
+                IronSkin("Mark 85");
+                IronSkin("Mark 42");
             }, "a");
 
             //Steve Rogers
@@ -1161,6 +1164,10 @@ namespace Mod
                         TimeFreeze.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/TimeFreeze.png"));
                         Limbs.gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(Limbs.gameObject);
                     }
+                    var menu = Instance.GetComponent<TextureMenu>();
+
+                       menu.AddButton("Mcu Strange", ModAPI.LoadSprite("Art/Thumbnails/Mcu Strange.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Mcu Strange/"), null, null, ModAPI.LoadSprite("Art/AltSkins/Mcu Strange/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/Mcu Strange/CapeThing.png"));
+
 
                     if (Limbs.gameObject.name.Contains("ArmFront"))
                     {
