@@ -9,7 +9,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using UnityEngine.UI.Extensions;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -154,6 +153,9 @@ namespace Mod
 
         public static Sprite Vision = ModAPI.LoadSprite("Art/Objects/Vision.png");
         public static Sprite Eye = ModAPI.LoadSprite("Art/Objects/Eye.png");
+
+        public static Sprite Ring = ModAPI.LoadSprite("Art/Objects/Ring.png");
+        public static Sprite RingGlow = ModAPI.LoadSprite("Art/Objects/Glow.png");
 
         //icons
         public static Sprite venomIcon = ModAPI.LoadSprite("Art/UI/Icons/Venom.png");
@@ -364,6 +366,27 @@ namespace Mod
 
         public struct ModAPIPlus
         {
+            public static GameObject AddGlowToObject(GameObject parent, Sprite sprite)
+            {
+                var glowObject = new GameObject("Glow");
+                glowObject.transform.parent = parent.transform;
+                glowObject.transform.localPosition = Vector3.zero;
+                glowObject.transform.localRotation = Quaternion.identity;
+                glowObject.transform.localScale = Vector3.one;
+
+                var parentSr = parent.GetComponent<SpriteRenderer>();
+
+                var sr = glowObject.AddComponent<SpriteRenderer>();
+                sr.sprite = sprite;
+                sr.gameObject.layer = 9;
+                sr.sortingLayerName = parentSr.sortingLayerName;
+                sr.sortingOrder = parentSr.sortingOrder + 1;
+                sr.color = Color.white;
+                sr.material = ModAPI.FindMaterial("VeryBright");
+
+                return glowObject;
+            }
+
             public static IEnumerator PlaySound(Vector2 position, AudioClip SoundToPlay, float pitch = 1, float volume = 1)
             {
                 var sound = new GameObject();
@@ -957,7 +980,13 @@ namespace Mod
                 var person = Instance.GetComponent<PersonBehaviour>();
                 var menu = Instance.GetComponent<TextureMenu>();
 
-
+                foreach (var limb in person.Limbs)
+                {
+                    if(limb.name.Contains("LowerArm"))
+                    {
+                        Rings.SetPower(person,limb, ModAPI.LoadSprite("Art/UI/Icons/Rings.png")).EnablePower();
+                    }
+                }
             }, "a");
 
             //Jennifer Walters
@@ -2182,6 +2211,650 @@ namespace Mod
                     Destroy(this);
                 }
             }
+        }
+    }
+
+    public class Rings : Power, Mod.ModAPIPlus.ISwap
+    {
+        public GameObject Ring1;
+        public GameObject Ring2;
+        public GameObject Ring3;
+        public GameObject Ring4;
+        public GameObject Ring5;
+
+        public enum Mode
+        {
+            onArm,
+            Sword,
+            Shoot
+        }
+
+        public Mode mode;
+
+        private const float OrbitRadius = 0.6f;
+        private const float OrbitSpeed = 3.5f;
+        private const float FollowKp = 30f;
+        private const float FollowKd = 6f;
+
+        private const float SwordFollowKp = 300f;
+        private const float SwordFollowKd = 50f;
+
+        private const float LaunchSpeed = 27f;
+        private const float HomingAccel = 70f;
+        private const float ReturnThreshold = 0.08f;
+        private const float AttachMass = 1f;
+
+        private Rigidbody2D _limbRb;
+        private Collider2D[] _ownerCols;
+        private readonly List<RingData> _rings = new List<RingData>();
+
+        private readonly float[] _attachOffsets = new float[5] { -0.2f, -0.1f, 0.0f, 0.1f, 0.2f };
+        private const float AttachedUpOffset = 0.05f;
+
+        private const float SwordBaseBelow = 0.45f;
+        private const float SwordStep = 0.25f;
+
+        private LineRenderer _swordLine;
+
+        private enum RingState
+        {
+            Attached,
+            SwordFollow,
+            Orbit,
+            Launched,
+            Returning
+        }
+
+        private class RingData
+        {
+            public GameObject go;
+            public Rigidbody2D rb;
+            public Collider2D[] cols;
+            public FixedJoint2D joint;
+            public float orbitAngle;
+            public RingState state;
+
+            public Rigidbody2D homingTarget;
+            public Collider2D targetCollider;
+            public Vector2 targetPoint;
+            public bool hasTarget;
+            public Rings owner;
+            public int index;
+            public float launchStartTime;
+            public Vector3 Jitter;
+        }
+
+        private class RingCollisionForwarder : UnityEngine.MonoBehaviour
+        {
+            public Rings owner;
+            public int index;
+
+            private void OnCollisionEnter2D(Collision2D col)
+            {
+                if (owner == null) return;
+
+                var data = owner._rings[index];
+                if (owner.mode == Mode.Sword)
+                {
+                    UnityEngine.Debug.Log("[Rings:Sword] Ring " + (index + 1) + " collided with " + col.collider.name);
+                }
+
+                if (owner.mode == Mode.Shoot && data.state == RingState.Launched && data.hasTarget)
+                {
+                    if (data.targetCollider != null && col.collider == data.targetCollider)
+                    {
+                        UnityEngine.Debug.Log("[Rings:HitTarget] Ring " + (index + 1) + " hit its target: " + col.collider.name);
+                        owner.BeginReturn(index);
+                    }
+                    else if (data.homingTarget != null && col.rigidbody == data.homingTarget)
+                    {
+                        UnityEngine.Debug.Log("[Rings:HitTarget] Ring " + (index + 1) + " hit its homing target: " + col.rigidbody.name);
+                        owner.BeginReturn(index);
+                    }
+                }
+            }
+        }
+
+        public static Rings SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
+        {
+            var power = Limb.gameObject.AddComponent<Rings>();
+            power.Name = "Five Rings";
+            power.Description = "Allows the user to use five of the ten rings.";
+            power.icon = icon;
+            power.targetLimb = power.name.Contains("Front") ? TargettedLimb.FrontArm : TargettedLimb.BackArm;
+
+            return power;
+        }
+
+        public override void Start()
+        {
+            base.Start();
+
+            _limbRb = GetComponent<Rigidbody2D>();
+            _ownerCols = transform.root.GetComponentsInChildren<Collider2D>(true);
+
+            Ring1 = ModAPI.CreatePhysicalObject("Ring", Mod.Ring);
+            Ring2 = ModAPI.CreatePhysicalObject("Ring", Mod.Ring);
+            Ring3 = ModAPI.CreatePhysicalObject("Ring", Mod.Ring);
+            Ring4 = ModAPI.CreatePhysicalObject("Ring", Mod.Ring);
+            Ring5 = ModAPI.CreatePhysicalObject("Ring", Mod.Ring);
+
+            SetupRing(Ring1, 0);
+            SetupRing(Ring2, 1);
+            SetupRing(Ring3, 2);
+            SetupRing(Ring4, 3);
+            SetupRing(Ring5, 4);
+
+            ApplyGlobalIgnoreRules();
+            RaiseRingSortingOrderAboveOwner();
+
+            _swordLine = CreateSwordLineRenderer();
+
+            mode = Mode.onArm;
+            EnterOnArmMode();
+        }
+
+        public void Swap()
+        {
+            if (mode == Mode.onArm)
+            {
+                mode = Mode.Sword;
+                EnterSwordMode();
+            }
+            else if (mode == Mode.Sword)
+            {
+                mode = Mode.Shoot;
+                EnterShootMode();
+            }
+            else if (mode == Mode.Shoot)
+            {
+                mode = Mode.onArm;
+                EnterOnArmMode();
+            }
+            FakeNotifDissapearer.CreateNotification(mode.ToString(), transform.position);
+        }
+
+        public void Use()
+        {
+            if (mode != Mode.Shoot) return;
+
+            int idx = GetFirstOrbitingRingIndex();
+            if (idx < 0) return;
+
+            var origin = (Vector2)transform.position;
+            var dir = -(Vector2)transform.up;
+            var hits = Physics2D.RaycastAll(origin, dir, 250f);
+            Collider2D targetCol = null;
+            Rigidbody2D targetBody = null;
+            Vector2 targetPoint = origin + dir * 10f;
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                var h = hits[i];
+                if (h.collider == null) continue;
+                if (IsColliderOwner(h.collider)) continue;
+                if (IsColliderRing(h.collider)) continue;
+
+                targetCol = h.collider;
+                targetBody = h.rigidbody != null && h.rigidbody.bodyType == RigidbodyType2D.Dynamic ? h.rigidbody : null;
+                targetPoint = h.point;
+                break;
+            }
+
+            LaunchRing(idx, targetPoint, targetCol, targetBody);
+        }
+
+        private void FixedUpdate()
+        {
+            float dt = Time.fixedDeltaTime;
+            for (int i = 0; i < _rings.Count; i++)
+            {
+                var r = _rings[i];
+                if (r == null || r.rb == null) continue;
+
+                switch (r.state)
+                {
+                    case RingState.SwordFollow:
+                        {
+                            Vector2 baseTarget = (Vector2)transform.position - (Vector2)transform.up * (SwordBaseBelow + (i * SwordStep));
+
+                            Vector2 limbVel = _limbRb != null ? _limbRb.velocity : Vector2.zero;
+                            baseTarget += limbVel * 0.035f;
+
+                            float angVel = _limbRb != null ? _limbRb.angularVelocity : 0f;
+                            Vector2 right = new Vector2(transform.right.x, transform.right.y);
+                            baseTarget += right * (angVel * 0.0025f);
+
+                            PDMove(r, baseTarget, dt, true);
+                            break;
+                        }
+                    case RingState.Orbit:
+                        {
+                            r.orbitAngle += OrbitSpeed * dt;
+                            Vector2 target = (Vector2)transform.position + new Vector2(Mathf.Cos(r.orbitAngle), Mathf.Sin(r.orbitAngle)) * OrbitRadius;
+                            PDMove(r, target, dt, false);
+                            break;
+                        }
+                    case RingState.Launched:
+                        {
+                            Vector2 pos = r.rb.position;
+
+                            if (r.homingTarget != null)
+                            {
+                                Vector2 tgt = r.homingTarget.position;
+                                Vector2 to = (tgt - pos);
+                                Vector2 acc = to.normalized * HomingAccel;
+                                r.rb.velocity = Vector2.ClampMagnitude(r.rb.velocity + acc * dt, LaunchSpeed * 1.2f);
+                            }
+                            else
+                            {
+                                Vector2 to = (r.targetPoint - pos);
+                                Vector2 desiredVel = to.normalized * LaunchSpeed;
+                                r.rb.velocity = Vector2.Lerp(r.rb.velocity, desiredVel, 10f * dt);
+
+                                if (to.magnitude < 0.15f)
+                                {
+                                    BeginReturn(i);
+                                }
+                            }
+
+                            if (Time.time - r.launchStartTime > 4f)
+                            {
+                                BeginReturn(i);
+                            }
+                            break;
+                        }
+                    case RingState.Returning:
+                        {
+                            Vector2 target = (Vector2)transform.position + new Vector2(Mathf.Cos(r.orbitAngle), Mathf.Sin(r.orbitAngle)) * OrbitRadius;
+                            PDMove(r, target, dt, false);
+                            if (((Vector2)r.rb.position - target).sqrMagnitude < ReturnThreshold * ReturnThreshold)
+                            {
+                                r.state = RingState.Orbit;
+                                r.hasTarget = false;
+                                r.homingTarget = null;
+                                r.targetCollider = null;
+                            }
+                            break;
+                        }
+                }
+            }
+
+            if (_swordLine == null) return;
+
+            bool swordActive = mode == Mode.Sword;
+            if (_swordLine.enabled != swordActive)
+                _swordLine.enabled = swordActive;
+
+            if (!swordActive) return;
+
+            int count = _rings.Count;
+            if (count == 0) return;
+
+
+            for (int i = 0; i < count; i++)
+            {
+                var r = _rings[i];
+                if (r == null || r.rb == null) continue;
+
+                Vector3 basePos = r.rb.position;
+
+                r.Jitter = new Vector2(r.go.transform.position.x + UnityEngine.Random.Range(-0.25f, 0.25f), r.go.transform.position.y + UnityEngine.Random.Range(-0.25f, 0.25f));
+            }
+        }
+
+        public void Update()
+        {
+            if (_swordLine == null) return;
+
+            bool swordActive = mode == Mode.Sword;
+            if (_swordLine.enabled != swordActive)
+                _swordLine.enabled = swordActive;
+
+            if (!swordActive) return;
+
+            int count = _rings.Count;
+            if (count == 0) return;
+
+            _swordLine.positionCount = count;
+
+            for (int i = 0; i < count; i++)
+            {
+                var r = _rings[i];
+                if (r == null || r.rb == null) continue;
+
+                Vector3 basePos = r.rb.position;
+
+                _swordLine.SetPosition(i, Vector3.Lerp(_swordLine.GetPosition(i), r.Jitter, Time.deltaTime * 10));
+            }
+        }
+
+        private void EnterOnArmMode()
+        {
+            if (_swordLine != null) _swordLine.enabled = false;
+
+            for (int i = 0; i < _rings.Count; i++)
+            {
+                var r = _rings[i];
+                if (r == null) continue;
+
+                if (r.joint == null)
+                {
+                    r.joint = r.go.AddComponent<FixedJoint2D>();
+                }
+
+                r.rb.gravityScale = 0f;
+                r.rb.mass = 0.0001f;
+                r.rb.drag = 0f;
+                r.rb.angularDrag = 0f;
+
+                var worldPos = transform.position + (Vector3)transform.up * (AttachedUpOffset + _attachOffsets[i]);
+                r.rb.position = worldPos;
+                r.go.transform.rotation = transform.rotation;
+
+                r.joint.connectedBody = _limbRb;
+                r.joint.autoConfigureConnectedAnchor = true;
+                r.joint.enableCollision = false;
+
+                r.state = RingState.Attached;
+            }
+        }
+
+        private void EnterSwordMode()
+        {
+            if (_swordLine != null) _swordLine.enabled = true;
+
+            for (int i = 0; i < _rings.Count; i++)
+            {
+                var r = _rings[i];
+                if (r == null) continue;
+
+                DestroyJointIfAny(r);
+                SetRingCollidersEnabled(r, true);
+
+                r.rb.gravityScale = 0f;
+                r.rb.mass = AttachMass;
+                r.rb.drag = 0.1f;
+                r.rb.angularDrag = 0.05f;
+
+                r.rb.velocity += (Vector2)transform.right * 0.5f;
+
+                r.state = RingState.SwordFollow;
+            }
+        }
+
+        private void EnterShootMode()
+        {
+            if (_swordLine != null) _swordLine.enabled = false;
+
+            int n = _rings.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var r = _rings[i];
+                if (r == null) continue;
+
+                DestroyJointIfAny(r);
+                SetRingCollidersEnabled(r, true);
+
+                r.rb.gravityScale = 0f;
+                r.rb.mass = AttachMass;
+                r.orbitAngle = ((Mathf.PI * 2f) / n) * i;
+                r.state = RingState.Orbit;
+                r.hasTarget = false;
+                r.homingTarget = null;
+                r.targetCollider = null;
+            }
+        }
+
+        private void LaunchRing(int index, Vector2 point, Collider2D col, Rigidbody2D body)
+        {
+            var r = _rings[index];
+            if (r.state != RingState.Orbit) return;
+
+            r.state = RingState.Launched;
+            r.hasTarget = true;
+            r.targetPoint = point;
+            r.targetCollider = col;
+            r.homingTarget = body;
+            r.launchStartTime = Time.time;
+
+            Vector2 dir = ((body != null ? (Vector2)body.position : point) - r.rb.position).normalized;
+            r.rb.velocity = dir * LaunchSpeed;
+        }
+
+        private void BeginReturn(int index)
+        {
+            var r = _rings[index];
+            r.state = RingState.Returning;
+            r.hasTarget = false;
+            r.homingTarget = null;
+            r.targetCollider = null;
+            r.orbitAngle = Mathf.Atan2(r.rb.position.y - transform.position.y, r.rb.position.x - transform.position.x);
+        }
+
+        private int GetFirstOrbitingRingIndex()
+        {
+            for (int i = 0; i < _rings.Count; i++)
+            {
+                if (_rings[i].state == RingState.Orbit) return i;
+            }
+            return -1;
+        }
+
+        private void PDMove(RingData r, Vector2 target, float dt, bool swordMode)
+        {
+            Vector2 pos = r.rb.position;
+            Vector2 vel = r.rb.velocity;
+
+            float kp = swordMode ? SwordFollowKp : FollowKp;
+            float kd = swordMode ? SwordFollowKd : FollowKd;
+
+            Vector2 err = target - pos;
+            Vector2 desiredF = kp * err - kd * vel;
+
+            if (swordMode)
+            {
+                Vector2 limbVel = _limbRb != null ? _limbRb.velocity : Vector2.zero;
+                float limbSpeed = limbVel.magnitude;
+
+                Vector2 boost = limbVel.normalized * Mathf.Clamp(limbSpeed * 0.9f, 0f, 12f);
+                desiredF += boost;
+
+                float angVel = _limbRb != null ? _limbRb.angularVelocity : 0f;
+                Vector2 tangential = new Vector2(transform.right.x, transform.right.y) * (angVel * 0.35f);
+                desiredF += tangential;
+            }
+
+            r.rb.AddForce(desiredF * r.rb.mass, ForceMode2D.Force);
+
+            if (r.rb.velocity.sqrMagnitude > 0.001f)
+            {
+                float targetRot = Mathf.Atan2(r.rb.velocity.y, r.rb.velocity.x) * Mathf.Rad2Deg - 90f;
+                float current = r.rb.rotation;
+                float lerped = Mathf.LerpAngle(current, targetRot, swordMode ? 18f * dt : 10f * dt);
+                r.rb.MoveRotation(lerped);
+            }
+        }
+
+        private void SetupRing(GameObject ring, int index)
+        {
+            ring.transform.position = transform.position;
+            ring.transform.rotation = transform.rotation;
+
+            var rb = ring.GetComponent<Rigidbody2D>();
+            if (rb == null) rb = ring.AddComponent<Rigidbody2D>();
+            rb.gravityScale = 0f;
+            rb.mass = 0.0001f;
+            rb.drag = 0f;
+            rb.angularDrag = 0f;
+            rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+            var cols = ring.GetComponentsInChildren<Collider2D>(true);
+            foreach (var c in cols)
+            {
+                c.isTrigger = false;
+            }
+
+            var forwarder = ring.GetComponent<RingCollisionForwarder>();
+            if (forwarder == null) forwarder = ring.AddComponent<RingCollisionForwarder>();
+            forwarder.owner = this;
+            forwarder.index = index;
+
+            var data = new RingData
+            {
+                go = ring,
+                rb = rb,
+                cols = cols,
+                joint = null,
+                orbitAngle = 0f,
+                state = RingState.Attached,
+                homingTarget = null,
+                targetCollider = null,
+                hasTarget = false,
+                owner = this,
+                index = index
+            };
+            _rings.Add(data);
+        }
+
+        private void DestroyJointIfAny(RingData r)
+        {
+            if (r.joint != null)
+            {
+                UnityEngine.Object.Destroy(r.joint);
+                r.joint = null;
+            }
+        }
+
+        private void SetRingCollidersEnabled(RingData r, bool enabled)
+        {
+            if (r.cols == null) return;
+            for (int i = 0; i < r.cols.Length; i++)
+            {
+                r.cols[i].enabled = enabled;
+            }
+        }
+
+        private void ApplyGlobalIgnoreRules()
+        {
+            for (int i = 0; i < _rings.Count; i++)
+            {
+                var ringCols = _rings[i].cols;
+                for (int c = 0; c < ringCols.Length; c++)
+                {
+                    for (int oc = 0; oc < _ownerCols.Length; oc++)
+                    {
+                        Physics2D.IgnoreCollision(ringCols[c], _ownerCols[oc], true);
+                    }
+                }
+            }
+
+            for (int i = 0; i < _rings.Count; i++)
+            {
+                var aCols = _rings[i].cols;
+                for (int j = i + 1; j < _rings.Count; j++)
+                {
+                    var bCols = _rings[j].cols;
+                    for (int ac = 0; ac < aCols.Length; ac++)
+                    {
+                        for (int bc = 0; bc < bCols.Length; bc++)
+                        {
+                            Physics2D.IgnoreCollision(aCols[ac], bCols[bc], true);
+                        }
+                    }
+                }
+            }
+
+            var allRingsBehaviours = transform.root.GetComponentsInChildren<Rings>(true);
+            for (int rbi = 0; rbi < allRingsBehaviours.Length; rbi++)
+            {
+                var other = allRingsBehaviours[rbi];
+                if (other == null || other == this) continue;
+
+                for (int i = 0; i < _rings.Count; i++)
+                {
+                    var myCols = _rings[i].cols;
+                    for (int j = 0; j < other._rings.Count; j++)
+                    {
+                        var otherCols = other._rings[j].cols;
+                        for (int mc = 0; mc < myCols.Length; mc++)
+                        {
+                            for (int oc = 0; oc < otherCols.Length; oc++)
+                            {
+                                Physics2D.IgnoreCollision(myCols[mc], otherCols[oc], true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private bool IsColliderOwner(Collider2D col)
+        {
+            for (int i = 0; i < _ownerCols.Length; i++)
+            {
+                if (col == _ownerCols[i]) return true;
+            }
+            return false;
+        }
+
+        private bool IsColliderRing(Collider2D col)
+        {
+            for (int i = 0; i < _rings.Count; i++)
+            {
+                var rd = _rings[i];
+                for (int j = 0; j < rd.cols.Length; j++)
+                {
+                    if (col == rd.cols[j]) return true;
+                }
+            }
+            return false;
+        }
+
+        private void RaiseRingSortingOrderAboveOwner()
+        {
+            var ownerSr = GetComponent<SpriteRenderer>();
+            int baseOrder = ownerSr.sortingOrder;
+            string baseLayer = ownerSr.sortingLayerName;
+
+            for (int i = 0; i < _rings.Count; i++)
+            {
+                var ringSr = _rings[i].go.GetComponent<SpriteRenderer>();
+                ringSr.sortingLayerName = baseLayer;
+                ringSr.sortingOrder = baseOrder + 1;
+
+                var r = _rings[i];
+                if (r == null) continue;
+
+                if (r.joint == null)
+                {
+                    r.joint = r.go.AddComponent<FixedJoint2D>();
+                }
+
+                r.rb.gravityScale = 0f;
+                r.rb.mass = 0.0001f;
+                r.rb.drag = 0f;
+                r.rb.angularDrag = 0f;
+            }
+        }
+
+        private LineRenderer CreateSwordLineRenderer()
+        {
+            var go = new GameObject("RingsSwordLine");
+            go.transform.SetParent(transform, false);
+            var lr = go.AddComponent<LineRenderer>();
+            lr.enabled = false;
+            lr.positionCount = 2;
+            lr.material = ModAPI.FindMaterial("VeryBright");
+            lr.widthMultiplier = 0.01f;
+            lr.sortingLayerName = GetComponent<SpriteRenderer>().sortingLayerName;
+            lr.sortingOrder = GetComponent<SpriteRenderer>().sortingOrder + 2;
+            lr.startColor = new Color(0.3f, 0.7f, 1f, 0.4f);
+            lr.endColor = new Color(0.3f, 0.7f, 1f, 0.4f);
+            lr.numCapVertices = 2;
+            lr.numCornerVertices = 2;
+            return lr;
         }
     }
 
@@ -11857,7 +12530,6 @@ namespace Mod
             CanGrab = false;
         }
     }
-
 
     //----------------------
     // Hello! if you are thinking about using any of my code, feel free to contact me on discord (_timtams.) using any of my code without my permission will get your mod taken down :P
