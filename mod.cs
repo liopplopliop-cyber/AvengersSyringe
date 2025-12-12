@@ -866,6 +866,10 @@ namespace Mod
                 IronSkin("Superior Iron Man Maskless");
                 IronSkin("Thorbuster");
                 IronSkin("Mark 50");
+                IronSkin("Mark 6");
+                IronSkin("Mark 85");
+                IronSkin("Mark 42");
+                IronSkin("Mark 46");
             }, "a");
 
             //Steve Rogers
@@ -1190,6 +1194,10 @@ namespace Mod
                         TimeFreeze.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/TimeFreeze.png"));
                         Limbs.gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(Limbs.gameObject);
                     }
+                    var menu = Instance.GetComponent<TextureMenu>();
+
+                       menu.AddButton("Mcu Strange", ModAPI.LoadSprite("Art/Thumbnails/Mcu Strange.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Mcu Strange/"), null, null, ModAPI.LoadSprite("Art/AltSkins/Mcu Strange/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/Mcu Strange/CapeThing.png"));
+
 
                     if (Limbs.gameObject.name.Contains("ArmFront"))
                     {
@@ -1424,12 +1432,14 @@ namespace Mod
 
                         if (Limbs.name.Contains("LowerBody"))
                         {
-                            Limbs.GetComponent<SpriteRenderer>().sortingOrder -= 4;
+                            Limbs.GetComponent<SpriteRenderer>().sortingOrder -= 4; 
                         }
                     }
                 }));
 
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Iron Spider Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Iron Spider Unmasked/"));
+                menu.AddButton("Damaged", ModAPI.LoadSprite("Art/Thumbnails/Damaged Iron Spidey.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Damaged Iron Spidey/"));
+                menu.AddButton("Mcu Iron Spider", ModAPI.LoadSprite("Art/Thumbnails/Mcu Iron Spider.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Mcu Iron Spider/"));
 
                 SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, new Vector2(-5, 3), 140);
                 SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, new Vector2(-5, 3), 140);
