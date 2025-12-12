@@ -2046,6 +2046,55 @@ namespace Mod
                 hatt.Wear(person.Limbs[0]);
             }, "a");
 
+            //Proxima Midnight
+            ModAPIPlus.CreateHuman("Proxima Midnight", "Father, we will not fail you.", "Proxima Midnight", "Proxima Midnight", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
+                SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+
+                     }, "a");
+
+            //Corvus Glaive
+            ModAPIPlus.CreateHuman("Corvus Glaive", "I am a servant of my master, Thanos-- a destroyer of worlds, a breaker of kings. I am one of the five, Corvus Glaive", "Corvus Glaive", "Corvus Glaive", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
+                SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+
+            }, "a");
+
+            //Cull Obsidian
+            ModAPIPlus.CreateHuman("Cull Obsidian", "he dont speak", "Cull Obsidian", "Cull Obsidian", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
+                SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+
+            }, "a");
+
+            //Ebony Maw
+            ModAPIPlus.CreateHuman("Ebony Maw", "Hear me and rejoice! You have had the privilege of being saved by the Great Titan. You may think this is suffering. No... it is salvation. The universal scales tip toward balance because of your sacrifice. Smile... for even in death, you have become children of Thanos.", "Ebony Maw", "Ebony Maw", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
+                SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+
+            }, "a");
+
+
             //Chitauri
             ModAPIPlus.CreateHuman("Chitauri", "", "Chitauri", "Chitauri", (Instance) =>
             {
