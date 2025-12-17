@@ -120,6 +120,7 @@ namespace Mod
         public static string CategoryName = "Nova's Avengers Mod";
 
         #region loadSprites
+
         public static Texture2D DamageTexture = ModAPI.LoadSprite("Art/TempForScripts/DamageTexture.png").texture;
 
         public static Sprite NoPowerSprite = ModAPI.LoadSprite("Art/UI/Icons/None.png");
@@ -296,12 +297,29 @@ namespace Mod
             return even;
         }
 
-        public static UnityEvent IronSkinAddEvent(List<Sprite> skin, PersonBehaviour person, Action<GameObject> addon = null)
+        public static UnityEvent IronSkinAddEvent(List<Sprite> skin, PersonBehaviour person, Action<GameObject> addon = null, Sprite Cannon = null, Sprite Hammer = null, Sprite Sword = null, Sprite Shield = null, Sprite Laser = null)
         {
             var act = new Action<GameObject>((Instance) =>
             {
                 var nano = person.GetComponentInChildren<Nanotech>();
                 nano.NanotechSuit = skin;
+
+                if (Cannon)
+                    foreach (var nanoc in person.GetComponentsInChildren<RepulsorCannons>())
+                        nanoc.Repulsor = Cannon;
+
+                if (Hammer)
+                    foreach (var nanoc in person.GetComponentsInChildren<NanoHammer>())
+                        nanoc.Nanoblade = Hammer;
+
+                if (Sword)
+                    foreach (var nanoc in person.GetComponentsInChildren<NanoBlade>())
+                        nanoc.Nanoblade = Sword;
+
+                if (Shield)
+                    foreach (var nanoc in person.GetComponentsInChildren<NanoShield>())
+                        nanoc.Nanoblade = Shield;
+
 
                 if (nano.transformed)
                 {
@@ -639,7 +657,7 @@ namespace Mod
 
                             var menu = Instance.AddComponent<TextureMenu>();
                             menu.CreateUI();
-                            menu.AddButton("Default", ModAPI.LoadSprite("Art/Thumbnails/" + Thumbname + ".png"), ModAPIPlus.LimbSprites("Art/Skins/" + FileName + "/"));
+                            menu.AddButton("Default", ModAPI.LoadSprite("Art/Thumbnails/" + Thumbname + ".png"), ModAPIPlus.LimbSprites("Art/Skins/" + FileName + "/"), null, null, ModAPI.LoadSprite("Art/Skins/" + FileName + "/Cape.png"), ModAPI.LoadSprite("Art/Skins/" + FileName + "/CapeThing.png"));
 
                             //body code thing
                             Timtam.MakeCustomSkin(person, ModAPIPlus.LimbSprites("Art/Skins/" + FileName + "/"), false, true);
@@ -791,7 +809,7 @@ namespace Mod
             Settings.main = new Settings();
             Settings.main.AddSetting("UI Size", "Adjust the UI scale if it is incorrect", "UISize", 0.9f, typeof(float), 0.5f, 1.5f);
             Settings.main.AddSetting("Capes", "When disabled, no characters will spawn with capes", "UseCapes", true, typeof(bool));
-            Settings.main.AddSetting("Legacy Mass System", "When enabled, it will force all 'stronger' characters masses to be 0.5, negating issues with characters jumping around too much", "LegacyMass", false, typeof(bool));
+            Settings.main.AddSetting("Legacy Mass System", "When enabled, it will force all 'stronger' characters masses to be 0.5, negating issues with characters jumping around too much", "LegacyMass", true, typeof(bool));
             Settings.main.AddSetting("Stronger healing", "Automatically enables the Speed Healing power on entities using the slower varient.", "SpeedHeal", false, typeof(bool));
             Settings.main.AddSetting("Flight Stun", "Adjust the duration that a character is stunned when hit while flying", "KnockoutTime", 1.5f, typeof(float), 0f, 5f);
             Settings.main.AddSetting("Durability", "Changes the damage dampening on speed healing and super strength, divides impact damage variable by whatever is inputted in this setting, and stacks if it has both strength and healing.", "DamDamp", 10, typeof(int), 1, 40);
@@ -843,9 +861,24 @@ namespace Mod
                 Nanotech.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Nanotech.png")).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
 
-                void IronSkin(string Name, string Display = null)
+                void IronSkin(string Name, string Display = null, string WeaponFolder = null)
                 {
-                    menu.AddFakeButton(Display??Name, ModAPI.LoadSprite("Art/Thumbnails/"+ Name + ".png"), null, IronSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/"+ Name + "/"), person));
+                    Sprite cannon = null;
+                    Sprite hammer = null;
+                    Sprite sword = null;
+                    Sprite shield = null;
+                    Sprite laser = null;
+
+                    if (WeaponFolder != null)
+                    {
+                        cannon = ModAPI.LoadSprite("Art/Objects/" + WeaponFolder + "/Cannon.png");
+                        hammer = ModAPI.LoadSprite("Art/Objects/" + WeaponFolder + "/Hammer.png");
+                        sword = ModAPI.LoadSprite("Art/Objects/" + WeaponFolder + "/Sword.png");
+                        shield = ModAPI.LoadSprite("Art/Objects/" + WeaponFolder + "/Shield.png");
+                        laser = ModAPI.LoadSprite("Art/Objects/" + WeaponFolder + "/Laser.png");
+                    }
+
+                    menu.AddFakeButton(Display??Name, ModAPI.LoadSprite("Art/Thumbnails/"+ Name + ".png"), null, IronSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/"+ Name + "/"), person, null, cannon, hammer, sword, shield, laser));
                 }
 
                 IronSkin("Bleeding Edge");
@@ -854,16 +887,16 @@ namespace Mod
                 IronSkin("Iron Man EMH");
                 IronSkin("Model 1");
                 IronSkin("Model 4");
-                IronSkin("Model 39");
-                IronSkin("Model 43");
+                IronSkin("Model 39", null, "black");
+                IronSkin("Model 43", null, "black");
                 IronSkin("Model 70");
                 IronSkin("MVC2");
                 IronSkin("Prime");
                 IronSkin("Rivals Tony");
                 IronSkin("Silver Centurion");
                 IronSkin("Stealth Iron Man");
-                IronSkin("Superior Iron Man");
-                IronSkin("Superior Iron Man Maskless");
+                IronSkin("Superior Iron Man", null, "superior");
+                IronSkin("Superior Iron Man Maskless", null, "superior");
                 IronSkin("Thorbuster");
                 IronSkin("Mark 50");
                 IronSkin("Mark 6");
@@ -983,6 +1016,9 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 var menu = Instance.GetComponent<TextureMenu>();
+
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
 
                 foreach (var limb in person.Limbs)
                 {
@@ -2355,20 +2391,39 @@ namespace Mod
                 var data = owner._rings[index];
                 if (owner.mode == Mode.Sword)
                 {
-                    UnityEngine.Debug.Log("[Rings:Sword] Ring " + (index + 1) + " collided with " + col.collider.name);
+                    if (col.rigidbody.bodyType == RigidbodyType2D.Dynamic)
+                    {
+                        ModAPI.CreateParticleEffect("Sparks", col.contacts[0].point);
+                        CameraShakeBehaviour.main.Shake(col.relativeVelocity.magnitude < 3 ? col.relativeVelocity.magnitude : 3f, col.contacts[0].point);
+                        col.rigidbody.AddForce(GetComponent<Rigidbody2D>().velocity);
+                    }
                 }
 
                 if (owner.mode == Mode.Shoot && data.state == RingState.Launched && data.hasTarget)
                 {
                     if (data.targetCollider != null && col.collider == data.targetCollider)
                     {
-                        UnityEngine.Debug.Log("[Rings:HitTarget] Ring " + (index + 1) + " hit its target: " + col.collider.name);
-                        owner.BeginReturn(index);
+                        if (col.rigidbody.bodyType == RigidbodyType2D.Dynamic)
+                        {
+                            ModAPI.CreateParticleEffect("BlasterImpact", col.contacts[0].point);
+                            ModAPI.CreateParticleEffect("HugeZap", col.contacts[0].point);
+                            CameraShakeBehaviour.main.Shake(col.relativeVelocity.magnitude < 3 ? col.relativeVelocity.magnitude : 3f, col.contacts[0].point);
+                            col.rigidbody.AddForce(GetComponent<Rigidbody2D>().velocity * 2);
+                            if (col.transform.TryGetComponent<PhysicalBehaviour>(out var phys))
+                                phys.charge += col.relativeVelocity.magnitude;
+                        }
                     }
                     else if (data.homingTarget != null && col.rigidbody == data.homingTarget)
                     {
-                        UnityEngine.Debug.Log("[Rings:HitTarget] Ring " + (index + 1) + " hit its homing target: " + col.rigidbody.name);
-                        owner.BeginReturn(index);
+                        if (col.rigidbody.bodyType == RigidbodyType2D.Dynamic)
+                        {
+                            ModAPI.CreateParticleEffect("Flash", col.contacts[0].point);
+                            ModAPI.CreateParticleEffect("HugeZap", col.contacts[0].point);
+                            CameraShakeBehaviour.main.Shake(col.relativeVelocity.magnitude < 3 ? col.relativeVelocity.magnitude : 3f, col.contacts[0].point);
+                            col.rigidbody.AddForce(GetComponent<Rigidbody2D>().velocity * 2);
+                            if (col.transform.TryGetComponent<PhysicalBehaviour>(out var phys))
+                                phys.charge += col.relativeVelocity.magnitude;
+                        }
                     }
                 }
             }
@@ -2382,7 +2437,28 @@ namespace Mod
             power.icon = icon;
             power.targetLimb = power.name.Contains("Front") ? TargettedLimb.FrontArm : TargettedLimb.BackArm;
 
+            foreach(var limb in Person.Limbs)
+            {
+                limb.PhysicalBehaviour.ForceNoCharge = true;
+            }
+
             return power;
+        }
+        
+        public void OnCollisionEnter2D(Collision2D col)
+        {
+            if (mode == Mode.onArm)
+            {
+                if (col.rigidbody.bodyType == RigidbodyType2D.Dynamic)
+                {
+                    ModAPI.CreateParticleEffect("BlasterImpact", col.contacts[0].point);
+                    CameraShakeBehaviour.main.Shake(col.relativeVelocity.magnitude < 4 ? col.relativeVelocity.magnitude : 4f, col.contacts[0].point);
+                    col.rigidbody.AddForce(GetComponent<Rigidbody2D>().velocity);
+
+                    if (col.transform.TryGetComponent<PhysicalBehaviour>(out var phys))
+                        phys.charge += col.relativeVelocity.magnitude;
+                }
+            }
         }
 
         public override void Start()
@@ -2470,6 +2546,9 @@ namespace Mod
             {
                 var r = _rings[i];
                 if (r == null || r.rb == null) continue;
+
+                if (mode == Mode.onArm)
+                    r.rb.mass = .00001f;
 
                 switch (r.state)
                 {
@@ -2584,7 +2663,9 @@ namespace Mod
 
                 Vector3 basePos = r.rb.position;
 
-                _swordLine.SetPosition(i, Vector3.Lerp(_swordLine.GetPosition(i), r.Jitter, Time.deltaTime * 10));
+
+                if(Time.timeScale > 0.01f)
+                    _swordLine.SetPosition(i, r.Jitter);
             }
         }
 
@@ -2602,11 +2683,6 @@ namespace Mod
                     r.joint = r.go.AddComponent<FixedJoint2D>();
                 }
 
-                r.rb.gravityScale = 0f;
-                r.rb.mass = 0.0001f;
-                r.rb.drag = 0f;
-                r.rb.angularDrag = 0f;
-
                 var worldPos = transform.position + (Vector3)transform.up * (AttachedUpOffset + _attachOffsets[i]);
                 r.rb.position = worldPos;
                 r.go.transform.rotation = transform.rotation;
@@ -2616,6 +2692,11 @@ namespace Mod
                 r.joint.enableCollision = false;
 
                 r.state = RingState.Attached;
+
+                r.rb.gravityScale = 0f;
+                r.rb.mass = 0.0001f;
+                r.rb.drag = 0f;
+                r.rb.angularDrag = 0f;
             }
         }
 
@@ -2755,6 +2836,11 @@ namespace Mod
                 c.isTrigger = false;
             }
 
+            ring.GetComponent<PhysicalBehaviour>().Properties = Instantiate(PhysicalProperty.Rod);
+            ring.GetComponent<PhysicalBehaviour>().Properties.HardImpact = new AudioClip[0];
+            ring.GetComponent<PhysicalBehaviour>().Properties.SparksOnSlide = false;
+            ring.GetComponent<PhysicalBehaviour>().Properties.SlidingLoop = null;
+
             var forwarder = ring.GetComponent<RingCollisionForwarder>();
             if (forwarder == null) forwarder = ring.AddComponent<RingCollisionForwarder>();
             forwarder.owner = this;
@@ -2890,11 +2976,6 @@ namespace Mod
                 {
                     r.joint = r.go.AddComponent<FixedJoint2D>();
                 }
-
-                r.rb.gravityScale = 0f;
-                r.rb.mass = 0.0001f;
-                r.rb.drag = 0f;
-                r.rb.angularDrag = 0f;
             }
         }
 
