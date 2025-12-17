@@ -2211,6 +2211,8 @@ namespace Mod
 
                 Instance.GetComponent<ShieldModeSwitch>().FrontView = ModAPI.LoadSprite("Art/Objects/Cap's Shield.png");
                 Instance.GetComponent<ShieldModeSwitch>().SideView = ModAPI.LoadSprite("Art/Objects/Cap's ShieldSide.png");
+
+                Instance.AddComponent<FighterObject>();
             }, "2", false);
 
             //Mjolnir
@@ -2218,6 +2220,8 @@ namespace Mod
             {
                 Instance.GetComponent<PhysicalBehaviour>().Properties = PhysicalProperty.Metal;
                 Instance.AddComponent<Hammer>();
+
+                Instance.AddComponent<FighterObject>().Shake = true;
             }, "2");
 
             //Hawkeye's Bow
@@ -14617,6 +14621,37 @@ namespace Mod
         }
     }
 
+    public class FighterObject : MonoBehaviour
+    {
+        public float strength = 1;
+        public bool Shake = false;
+
+        public void OnCollisionEnter2D(Collision2D col)
+        {
+            float magnitude = col.relativeVelocity.magnitude;
+
+            if (col.relativeVelocity.magnitude > 2)
+            {
+                if (Shake)
+                    CameraShakeBehaviour.main.Shake(col.relativeVelocity.magnitude * 0.1f, col.contacts[0].point, 1);
+
+                ModAPI.CreateParticleEffect("Vapor", col.contacts[0].point);
+
+                float clampedImpact = Mathf.Min(magnitude, 2f);
+                col.rigidbody.AddForce(GetComponent<Rigidbody2D>().velocity * clampedImpact * 0.01f * strength, ForceMode2D.Impulse);
+
+                if (col.collider.gameObject.TryGetComponent<LimbBehaviour>(out var limb))
+                {
+                    limb.Damage(col.relativeVelocity.magnitude * strength);
+                }
+
+                if(col.relativeVelocity.magnitude > 15 && col.transform.TryGetComponent<DestroyableBehaviour>(out var des))
+                    des.Break();
+            }
+
+        }
+    }
+
     public class Fighter : Power
     {
         public static Power SetPower(PersonBehaviour Person, Sprite icon, float strength = 0.5f, bool shake = false)
@@ -14700,6 +14735,9 @@ namespace Mod
                                     ps.startColor = limb.CirculationBehaviour.GetComputedColor();
                             }
                         }
+
+                        if (col.relativeVelocity.magnitude > 15 && col.transform.TryGetComponent<DestroyableBehaviour>(out var des))
+                            des.Break();
                     }
                 }
             }
