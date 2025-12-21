@@ -898,11 +898,14 @@ namespace Mod
                 IronSkin("Superior Iron Man", null, "superior");
                 IronSkin("Superior Iron Man Maskless", null, "superior");
                 IronSkin("Thorbuster");
-                IronSkin("Mark 50");
+                IronSkin("Mark 2");
                 IronSkin("Mark 6");
-                IronSkin("Mark 85");
+                IronSkin("Mark 7");
                 IronSkin("Mark 42");
                 IronSkin("Mark 46");
+                IronSkin("Space Armor");
+                IronSkin("Mark 50");
+                IronSkin("Mark 85");
             }, "a");
 
             //Steve Rogers
