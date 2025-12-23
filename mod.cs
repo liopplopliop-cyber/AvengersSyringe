@@ -152,6 +152,10 @@ namespace Mod
         public static Sprite NanoShield = ModAPI.LoadSprite("Art/Objects/Shield.png");
         public static Sprite NanoHammer = ModAPI.LoadSprite("Art/Objects/Hammer.png");
 
+        public static Sprite WidowGauntlet = ModAPI.LoadSprite("Art/Objects/WidowGauntlet.png");
+        public static Sprite WidowGauntletKnife = ModAPI.LoadSprite("Art/Objects/WidowGauntletSword.png");
+        public static Sprite TaserRope = ModAPI.LoadSprite("Art/Objects/Taser.png");
+
         public static Sprite Vision = ModAPI.LoadSprite("Art/Objects/Vision.png");
         public static Sprite Eye = ModAPI.LoadSprite("Art/Objects/Eye.png");
 
@@ -876,9 +880,16 @@ namespace Mod
                         sword = ModAPI.LoadSprite("Art/Objects/" + WeaponFolder + "/Sword.png");
                         shield = ModAPI.LoadSprite("Art/Objects/" + WeaponFolder + "/Shield.png");
                         laser = ModAPI.LoadSprite("Art/Objects/" + WeaponFolder + "/Laser.png");
+                    }else
+                    {
+                        cannon = ModAPI.LoadSprite("Art/Objects/Cannon.png");
+                        hammer = ModAPI.LoadSprite("Art/Objects/Hammer.png");
+                        sword = ModAPI.LoadSprite("Art/Objects/Sword.png");
+                        shield = ModAPI.LoadSprite("Art/Objects/Shield.png");
+                        laser = ModAPI.LoadSprite("Art/Objects/Laser.png");
                     }
 
-                    menu.AddFakeButton(Display??Name, ModAPI.LoadSprite("Art/Thumbnails/"+ Name + ".png"), null, IronSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/"+ Name + "/"), person, null, cannon, hammer, sword, shield, laser));
+                    menu.AddFakeButton(Display ?? Name, ModAPI.LoadSprite("Art/Thumbnails/" + Name + ".png"), null, IronSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/" + Name + "/"), person, null, cannon, hammer, sword, shield, laser));
                 }
 
                 IronSkin("Bleeding Edge");
@@ -1077,6 +1088,15 @@ namespace Mod
                 Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
 
+                foreach (var limb in person.Limbs)
+                {
+                    if (limb.name.Contains("LowerArm"))
+                    {
+                        var widowGauntlet = ModAPI.CreatePhysicalObject("WidowGauntlet", Mod.WidowGauntlet);
+                        var gaunt = widowGauntlet.AddComponent<WidowGauntlet>();
+                        gaunt.Connect(limb);
+                    }
+                }
             }, "a");
 
             //Yelena Belova
@@ -2313,6 +2333,396 @@ namespace Mod
         }
     }
 
+    public class WidowGauntlet : MonoBehaviour, Mod.ModAPIPlus.ISwap, Mod.ModAPIPlus.IUse2
+    {
+        public FixedJoint2D Joint;
+
+        public ProjectileLauncherBehaviour stunner;
+
+        public Collider2D triggerCol;
+
+        EnergyWireBehaviour energyWire;
+
+        bool OnCooldown;
+        FixedJoint2D joint;
+        DistanceJoint2D taserJoint;
+        public List<Transform> stabPoints = new List<Transform>();
+
+        public enum Mode
+        {
+            StunGun,
+            TaserRope,
+            knife
+        }
+
+        public Mode mode;
+
+        public void Start()
+        {
+            var newCol = gameObject.AddComponent<BoxCollider2D>();
+
+            newCol.size = new Vector2(0.142849f, 0.2273769f);
+            newCol.offset = new Vector2(0, -0.3408651f);
+            newCol.isTrigger = true;
+
+            triggerCol = newCol;
+
+            var stabber1 = new GameObject("StabPoint1");
+
+            stabber1.transform.parent = transform;
+            stabber1.transform.localPosition = new Vector2(0, -0.267f);
+
+            var stabber2 = new GameObject("StabPoint2");
+
+            stabber2.transform.parent = transform;
+            stabber2.transform.localPosition = new Vector2(0, -0.42f);
+
+            var stabber3 = new GameObject("StabPoint3");
+
+            stabber3.transform.parent = transform;
+            stabber3.transform.localPosition = new Vector2(-0.056f, -0.313f);
+
+            var stabber4 = new GameObject("StabPoint4");
+
+            stabber4.transform.parent = transform;
+            stabber4.transform.localPosition = new Vector2(0.056f, -0.313f);
+
+            stabPoints.Add(stabber1.transform);
+            stabPoints.Add(stabber2.transform);
+            stabPoints.Add(stabber3.transform);
+            stabPoints.Add(stabber4.transform);
+
+            GetComponent<Rigidbody2D>().mass = 0.1f;
+
+            Destroy(GetComponent<Collider2D>());
+            gameObject.AddComponent<PolygonCollider2D>();
+            Timtam.CreateCollider(GetComponent<SpriteRenderer>());
+
+            stunner = gameObject.AddComponent<ProjectileLauncherBehaviour>();
+            stunner.projectilePrefab = ModAPI.FindSpawnable("Stunner").Prefab.GetComponent<ProjectileLauncherBehaviour>().projectilePrefab;
+            stunner.launchSound = ModAPI.FindSpawnable("Stunner").Prefab.GetComponent<ProjectileLauncherBehaviour>().launchSound;
+            stunner.projectileLaunchStrength = ModAPI.FindSpawnable("Stunner").Prefab.GetComponent<ProjectileLauncherBehaviour>().projectileLaunchStrength;
+            stunner.barrelDirection = -transform.up; 
+            stunner.barrelPosition = new Vector2(0, -0.5f);
+            
+            stunner.OnLaunch += fuckyou;
+        }
+
+        private void fuckyou(object sender, GameObject e)
+        {
+            var s2 = e.AddComponent<StunnerBehaviour2>();
+            var s = e.GetComponent<StunnerBehaviour>();
+            s2.Speed = s.Speed;
+            s2.Gravity = s.Gravity;
+            s2.ImpactEffect = s.ImpactEffect;
+            s2.mask = s.mask;
+            s2.right = transform.localScale.x > 0 ? -transform.up : transform.up;
+            Destroy(s);
+        }
+
+        public void Swap()
+        {
+            if (mode == Mode.StunGun)
+            {
+                stunner.enabled = false;
+                mode = Mode.TaserRope;
+            }
+            else if (mode == Mode.TaserRope)
+            {
+                mode = Mode.knife;
+                GetComponent<SpriteRenderer>().sprite = Mod.WidowGauntletKnife;
+            }
+            else if (mode == Mode.knife)
+            {
+                GetComponent<SpriteRenderer>().sprite = Mod.WidowGauntlet;
+                mode = Mode.StunGun;
+                stunner.enabled = true;
+            }
+
+            FakeNotifDissapearer.CreateNotification(mode.ToString(), transform.position);
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            Vector2 origin = transform.position + transform.up * -0.3f;
+            Vector2 direction = -transform.up;
+            float maxDistance = 10;
+
+            RaycastHit2D hit = Physics2D.Raycast(origin, direction, maxDistance);
+            RaycastHit2D[] hits = Physics2D.RaycastAll(origin, direction, maxDistance);
+            bool ishit = true;
+
+            foreach (var hitt in hits)
+            {
+                if (hitt.collider.TryGetComponent<LimbBehaviour>(out var limb))
+                {
+                    if (transform.root.GetComponent<PersonBehaviour>() && limb.Person != transform.root.GetComponent<PersonBehaviour>())
+                    {
+                        hit = hitt; break;
+                    }
+                }
+                else
+                {
+                    if (hitt.collider.GetComponent<PhysicalBehaviour>())
+                        hit = hitt; break;
+                }
+            }
+
+            if (hits == null)
+            {
+                ishit = false;
+            }
+
+            if (hit.collider != null)
+            {
+                if (hit.collider.TryGetComponent<LimbBehaviour>(out var limb))
+                {
+                    if (transform.root.GetComponent<PersonBehaviour>() && limb.Person == transform.root.GetComponent<PersonBehaviour>())
+                        ishit = false;
+                }
+            }
+
+            if (mode == Mode.TaserRope && !taserJoint)
+            {
+                taserJoint = gameObject.AddComponent<DistanceJoint2D>();
+                taserJoint.anchor = new Vector2(0, -0.25f);
+                taserJoint.connectedBody = hit.rigidbody;
+                taserJoint.autoConfigureDistance = false;
+                taserJoint.enableCollision = true;
+                taserJoint.connectedAnchor = hit.rigidbody.transform.InverseTransformPoint(hit.point);
+                taserJoint.distance = Vector2.Distance(transform.position, hit.point);
+                taserJoint.maxDistanceOnly = true;
+                taserJoint.breakForce = 5000 * hit.rigidbody.mass;
+                JointCreated(taserJoint);
+            }else
+            {
+                Destroy(taserJoint);
+                Destroy(energyWire);
+            }
+        }
+         
+        public void OnCollisionEnter2D(Collision2D col)
+        {
+            if (col.collider.TryGetComponent<LimbBehaviour>(out var limb) && col.collider.gameObject.name.Contains("LowerArm") && !Joint & !OnCooldown && !col.collider.GetComponentInChildren<WidowGauntlet>())
+                Connect(limb);
+        }
+
+        public void Connect(LimbBehaviour connected)
+        {
+            StartCoroutine(fuckyouunitykys(connected));
+        }
+
+        public IEnumerator fuckyouunitykys(LimbBehaviour connected)
+        {
+            yield return null;
+            if (Joint)
+            {
+                transform.parent = null;
+                Destroy(Joint);
+            }
+
+            GetComponent<Rigidbody2D>().mass = connected.PhysicalBehaviour.rigidbody.mass;
+
+            GetComponent<SpriteRenderer>().sortingLayerName = connected.GetComponent<SpriteRenderer>().sortingLayerName;
+            GetComponent<SpriteRenderer>().sortingOrder = connected.GetComponent<SpriteRenderer>().sortingOrder + 1;
+
+            transform.parent = connected.transform;
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+            transform.localScale = Vector3.one;
+
+            Joint = gameObject.AddComponent<FixedJoint2D>();
+            Joint.connectedBody = connected.PhysicalBehaviour.rigidbody;
+            Joint.autoConfigureConnectedAnchor = false;
+
+            foreach (var col in Joint.connectedBody.transform.root.GetComponentsInChildren<Collider2D>())
+                foreach (var ocol in GetComponents<Collider2D>())
+                    Physics2D.IgnoreCollision(col, ocol, true);
+        }
+
+        public void Use2()
+        {
+            foreach (var col in Joint.connectedBody.transform.root.GetComponentsInChildren<Collider2D>())
+                foreach (var ocol in GetComponents<Collider2D>())
+                    Physics2D.IgnoreCollision(col, ocol, false);
+            StartCoroutine(Cooldown2());
+            Destroy(Joint);
+            transform.parent = null;
+            GetComponent<Rigidbody2D>().mass = 0.1f;
+        }
+
+        public void OnTriggerEnter2D(Collider2D col)
+        {
+            if (col.gameObject.GetComponent<LimbBehaviour>() && !OnCooldown && mode == Mode.knife && Joint)
+            {
+                if (transform.root.GetComponent<PersonBehaviour>() != col.transform.root.GetComponent<PersonBehaviour>())
+                {
+                    if (col.GetComponent<LimbBehaviour>().IsAndroid == false)
+                        ModAPI.CreateParticleEffect("BloodExplosion", col.transform.position).transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+                    else
+                        ModAPI.CreateParticleEffect("Zap", col.transform.position).transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+                    col.GetComponent<LimbBehaviour>().Damage(20);
+                }
+            }
+        }
+
+        public void OnTriggerExit2D(Collider2D col)
+        {
+            if (col.gameObject.GetComponent<LimbBehaviour>() && !OnCooldown && mode == Mode.knife && Joint)
+            {
+                if (transform.root.GetComponent<PersonBehaviour>() != col.transform.root.GetComponent<PersonBehaviour>())
+                    {
+                        if (col.GetComponent<LimbBehaviour>().IsAndroid == false)
+                            ModAPI.CreateParticleEffect("BloodExplosion", col.transform.position).transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+                        else
+                            ModAPI.CreateParticleEffect("Zap", col.transform.position).transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+                        col.GetComponent<LimbBehaviour>().Damage(20);
+                    }
+            }
+        }
+
+        public void OnTriggerStay2D(Collider2D col)
+        {
+            if (mode == Mode.knife && Joint)
+            {
+                if (col.GetComponent<LimbBehaviour>() && !OnCooldown)
+                {
+                    if (transform.root.GetComponent<PersonBehaviour>() != col.transform.root.GetComponent<PersonBehaviour>())
+                    {
+                        if (joint == null && col.GetComponent<Rigidbody2D>())
+                        {
+                            joint = transform.parent.gameObject.AddComponent<FixedJoint2D>();
+                            joint.connectedBody = col.GetComponent<Rigidbody2D>();
+                            joint.breakForce = 35;
+                            joint.breakTorque = 35;
+                            joint.enableCollision = true;
+                        }
+                        GetComponent<Rigidbody2D>().velocity = Vector2.zero;
+                        GetComponent<Rigidbody2D>().angularVelocity = 0f;
+
+                        if (stabPoints.Count > 0)
+                        {
+                            foreach (var stabbah in stabPoints)
+                            {
+                                col.GetComponent<LimbBehaviour>().SkinMaterialHandler.AddDamagePoint(DamageType.Stab, stabbah.transform.position, 8);
+                                col.GetComponent<LimbBehaviour>().CirculationBehaviour.CreateBleedingParticle(transform.position, Vector2.zero, 0.4f, true);
+                                StartCoroutine(Cooldown());
+                            }
+                        }
+                        else
+                        {
+                            col.GetComponent<LimbBehaviour>().SkinMaterialHandler.AddDamagePoint(DamageType.Stab, transform.position, 8);
+                            col.GetComponent<LimbBehaviour>().CirculationBehaviour.CreateBleedingParticle(transform.position, Vector2.zero, 0.4f, true);
+                            StartCoroutine(Cooldown());
+                        }
+
+                        if (col.gameObject.GetComponent<Rigidbody2D>().velocity.magnitude >= 25 || gameObject.GetComponent<Rigidbody2D>().velocity.magnitude >= 25 || gameObject.GetComponent<Rigidbody2D>().angularVelocity >= 50)
+                        {
+                            if (!col.gameObject.GetComponent<LimbBehaviour>().IsDismembered && col.gameObject.GetComponent<LimbBehaviour>().HasJoint)
+                            {
+                                col.gameObject.GetComponent<LimbBehaviour>().Joint.breakTorque = 0.01f;
+                                col.gameObject.GetComponent<Rigidbody2D>().angularVelocity = 90;
+                            }
+                        }
+
+                        StartCoroutine(Cooldown());
+                    }
+                }
+                else if (!OnCooldown)
+                {
+                    if (joint == null && col.GetComponent<Rigidbody2D>())
+                    {
+                        if (col.GetComponent<Rigidbody2D>().freezeRotation)
+                        {
+                            joint = transform.parent.gameObject.AddComponent<FixedJoint2D>();
+                            joint.connectedBody = col.GetComponent<Rigidbody2D>();
+                            joint.breakForce = 35;
+                            joint.breakTorque = 35;
+                            joint.enableCollision = true;
+                        }
+                    }
+                    GetComponent<Rigidbody2D>().velocity = Vector2.zero;
+                    GetComponent<Rigidbody2D>().angularVelocity = 0f;
+                }
+            }
+        }
+
+        public IEnumerator Cooldown()
+        {
+            OnCooldown = true;
+            yield return new WaitForSeconds(0.15f);
+            OnCooldown = false;
+        }
+
+        public IEnumerator Cooldown2()
+        {
+            OnCooldown = true;
+            yield return new WaitForSeconds(1f);
+            OnCooldown = false;
+        }
+
+        public void FixedUpdate()
+        {
+            if (Joint)
+            {
+                Joint.anchor = Vector2.zero;
+                Joint.connectedAnchor = Vector2.zero;
+            }
+
+            if (energyWire && taserJoint)
+            {
+                energyWire.WireColor = new Color(0.001f, 0.001f, UnityEngine.Random.Range(0.001f, 0.7f));
+                taserJoint.connectedBody.GetComponent<PhysicalBehaviour>().charge = 5;
+            }
+        }
+
+        public class StunnerBehaviour2 : MonoBehaviour
+        {
+            public float Speed = 1f;
+
+            public float Gravity = 1f;
+
+            public GameObject ImpactEffect;
+
+            public LayerMask mask;
+
+            private float t;
+
+            public Vector3 right;
+
+            public void Update()
+            {
+                right.y -= t;
+                right.Normalize();
+                float num = Speed * Time.deltaTime;
+                RaycastHit2D raycastHit2D = Physics2D.Raycast(base.transform.position, right, num, mask);
+                if ((bool)raycastHit2D)
+                {
+                    Destroy(base.gameObject);
+                    Instantiate(ImpactEffect, base.transform.position, Quaternion.identity);
+                    raycastHit2D.transform.SendMessage("StunImpact", new Shot(raycastHit2D.normal, raycastHit2D.point, 0f), SendMessageOptions.DontRequireReceiver);
+                }
+                else
+                {
+                    base.transform.position += right * num;
+                }
+
+                t += Time.deltaTime * 0.1f * Gravity;
+            }
+        }
+
+        void JointCreated(DistanceJoint2D joint)
+        {
+            energyWire = joint.gameObject.AddComponent<EnergyWireBehaviour>();
+            energyWire.WireColor = new Color(0.001f, 0.001f, 0.001f);
+            energyWire.WireMaterial = Instantiate(ModAPI.FindMaterial("VeryBright"));
+            energyWire.WireWidth = 0.055f;
+            energyWire.typedJoint = joint;
+            energyWire.WireMaterial.mainTexture = Mod.TaserRope.texture;
+            energyWire.WireMaterial.mainTexture.wrapMode = TextureWrapMode.Repeat;
+        }
+    }
+
     public class Rings : Power, Mod.ModAPIPlus.ISwap
     {
         public GameObject Ring1;
@@ -2355,6 +2765,8 @@ namespace Mod
 
         private LineRenderer _swordLine;
 
+        bool cooldown = false;
+
         private enum RingState
         {
             Attached,
@@ -2388,9 +2800,13 @@ namespace Mod
             public Rings owner;
             public int index;
 
+            public bool cooldown = false;
+
             private void OnCollisionEnter2D(Collision2D col)
             {
-                if (owner == null) return;
+                if (owner == null || cooldown) return;
+
+                StartCoroutine(CooldownCoroutine());
 
                 var data = owner._rings[index];
                 if (owner.mode == Mode.Sword)
@@ -2431,6 +2847,13 @@ namespace Mod
                     }
                 }
             }
+
+            public IEnumerator CooldownCoroutine()
+            {
+                cooldown = true;
+                yield return new WaitForSeconds(0.5f);
+                cooldown = false;
+            }
         }
 
         public static Rings SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
@@ -2451,6 +2874,8 @@ namespace Mod
         
         public void OnCollisionEnter2D(Collision2D col)
         {
+            StartCoroutine(CooldownCoroutine());
+
             if (mode == Mode.onArm)
             {
                 if (col.rigidbody.bodyType == RigidbodyType2D.Dynamic)
@@ -3000,9 +3425,16 @@ namespace Mod
             lr.numCornerVertices = 2;
             return lr;
         }
+
+        public IEnumerator CooldownCoroutine()
+        {
+            cooldown = true;
+            yield return new WaitForSeconds(0.5f);
+            cooldown = false;
+        }
     }
 
-    public class Bow : MonoBehaviour, Mod.ModAPIPlus.ISwap
+    public class Bow : MonoBehaviour, Mod.ModAPIPlus.ISwap, Messages.IOnGripped, Messages.IOnDrop
     {
         public float LoadTime = 0.25f;
         public float CurrentLoad = 0f;
@@ -3018,6 +3450,26 @@ namespace Mod
 
         const float MaxDrawDistance = 0.45f;
         const float FakeArrowForwardOffset = 0.3f;
+
+        public List<GripBehaviour> grippers = new List<GripBehaviour>();
+
+        public void OnGripped(GripBehaviour grip)
+        {
+            foreach(var gripper in grippers)
+                if(gripper == null)
+                    grippers.Remove(gripper);
+
+            grippers.Add(grip);
+        }
+
+        public void OnDrop(GripBehaviour grip)
+        {
+            foreach (var gripper in grippers)
+                if (gripper == null)
+                    grippers.Remove(gripper);
+
+            grippers.Remove(grip);
+        }
 
         public enum ArrowType
         {
@@ -3110,6 +3562,10 @@ namespace Mod
                         arrow.transform.localScale = new Vector3(-arrow.transform.localScale.x, arrow.transform.localScale.y, arrow.transform.localScale.z);
                     arrow.AddComponent<DebrisComponent>();
                     Physics2D.IgnoreCollision(arrow.GetComponent<Collider2D>(), GetComponent<Collider2D>());
+
+                    foreach (var gripper in grippers)
+                        foreach (var col in gripper.transform.root.GetComponentsInChildren<Collider2D>())
+                            Physics2D.IgnoreCollision(col, arrow.GetComponent<Collider2D>(), true);
 
                     arrow.GetComponent<SpriteRenderer>().sprite = arrowType == ArrowType.Normal ? Mod.NormalArrow :
                                                                 arrowType == ArrowType.Explosive ? Mod.ExplosiveArrow :
@@ -6079,7 +6535,7 @@ namespace Mod
                 return;
             }
 
-            foreach (var collider2D in Physics2D.OverlapCircleAll(transform.position, 1))
+            foreach (var collider2D in Physics2D.OverlapCircleAll(transform.position, 1, LayerMask.GetMask("Objects")))
             {
                 if (Global.main.PhysicalObjectsInWorldByTransform.TryGetValue(collider2D.transform, out var value) && value.transform.root != transform.root)
                 {
@@ -11419,7 +11875,7 @@ namespace Mod
                 else
                 {
                     hadStrength = false;
-                    SuperMass.SetPower(Person, null).EnablePower();
+                    SuperMass.SetPower(Person, null, 0.5f, 15).EnablePower();
                 }
 
                 Person.Limbs[2].PhysicalBehaviour.PlayClipOnce(TransformationSound);
@@ -13074,7 +13530,7 @@ namespace Mod
                         Transform thirdChild = underMouse.transform.parent.GetChild(2);
                         if (activatedThirdChildren.Add(thirdChild.gameObject) && !SelectionController.Main.SelectedObjects.Contains(thirdChild.GetComponent<PhysicalBehaviour>()))
                         {
-                            foreach (var comp in thirdChild.GetComponents<MonoBehaviour>())
+                            foreach (var comp in thirdChild.GetComponentsInChildren<MonoBehaviour>())
                             {
                                 if (comp is Mod.ModAPIPlus.IUse2 us)
                                 {
@@ -13101,7 +13557,7 @@ namespace Mod
                         Transform thirdChild = hit.transform.parent.GetChild(2);
                         if (activatedThirdChildren.Add(thirdChild.gameObject) && !SelectionController.Main.SelectedObjects.Contains(thirdChild.GetComponent<PhysicalBehaviour>()))
                         {
-                            foreach (var comp in thirdChild.GetComponents<MonoBehaviour>())
+                            foreach (var comp in thirdChild.GetComponentsInChildren<MonoBehaviour>())
                             {
                                 if (comp is Mod.ModAPIPlus.IUse2 us)
                                 {
@@ -13134,7 +13590,7 @@ namespace Mod
                         Transform thirdChild = underMouse.transform.parent.GetChild(2);
                         if (activatedThirdChildren.Add(thirdChild.gameObject) && !SelectionController.Main.SelectedObjects.Contains(thirdChild.GetComponent<PhysicalBehaviour>()))
                         {
-                            foreach (var comp in thirdChild.GetComponents<MonoBehaviour>())
+                            foreach (var comp in thirdChild.GetComponentsInChildren<MonoBehaviour>())
                             {
                                 if (comp is Mod.ModAPIPlus.ISwap us)
                                 {
@@ -13161,7 +13617,7 @@ namespace Mod
                         Transform thirdChild = hit.transform.parent.GetChild(2);
                         if (activatedThirdChildren.Add(thirdChild.gameObject) && !SelectionController.Main.SelectedObjects.Contains(thirdChild.GetComponent<PhysicalBehaviour>()))
                         {
-                            foreach (var comp in thirdChild.GetComponents<MonoBehaviour>())
+                            foreach (var comp in thirdChild.GetComponentsInChildren<MonoBehaviour>())
                             {
                                 if (comp is Mod.ModAPIPlus.ISwap us)
                                 {
