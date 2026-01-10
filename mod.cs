@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using static FunLittleGames.Linkage.Linkage;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -845,6 +846,10 @@ namespace Mod
             Telekinesis.RunePrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Rune");
             TimeFreeze.RunePrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "TimeRune");
             AstralFist.SoulRune = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "SoulRune");
+            LifeDrain.RunePrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Drain");
+            LifeDrain.ExplodePrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "WandaExplosion");
+            WandaAreaBlast.BlastPrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Area");
+            WandaAreaBlast.DamageVictim.PFXPrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Damage");
             #endregion
         }
 
@@ -1005,7 +1010,7 @@ namespace Mod
                 Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
 
             }, "a");
-
+            
             //Bruce Banner
             ModAPIPlus.CreateHuman("Bruce Banner", "", "Bruce Banner", "Hulk", (Instance) =>
             {
@@ -1135,6 +1140,16 @@ namespace Mod
             ModAPIPlus.CreateHuman("Wanda Maximoff", "", "Wanda", "Wanda", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
+
+                WandaAreaBlast.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Area Blast.png")).EnablePower();
+
+                foreach (var limb in person.Limbs)
+                {
+                    if (limb.name.Contains("LowerArm"))
+                    {
+                        LifeDrain.SetPower(person, limb, ModAPI.LoadSprite("Art/UI/Icons/Life Drain.png")).EnablePower();
+                    }
+                }
 
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Wanda Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wanda Casual/"));
@@ -2257,6 +2272,7 @@ namespace Mod
 
             #endregion
 
+            #region Extras
             //Settings
             ModAPI.Register(
                 new Modification()
@@ -2284,6 +2300,7 @@ namespace Mod
             ModAPI.Register<BifrostTeleportation.BifrostTeleportHandler>();
             ModAPI.RegisterLiquid(TBLiquid.ID, new TBLiquid());
             ModAPI.OnItemSpawned += AddLimbLogger;
+            #endregion
         }
 
         private static void AddLimbLogger(object sender, UserSpawnEventArgs args)
@@ -2333,6 +2350,503 @@ namespace Mod
                     Destroy(this);
                 }
             }
+        }
+    }
+
+    // WandaAreaBlast and DamageVictim cleanup and stability improvements
+    public class WandaAreaBlast : Power, Messages.IUse
+    {
+        public static GameObject BlastPrefab;
+
+        private ParticleSystem _pfxPs;
+        public GameObject PFX;
+
+        private PersonBehaviour _person;
+
+        public bool busting = false;
+
+        public static WandaAreaBlast SetPower(PersonBehaviour person, LimbBehaviour limb, Sprite icon)
+        {
+            var power = limb.gameObject.AddComponent<WandaAreaBlast>();
+            power.Name = "Spacial Torture Field";
+            power.Description = "Press the activation key (typically F) target anyone in a large diameter to float and be damaged!";
+            power.icon = icon;
+            power.targetLimb = TargettedLimb.Head;
+            power._person = person;
+
+            if (BlastPrefab != null)
+            {
+                power.PFX = UnityEngine.Object.Instantiate(BlastPrefab);
+                power._pfxPs = power.PFX.GetComponent<ParticleSystem>();
+                if (power._pfxPs != null)
+                {
+                    power._pfxPs.Stop();
+                }
+
+                power.PFX.transform.SetParent(limb.transform, false);
+                power.PFX.transform.position = limb.transform.position;
+            }
+
+            return power;
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled)
+            {
+                return;
+            }
+
+            busting = !busting;
+
+            if (_pfxPs != null)
+            {
+                if (busting)
+                {
+                    _pfxPs.Play();
+                }
+                else
+                {
+                    _pfxPs.Stop();
+                }
+            }
+        }
+
+        private void FixedUpdate()
+        {
+            if (!Enabled || !busting)
+            {
+                return;
+            }
+
+            // Overlap target collection
+            var hits = Physics2D.OverlapCircleAll(transform.position, 8f, LayerMask.GetMask("Objects"));
+            if (hits == null || hits.Length == 0)
+            {
+                return;
+            }
+
+            foreach (var c in hits)
+            {
+                if (c == null)
+                {
+                    continue;
+                }
+
+                if (!Global.main.PhysicalObjectsInWorldByTransform.TryGetValue(c.transform, out var phys))
+                {
+                    continue;
+                }
+
+                // Skip self/root
+                if (phys == null || phys.transform == null || phys.transform.root == transform.root)
+                {
+                    continue;
+                }
+
+                // Skip if already affected
+                if (phys.gameObject.GetComponent<DamageVictim>() != null)
+                {
+                    continue;
+                }
+
+                var victim = phys.gameObject.AddComponent<DamageVictim>();
+                victim.mommy = this;
+            }
+        }
+
+        public class DamageVictim : MonoBehaviour
+        {
+            public WandaAreaBlast mommy;
+
+            public static GameObject PFXPrefab;
+            public GameObject pfx;
+
+            public float cooldown = 2.5f;
+            private float _cooldownTimer;
+
+            private LimbBehaviour _limb;
+            private PhysicalBehaviour _phys;
+
+            private float _ogGrav;
+            private float _ogDrag;
+
+            public void Start()
+            {
+                if (PFXPrefab != null)
+                {
+                    var pf = UnityEngine.Object.Instantiate(PFXPrefab);
+                    pfx = pf;
+                    pf.transform.SetParent(transform, false);
+
+                    var childPs = pf.transform.childCount > 0 ? pf.transform.GetChild(0).GetComponent<ParticleSystem>() : pf.GetComponent<ParticleSystem>();
+                    if (childPs != null)
+                    {
+                        var shape = childPs.shape;
+                        var sr = GetComponent<SpriteRenderer>();
+                        if (sr != null)
+                        {
+                            shape.spriteRenderer = sr;
+                        }
+                    }
+                }
+
+                TryGetComponent(out _limb);
+                TryGetComponent(out _phys);
+
+                if (_phys != null && _phys.rigidbody != null)
+                {
+                    _ogGrav = _phys.rigidbody.gravityScale;
+                    _ogDrag = _phys.rigidbody.drag;
+
+                    _phys.rigidbody.gravityScale = 0f;
+                    _phys.rigidbody.drag = 1f;
+                }
+
+                if (_limb != null && _limb.Person != null)
+                {
+                    _limb.Person.OverridePoseIndex = 5;
+                }
+            }
+
+            private void Update()
+            {
+                if (mommy == null || !mommy.busting || Vector2.Distance(transform.position, mommy.transform.position) > 8f)
+                {
+                    RestoreAndDestroy();
+                    return;
+                }
+
+                if (_cooldownTimer > 0f)
+                {
+                    _cooldownTimer -= Time.deltaTime;
+                    return;
+                }
+
+                _cooldownTimer = cooldown * UnityEngine.Random.Range(0.8f, 2.5f);
+
+                if (_phys != null && _phys.rigidbody != null)
+                {
+                    _phys.rigidbody.gravityScale = 0f;
+
+                    var impulseDir = new Vector2(
+                        UnityEngine.Random.Range(-1f, 1f),
+                        UnityEngine.Random.Range(-1f, 1f)
+                    );
+                    if (impulseDir.sqrMagnitude > 0.0001f)
+                    {
+                        _phys.rigidbody.AddForce(impulseDir.normalized, ForceMode2D.Impulse);
+                    }
+                }
+
+                if (_limb != null)
+                {
+                    _limb.Health -= _limb.InitialHealth * 0.1f;
+
+                    if (_limb.PhysicalBehaviour != null && _limb.Person != null && _limb.Person.DismembermentClips != null)
+                    {
+                        var clip = _limb.Person.DismembermentClips.PickRandom();
+                        if (clip != null)
+                        {
+                            _limb.PhysicalBehaviour.PlayClipOnce(clip);
+                        }
+                    }
+
+                    if (_limb.SkinMaterialHandler != null)
+                    {
+                        _limb.SkinMaterialHandler.AddDamagePoint(
+                            DamageType.Bullet,
+                            new Vector2(
+                                transform.position.x + UnityEngine.Random.Range(-0.5f, 0.5f),
+                                transform.position.y + UnityEngine.Random.Range(-0.5f, 0.5f)
+                            ),
+                            0.5f
+                        );
+                    }
+                }
+            }
+
+            private void RestoreAndDestroy()
+            {
+                if (_phys != null && _phys.rigidbody != null)
+                {
+                    _phys.rigidbody.gravityScale = _ogGrav;
+                    _phys.rigidbody.drag = _ogDrag;
+                }
+
+                if (_limb != null && _limb.Person != null)
+                {
+                    _limb.Person.OverridePoseIndex = 11;
+                }
+
+                UnityEngine.Object.Destroy(this);
+            }
+        }
+    }
+
+    public class LifeDrain : Power, Mod.ModAPIPlus.IUse2
+    {
+        public static GameObject RunePrefab;
+        public static GameObject ExplodePrefab;
+
+        public PersonBehaviour Person;
+
+        public float rayDistance = 10f;
+        public float forceMagnitude = 10f;
+        public LayerMask layerMask;
+        public float holdDistance = 4f;
+        public float closeDistanceThreshold = 0.1f;
+        bool doing;
+        private LimbBehaviour limb;
+        GameObject target;
+
+        PhysicalBehaviour physicalBehaviour;
+
+        GameObject PFX;
+
+        public static LifeDrain SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
+        {
+            var power = Limb.gameObject.AddComponent<LifeDrain>();
+            power.Name = "Life Drain";
+            power.Description = "Hold the activation key (typically F) to syphon the life force of nearby objects\n<color =\"yellow\">This power can also swap inflicted damage with another person using the custom activation key (typically H) (Switches all bodily contents, as well as damage and health)";
+            power.icon = icon;
+            power.targetLimb = power.name.Contains("Front") ? TargettedLimb.FrontArm : TargettedLimb.BackArm;
+            power.physicalBehaviour = Limb.GetComponent<PhysicalBehaviour>();
+            power.limb = Limb;
+            power.Person = Person;
+            power.PFX = Instantiate(RunePrefab);
+            power.PFX.GetComponent<ParticleSystem>().Stop();
+
+            return power;
+        }
+
+        public void Use2ContinuousStart()
+        {
+            if (!Enabled)
+                return;
+            doing = true;
+            layerMask = LayerMask.GetMask("Objects");
+            RaycastHit2D hit = Physics2D.Raycast(transform.position, -transform.up, rayDistance, layerMask);
+
+            if (hit.collider != null)
+            {
+                if (hit.collider.transform.root != transform.root && hit.collider.gameObject.GetComponent<Rigidbody2D>().bodyType != RigidbodyType2D.Static && !hit.collider.GetComponent<HatBehaviour>())
+                {
+                    if (hit.collider.GetComponent<LimbBehaviour>())
+                    {
+                        this.target = hit.collider.gameObject;
+                    }
+                }
+            }
+            else
+            {
+                target = null;
+            }
+        }
+
+        public void Use2Continuous()
+        {
+            if (!Enabled)
+                return;
+
+            if (target != null)
+            {
+                if(!PFX.GetComponent<ParticleSystem>().isPlaying)
+                    PFX.GetComponent<ParticleSystem>().Play();
+                target.GetComponent<LimbBehaviour>().Person.OverridePoseIndex = 3;
+                foreach (var limb in transform.root.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    limb.CirculationBehaviour.AddLiquid(Liquid.GetLiquid(limb.BloodLiquidType), 0.1f * Time.deltaTime);
+                    limb.Health += limb.InitialHealth / 50;
+                    limb.PhysicalBehaviour.BurnProgress -= Time.deltaTime * 0.16f;
+                    limb.SkinMaterialHandler.AcidProgress -= Time.deltaTime * 0.8f;
+                    limb.SkinMaterialHandler.RottenProgress -= Time.deltaTime * 0.8f;
+                    for (int i = 0; i < limb.SkinMaterialHandler.damagePoints.Length; i++)
+                    {
+                        limb.SkinMaterialHandler.damagePoints[i].z *= Mathf.Pow(0.5f, Time.deltaTime);
+                    }
+
+                    limb.SkinMaterialHandler.Sync();
+                }
+
+                foreach(var limb in target.transform.root.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    limb.CirculationBehaviour.RemoveLiquid(Liquid.GetLiquid(limb.BloodLiquidType), 0.1f * Time.deltaTime);
+                    limb.Health -= limb.InitialHealth / 50;
+
+                    limb.SkinMaterialHandler.AcidProgress *= 1.001f;
+
+                    if(limb.name.Contains("Head") || limb.name.Contains("UpperBody"))
+                        if (limb.Health < limb.InitialHealth * 0.01f)
+                            Use2ContinuousEnd();
+                }
+            }
+        }
+
+        // Replace the existing method body
+        public void Use2()
+        {
+            if (!Enabled)
+                return;
+
+            doing = true;
+            layerMask = LayerMask.GetMask("Objects");
+            var hit = Physics2D.Raycast(transform.position, -transform.up, rayDistance, layerMask);
+
+            var hitRb = hit.collider.GetComponent<Rigidbody2D>();
+            var targetLimb = hit.collider.GetComponent<LimbBehaviour>();
+
+            var sourcePerson = transform.root.GetComponent<PersonBehaviour>();
+            var targetPerson = hit.collider.transform.root.GetComponent<PersonBehaviour>();
+
+            var beat = sourcePerson.BrainDamaged;
+            sourcePerson.BrainDamaged = targetPerson.BrainDamaged;
+            targetPerson.BrainDamaged = beat;
+
+            var seizureti = sourcePerson.SeizureTime;
+            sourcePerson.SeizureTime = targetPerson.SeizureTime;
+            targetPerson.SeizureTime = seizureti;
+
+            var braindead = sourcePerson.Braindead;
+            sourcePerson.Braindead = targetPerson.Braindead;
+            targetPerson.Braindead = braindead;
+
+            var braintime = sourcePerson.BrainDamagedTime;
+            sourcePerson.BrainDamagedTime = targetPerson.BrainDamagedTime;
+            targetPerson.BrainDamagedTime = braintime;
+
+            var consc = sourcePerson.Consciousness;
+            sourcePerson.Consciousness = targetPerson.Consciousness;
+            targetPerson.Consciousness = consc;
+
+            var pain = sourcePerson.PainLevel;
+            sourcePerson.PainLevel = targetPerson.PainLevel;
+            targetPerson.PainLevel = pain;
+
+            var adrenaline = sourcePerson.AdrenalineLevel;
+            sourcePerson.AdrenalineLevel = targetPerson.AdrenalineLevel;
+            targetPerson.AdrenalineLevel = adrenaline;
+
+            foreach (var limb in sourcePerson.Limbs)
+            {
+                foreach (var limb2 in targetPerson.Limbs)
+                {
+                    if (limb.name != limb2.name)
+                    {
+                        continue;
+                    }
+
+                    var liquidDistTmp = limb.CirculationBehaviour.LiquidDistribution;
+                    limb.CirculationBehaviour.LiquidDistribution = limb2.CirculationBehaviour.LiquidDistribution;
+                    limb2.CirculationBehaviour.LiquidDistribution = liquidDistTmp;
+
+                    var gunshotWoundCountTmp = limb.CirculationBehaviour.GunshotWoundCount;
+                    limb.CirculationBehaviour.GunshotWoundCount = limb2.CirculationBehaviour.GunshotWoundCount;
+                    limb2.CirculationBehaviour.GunshotWoundCount = gunshotWoundCountTmp;
+
+                    var stabWoundCountTmp = limb.CirculationBehaviour.StabWoundCount;
+                    limb.CirculationBehaviour.StabWoundCount = limb2.CirculationBehaviour.StabWoundCount;
+                    limb2.CirculationBehaviour.StabWoundCount = stabWoundCountTmp;
+
+                    limb.CirculationBehaviour.HealBleeding();
+                    limb2.CirculationBehaviour.HealBleeding();
+
+                    var healthTmp = limb.Health;
+                    limb.Health = limb2.Health;
+                    limb2.Health = healthTmp;
+
+                    var broken = limb.Broken;
+                    if (limb2.Broken)
+                        limb.BreakBone();
+                    else
+                        limb.HealBone();
+
+                    if (broken)
+                        limb2.BreakBone();
+                    else
+                        limb.HealBone();
+
+                    var damagePointsTmp = limb.SkinMaterialHandler.damagePoints;
+                    limb.SkinMaterialHandler.damagePoints = limb2.SkinMaterialHandler.damagePoints;
+                    limb2.SkinMaterialHandler.damagePoints = damagePointsTmp;
+
+                    var dama = limb.SkinMaterialHandler.currentDamagePointCount;
+                    limb.SkinMaterialHandler.currentDamagePointCount = limb2.SkinMaterialHandler.currentDamagePointCount;
+                    limb2.SkinMaterialHandler.currentDamagePointCount = dama;
+
+                    limb.SkinMaterialHandler.Sync();
+                    limb2.SkinMaterialHandler.Sync();
+
+                    var burnProgressTmp = limb.PhysicalBehaviour.BurnProgress;
+                    limb.PhysicalBehaviour.BurnProgress = limb2.PhysicalBehaviour.BurnProgress;
+                    limb2.PhysicalBehaviour.BurnProgress = burnProgressTmp;
+
+                    var acidProgressTmp = limb.SkinMaterialHandler.AcidProgress;
+                    limb.SkinMaterialHandler.AcidProgress = limb2.SkinMaterialHandler.AcidProgress;
+                    limb2.SkinMaterialHandler.AcidProgress = acidProgressTmp;
+
+                    var rottenProgressTmp = limb.SkinMaterialHandler.RottenProgress;
+                    limb.SkinMaterialHandler.RottenProgress = limb2.SkinMaterialHandler.RottenProgress;
+                    limb2.SkinMaterialHandler.RottenProgress = rottenProgressTmp;
+
+                    var heartBeat = limb.CirculationBehaviour.MeasuredPressure;
+                    limb.CirculationBehaviour.MeasuredPressure = limb2.CirculationBehaviour.MeasuredPressure;
+                    limb2.CirculationBehaviour.MeasuredPressure = heartBeat;
+
+                    var press = limb.CirculationBehaviour.BloodFlow;
+                    limb.CirculationBehaviour.BloodFlow = limb2.CirculationBehaviour.BloodFlow;
+                    limb2.CirculationBehaviour.BloodFlow = press;
+
+                    var num = limb.Numbness;
+                    limb.Numbness = limb2.Numbness;
+                    limb2.Numbness = num;
+                }
+            }
+
+            var heart = sourcePerson.Heartbeat;
+            sourcePerson.Heartbeat = targetPerson.Heartbeat;
+            targetPerson.Heartbeat = heart;
+
+            Instantiate(ExplodePrefab, target.transform.position, Quaternion.identity).AddComponent<OBJDestroyer>();
+        }
+
+        public void Use2ContinuousEnd()
+        {
+            if (target != null)
+            {
+                Instantiate(ExplodePrefab, target.transform.position, Quaternion.identity).AddComponent<OBJDestroyer>();
+                target.GetComponent<LimbBehaviour>().Person.OverridePoseIndex = 11;
+            }
+
+            target = null;
+            doing = false;
+            PFX.GetComponent<ParticleSystem>().Stop();
+        }
+
+        public void Update()
+        {
+            if (Person.Braindead)
+                return;
+
+            if (physicalBehaviour.StartedBeingUsedContinuously())
+                Use2ContinuousStart();
+
+            if (physicalBehaviour.StoppedBeingUsedContinuously())
+                Use2ContinuousEnd();
+
+            if(target)
+                PFX.transform.position = target.transform.position;
+        }
+
+        public void FixedUpdate()
+        {
+            if (physicalBehaviour.IsBeingUsedContinuously())
+                Use2Continuous();
+        }
+
+        public void OnDestroy()
+        {
+            Destroy(PFX);
         }
     }
 
@@ -19196,7 +19710,6 @@ namespace Mod
         }
     }
 
-    //ModUtils class created by RikuTheKiller on discord
     public static class ModUtils
     {
         public static void RealignLimb(LimbBehaviour limb)
