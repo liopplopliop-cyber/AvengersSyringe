@@ -2158,7 +2158,9 @@ namespace Mod
                 Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
 
-                     }, "a");
+                menu.AddButton("Proxima Midnight Mcu", ModAPI.LoadSprite("Art/Thumbnails/Proxima Midnight Mcu.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Proxima Midnight Mcu/"));
+
+            }, "a");
 
             //Corvus Glaive
             ModAPIPlus.CreateHuman("Corvus Glaive", "I am a servant of my master, Thanos-- a destroyer of worlds, a breaker of kings. I am one of the five, Corvus Glaive", "Corvus Glaive", "Corvus Glaive", (Instance) =>
@@ -2169,6 +2171,8 @@ namespace Mod
 
                 Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+
+                menu.AddButton("Corvus Glaive Mcu", ModAPI.LoadSprite("Art/Thumbnails/Corvus Glaive Mcu.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Corvus Glaive Mcu/"));
 
             }, "a");
 
@@ -2182,6 +2186,8 @@ namespace Mod
                 Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
 
+                menu.AddButton("Cull Obsidian Mcu", ModAPI.LoadSprite("Art/Thumbnails/Cull Obsidian Mcu.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Cull Obsidian Mcu/"));
+
             }, "a");
 
             //Ebony Maw
@@ -2193,6 +2199,8 @@ namespace Mod
 
                 Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+
+                menu.AddButton("Ebony Maw Mcu", ModAPI.LoadSprite("Art/Thumbnails/Ebony Maw Mcu.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ebony Maw Mcu/"));
 
             }, "a");
 
