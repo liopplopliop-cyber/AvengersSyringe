@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +12,7 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using static FunLittleGames.Linkage.Linkage;
+using static Mod.HatBehaviour;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -391,6 +393,41 @@ namespace Mod
 
         public struct ModAPIPlus
         {
+            public static Action<GameObject> removeCloth(int limb)
+            {
+                return new Action<GameObject>((Instance) =>
+                {
+                    var person = Instance.GetComponent<PersonBehaviour>();
+
+                    Destroy(person.Limbs[limb].GetComponent<DynamicCloth>());
+                });
+            }
+
+            public static Action<GameObject> AddCloth(Sprite cloth, Vector2 PixelPerfectLocation, int limb = 1, Sprite Collar = null)
+            {
+                var action = new Action<GameObject>((Instance) =>
+                {
+                    var person = Instance.GetComponent<PersonBehaviour>();
+
+                    DynamicCloth.CreateCloth(person, person.Limbs[limb], cloth.texture, PixelPerfectLocation * ModAPI.PixelSize);
+
+                    if (Collar != null)
+                    {
+                        var collar = new GameObject("Collar");
+                        collar.transform.parent = person.Limbs[1].transform;
+                        collar.transform.localPosition = Vector3.zero;
+                        collar.transform.localRotation = Quaternion.identity;
+                        collar.transform.localScale = Vector3.one;
+                        var sr = collar.AddComponent<SpriteRenderer>();
+                        sr.sprite = Collar;
+                        sr.sortingLayerName = person.Limbs[limb].GetComponent<SpriteRenderer>().sortingLayerName;
+                        sr.sortingOrder = person.Limbs[limb].GetComponent<SpriteRenderer>().sortingOrder + 1;
+                    }
+                });
+
+                return action;
+            }
+
             public static GameObject AddGlowToObject(GameObject parent, Sprite sprite)
             {
                 var glowObject = new GameObject("Glow");
@@ -570,7 +607,7 @@ namespace Mod
                 return null;
             }
 
-            public static void CreateHuman(string name, string description, string FileName, string Thumbname, Action<GameObject> AfterSpawn = null, string OrderOverride = null, Sprite Flesh = null, Sprite Bone = null)
+            public static void CreateHuman(string name, string description, string FileName, string Thumbname, Action<GameObject> AfterSpawn = null, string OrderOverride = null, Sprite Flesh = null, Sprite Bone = null, Action<GameObject> SkinAdd = null, Action<GameObject> SkinRemove = null)
             {
                 var bob = new SkinsDictionary()
                 {
@@ -607,7 +644,19 @@ namespace Mod
 
                             var menu = Instance.AddComponent<TextureMenu>();
                             menu.CreateUI();
-                            menu.AddButton("Default", ModAPI.LoadSprite("Art/Thumbnails/" + Thumbname + ".png"), ModAPIPlus.LimbSprites("Art/Skins/" + FileName + "/"), null, null, ModAPI.LoadSprite("Art/Skins/" + FileName + "/Cape.png"), ModAPI.LoadSprite("Art/Skins/" + FileName + "/CapeThing.png"));
+
+                            UnityEvent a = new UnityEvent();
+                            a.AddListener(() =>
+                            {
+                                SkinAdd.Invoke(Instance);
+                            });
+
+                            UnityEvent b = new UnityEvent();
+                            b.AddListener(() =>
+                            {
+                                SkinRemove.Invoke(Instance);
+                            });
+                            menu.AddButton("Default", ModAPI.LoadSprite("Art/Thumbnails/" + Thumbname + ".png"), ModAPIPlus.LimbSprites("Art/Skins/" + FileName + "/"), a, b, ModAPI.LoadSprite("Art/Skins/" + FileName + "/Cape.png"), ModAPI.LoadSprite("Art/Skins/" + FileName + "/CapeThing.png"));
 
                             //body code thing
                             Timtam.MakeCustomSkin(person, ModAPIPlus.LimbSprites("Art/Skins/" + FileName + "/"), false, true);
@@ -1190,7 +1239,7 @@ namespace Mod
                 Vibration.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Vibration.png")).EnablePower();
                 SpeedMirage.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Mirage.png"));
 
-                person.Limbs[0].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[0].gameObject);
+                person.Limbs[1].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[1].gameObject);
 
                 foreach (var limb in person.Limbs)
                     if (limb.name.Contains("LowerArm"))
@@ -2052,12 +2101,41 @@ namespace Mod
             }, "a");
             */
 
+            Sprite sp = ModAPI.LoadSprite("Art/Objects/Helmet.png");
+
+            Action<GameObject> act = new Action<GameObject>((instance) =>
+            {
+                var person = instance.GetComponent<PersonBehaviour>();
+
+                if (!person.Limbs[0].GetComponent<HatBehaviour.HasHat>())
+                {
+                    var hat = ModAPI.CreatePhysicalObject("Hat", sp);
+                    Destroy(hat.GetComponent<Collider2D>());
+                    hat.AddComponent<PolygonCollider2D>();
+                    Timtam.CreateCollider(hat.GetComponent<SpriteRenderer>());
+                    var hatt = HatBehaviour.AddHatStuff(person.Limbs[0], hat);
+
+                    hatt.Wear(person.Limbs[0]);
+                }
+            });
+
+            Action<GameObject> ract = new Action<GameObject>((instance) =>
+            {
+                var person = instance.GetComponent<PersonBehaviour>();
+                if (person.Limbs[0].GetComponent<HatBehaviour.HasHat>())
+                {
+                    Destroy(person.Limbs[0].GetComponent<HatBehaviour.HasHat>());
+                    Destroy(person.Limbs[0].GetComponent<HatBehaviour.HasHat>().hat.gameObject);
+                }
+            });
+
             //Thanos
             ModAPIPlus.CreateHuman("Thanos", "", "Thanos", "Thanos", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
 
                 var menu = Instance.GetComponent<TextureMenu>();
+
                 menu.AddButton("Infinity War", ModAPI.LoadSprite("Art/Thumbnails/Thanos Infinity War.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Thanos Infinity War/"));
                 menu.AddButton("Comics", ModAPI.LoadSprite("Art/Thumbnails/Thanos Comics.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Thanos Comics/"));
 
@@ -2074,8 +2152,6 @@ namespace Mod
 
                 foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
                 {
-                    Limbs.ImmuneToDamage = true;
-                    Limbs.CirculationBehaviour.ImmuneToDamage = true;
                     if (Limbs.gameObject.name.Contains("ArmFront"))
                     {
                         Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
@@ -2100,6 +2176,7 @@ namespace Mod
                         Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
                     }
                 }
+
                 foreach (var limb in person.Limbs)
                 {
                     person.SetBloodColour(145, 65, 143);
@@ -2107,12 +2184,15 @@ namespace Mod
                     person.SetBruiseColor(145, 65, 143);
                     person.SetSecondBruiseColor(116, 50, 128);
                     person.SetThirdBruiseColor(74, 26, 82);
-                    limb.ImmuneToDamage = true;
                     limb.BloodLiquidType = TBLiquid.ID;
                     limb.CirculationBehaviour.ClearLiquid();
                     limb.CirculationBehaviour.AddLiquid(Liquid.GetLiquid(TBLiquid.ID), 1f);
                     limb.ImmuneToDamage = true;
+                    limb.CirculationBehaviour.ImmuneToDamage = true;
                     limb.gameObject.FixColliders();
+                    limb.InitialHealth = 2000;
+                    limb.Health = 2000;
+                    limb.PhysicalBehaviour.ForceNoCharge = true;
                     Timtam.CreateFastCollider(limb.GetComponent<SpriteRenderer>());
                 }
 
@@ -2140,13 +2220,7 @@ namespace Mod
                     person.SetSecondBruiseColor(116, 50, 128);
                     person.SetThirdBruiseColor(74, 26, 82);
                 }
-
-                var hat = ModAPI.CreatePhysicalObject("Hat", ModAPI.LoadSprite("Art/Objects/Helmet.png"));
-
-                var hatt = HatBehaviour.AddHatStuff(person.Limbs[0], hat);
-
-                hatt.Wear(person.Limbs[0]);
-            }, "a");
+            }, "a", null, null, act, ract);
 
             //Proxima Midnight
             ModAPIPlus.CreateHuman("Proxima Midnight", "Father, we will not fail you.", "Proxima Midnight", "Proxima Midnight", (Instance) =>
@@ -2191,10 +2265,37 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
 
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.name.Contains("UpperBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
+                    }
+
+                    if (Limbs.name.Contains("LowerBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
+                    }
+                }
+
                 Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
 
-            }, "a");
+            }, "a", null, null, ModAPIPlus.AddCloth(ModAPI.LoadSprite("Art/Skins/Ebony Maw/Skirt.png"), new Vector2(0, 0), 3), ModAPIPlus.removeCloth(3));
 
             //Chitauri
             ModAPIPlus.CreateHuman("Chitauri", "", "Chitauri", "Chitauri", (Instance) =>
@@ -2336,6 +2437,7 @@ namespace Mod
 
             ModAPI.Register<AlternateMouseActivator>();
             ModAPI.Register<CategoryButtonEditor>();
+            ModAPI.Register<SlowMotionController>();
             ModAPI.Register<BifrostTeleportation.BifrostTeleportHandler>();
             ModAPI.RegisterLiquid(TBLiquid.ID, new TBLiquid());
             ModAPI.OnItemSpawned += AddLimbLogger;
@@ -2805,7 +2907,7 @@ namespace Mod
                     limb.SkinMaterialHandler.AcidProgress *= 1.01f;
 
                     if(limb.name.Contains("Head") || limb.name.Contains("UpperBody"))
-                        if (limb.Health < limb.InitialHealth * 0.01f)
+                        if (limb.Health < 5)
                             Use2ContinuousEnd();
                 }
             }
@@ -8610,7 +8712,7 @@ namespace Mod
                 if (!Lasering)
                 {
                     line.enabled = true;
-                    StartCoroutine(RendererColorTransition(line, new Color(0.5f, 0.5f, 0.8f, 1f), Color.clear, 0.1f));
+                    StartCoroutine(RendererColorTransition(line, new Color(0.2f, 0.2f, 0.8f, 1f), Color.clear, 0.1f));
                     Source.Play();
                     Lasering = true;
                     trail.enabled = true;
@@ -8620,7 +8722,7 @@ namespace Mod
                 {
                     Source.Stop();
 
-                    StartCoroutine(RendererColorTransition(line, Color.clear, new Color(0.5f, 0.5f, 0.8f, 1f), 0.25f));
+                    StartCoroutine(RendererColorTransition(line, Color.clear, new Color(0.2f, 0.2f, 0.8f, 1f), 0.25f));
 
                     line.enabled = false;
                     Lasering = false;
@@ -8700,7 +8802,7 @@ namespace Mod
                 Lasering = false;
                 Source.Stop();
 
-                StartCoroutine(RendererColorTransition(line, Color.clear, new Color(0.5f, 0.5f, 0.8f, 1f), 0.25f));
+                StartCoroutine(RendererColorTransition(line, Color.clear, new Color(0.2f, 0.2f, 0.8f, 1f), 0.25f));
 
                 line.enabled = false;
                 trail.enabled = false;
@@ -8710,12 +8812,12 @@ namespace Mod
 
             if (person.transform.localScale.x > 0)
             {
-                hit = Physics2D.Raycast(RaycastPoint2.transform.position, RaycastPoint.transform.right, 200000, LayerMask.GetMask(new string[] { "Objects", "Bounds" }));
+                hit = Physics2D.Raycast(RaycastPoint2.transform.position, -RaycastPoint.transform.up, 200000, LayerMask.GetMask(new string[] { "Objects", "Bounds" }));
 
             }
             else
             {
-                hit = Physics2D.Raycast(RaycastPoint2.transform.position, -RaycastPoint.transform.right, 200000, LayerMask.GetMask(new string[] { "Objects", "Bounds" }));
+                hit = Physics2D.Raycast(RaycastPoint2.transform.position, -RaycastPoint.transform.up, 200000, LayerMask.GetMask(new string[] { "Objects", "Bounds" }));
 
             }
 
