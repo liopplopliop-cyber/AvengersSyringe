@@ -1381,6 +1381,55 @@ namespace Mod
                 */
             }, "a");
 
+            //Wong
+            ModAPIPlus.CreateHuman("Wong", "", "Wong", "Wong", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 0.5f, 15).EnablePower();
+
+                Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
+                AstralProjection.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Astral Projection.png")).EnablePower();
+
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (Limbs.gameObject.name.Contains("LowerArm"))
+                    {
+                        MagicProjectile.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Projectile.png")).EnablePower();
+                        MysticFist.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/MysticFist.png"));
+                        AstralFist.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/AstralFist.png"));
+                        MagicWhip.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Magic Whip.png"));
+                        Portaller.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Portal.png"));
+                        Telekinesis.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Telekinesis.png"));
+                        TimeFreeze.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/TimeFreeze.png"));
+                        Limbs.gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(Limbs.gameObject);
+                    }
+                    var menu = Instance.GetComponent<TextureMenu>();
+
+
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.name.Contains("UpperBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
+                    }
+
+                    if (Limbs.name.Contains("LowerBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
+                    }
+                }
+
+            }, "a");
+
             //Antman
             ModAPIPlus.CreateHuman("Antman", "", "Antman", "Antman", (Instance) =>
             {
