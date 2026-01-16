@@ -758,20 +758,23 @@ namespace Mod
                         ThumbnailOverride = ModAPI.LoadSprite("Art/Thumbnails/" + Thumbname + ".png"),
                         AfterSpawn = (Instance) =>
                         {
-                            if (Instance.GetComponent<RandomSpriteBehaviour>())
+                            if (Instance.GetComponent<SpriteRenderer>() && Instance.GetComponent<PhysicalBehaviour>())
                             {
-                                Destroy(Instance.GetComponent<RandomSpriteBehaviour>());
-                            }
+                                if (Instance.GetComponent<RandomSpriteBehaviour>())
+                                {
+                                    Destroy(Instance.GetComponent<RandomSpriteBehaviour>());
+                                }
 
-                            Instance.GetComponent<SpriteRenderer>().sprite = ModAPI.LoadSprite("Art/Objects/" + FileName + ".png");
-                            Instance.GetComponent<PhysicalBehaviour>().RefreshOutline();
-                            if (ChangeColsAndMass)
-                            {
-                                Instance.FixColliders();
-                                Instance.GetComponent<PhysicalBehaviour>().RecalculateMassBasedOnSize();
-                                Timtam.CreateCollider(Instance.GetComponent<SpriteRenderer>());
+                                Instance.GetComponent<SpriteRenderer>().sprite = ModAPI.LoadSprite("Art/Objects/" + FileName + ".png");
+                                Instance.GetComponent<PhysicalBehaviour>().RefreshOutline();
+                                if (ChangeColsAndMass)
+                                {
+                                    Instance.FixColliders();
+                                    Instance.GetComponent<PhysicalBehaviour>().RecalculateMassBasedOnSize();
+                                    Timtam.CreateCollider(Instance.GetComponent<SpriteRenderer>());
+                                }
                             }
-
+                            Debug.Log("Spawned Custom Object");
                         }
                         + AfterSpawn
                     }
@@ -2071,6 +2074,18 @@ namespace Mod
                     }
                 }, false).EnablePower();
 
+                foreach (var limb in person.Limbs)
+                {
+                    if (limb.name.Contains("LowerArm"))
+                    {
+                        Repulsor.SetPower(person, limb, null, new Color32(230, 0, 0, 200));
+                        UltronTouch.SetPower(person, limb, ModAPI.LoadSprite("Art/UI/Icons/Ultron Touch.png"), ult).EnablePower();
+                        limb.gameObject.AddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+                    }
+
+                    if (limb.name.Contains("Foot"))
+                        Thruster.SetPower(person, limb, null, new Color32(230, 0, 0, 200), new Color32(230, 0, 0, 200)).EnablePower();
+                }
             }, "a");
 
             //Ultron Bot
@@ -2448,6 +2463,33 @@ namespace Mod
                 var cloth = DynamicCloth.CreateCloth(Instance, ModAPI.LoadTexture("Art/Objects/String.png"), new Vector2(0, -6f) * ModAPI.PixelSize);
 
             }, "2");
+
+            //Stormbreaker
+            ModAPIPlus.CreateObject("Axe", "Stormbreaker", "", "Stormbreaker", "Mjolnir", (Instance) =>
+            {
+                Instance.transform.GetChild(0).GetComponent<PhysicalBehaviour>().Properties = PhysicalProperty.Wood;
+                Instance.transform.GetChild(0).gameObject.AddComponent<Hammer>();
+
+                Instance.transform.GetChild(0).gameObject.AddComponent<FighterObject>().Shake = true;
+
+                Instance.transform.GetChild(0).GetComponent<SpriteRenderer>().sprite = ModAPI.LoadSprite("Art/Objects/StormHandle.png");
+                Instance.transform.GetChild(0).GetChild(0).GetComponent<SpriteRenderer>().sprite = ModAPI.LoadSprite("Art/Objects/StormHead.png");
+
+                Instance.transform.GetChild(0).GetChild(0).transform.localPosition += new Vector3(0, 5, 0) * ModAPI.PixelSize;
+                Instance.transform.GetChild(0).GetChild(0).GetComponent<SpriteRenderer>().sortingOrder = Instance.transform.GetChild(0).GetComponent<SpriteRenderer>().sortingOrder - 1;
+
+                Destroy(Instance.transform.GetChild(0).GetComponent<Collider2D>());
+
+                Instance.transform.GetChild(0).gameObject.AddComponent<PolygonCollider2D>();
+
+                Timtam.CreateCollider(Instance.transform.GetChild(0).GetComponent<SpriteRenderer>());
+
+                Destroy(Instance.transform.GetChild(0).GetChild(0).GetComponent<Collider2D>());
+
+                Instance.transform.GetChild(0).GetChild(0).gameObject.AddComponent<PolygonCollider2D>();
+
+                Timtam.CreateCollider(Instance.transform.GetChild(0).GetComponent<SpriteRenderer>());
+            }, "2", false);
 
             //Hawkeye's Bow
             ModAPIPlus.CreateObject("Rod", "Hawkeye's Bow", "", "Bow", "Bow", (Instance) =>
