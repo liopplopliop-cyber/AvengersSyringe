@@ -148,9 +148,9 @@ namespace Mod
         public static Sprite ToggledSprite = ModAPI.LoadSprite("Art/UI/off.png");
 
         public static Sprite RepulsorCannon = ModAPI.LoadSprite("Art/Objects/Cannon.png");
-        public static Sprite NanoBlade = ModAPI.LoadSprite("Art/Objects/Sword.png");
-        public static Sprite NanoShield = ModAPI.LoadSprite("Art/Objects/Shield.png");
-        public static Sprite NanoHammer = ModAPI.LoadSprite("Art/Objects/Hammer.png");
+        public static Sprite NanoBladeS = ModAPI.LoadSprite("Art/Objects/Sword.png");
+        public static Sprite NanoShieldS = ModAPI.LoadSprite("Art/Objects/Shield.png");
+        public static Sprite NanoHammerS = ModAPI.LoadSprite("Art/Objects/Hammer.png");
 
         public static Sprite WidowGauntlet = ModAPI.LoadSprite("Art/Objects/WidowGauntlet.png");
         public static Sprite WidowGauntletKnife = ModAPI.LoadSprite("Art/Objects/WidowGauntletSword.png");
@@ -1686,8 +1686,26 @@ namespace Mod
                 person.GetComponent<SpeedHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
 
-                var menu = Instance.GetComponent<TextureMenu>();
+                foreach(var limb in person.Limbs)
+                {
+                    limb.PhysicalBehaviour.Properties = PhysicalProperty.AndroidArmour;
 
+                    if (limb.name.Contains("LowerArm"))
+                    {
+                        Repulsor.SetPower(person, limb, null);
+                        RepulsorCannons.SetPower(person, limb, null);
+                        NanoBlade.SetPower(person, limb, null);
+                        NanoShield.SetPower(person, limb, null);
+                        NanoHammer.SetPower(person, limb, null);
+                        limb.gameObject.AddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+                    }
+
+                    if (limb.name.Contains("Foot"))
+                        Thruster.SetPower(person, limb, null);
+                }
+
+                var menu = Instance.GetComponent<TextureMenu>();
+                
                 menu.AddButton("Model 2", ModAPI.LoadSprite("Art/Thumbnails/Ironheart Model 2.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ironheart Model 2/"));
 
             }, "a");
@@ -1754,8 +1772,25 @@ namespace Mod
                 SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
 
                 person.GetComponent<SpeedHealing>().EnablePower();
-                person.GetComponent<SuperMass>().EnablePower();
 
+                person.GetComponent<SuperMass>().EnablePower();
+                foreach (var limb in person.Limbs)
+                {
+                    limb.PhysicalBehaviour.Properties = PhysicalProperty.AndroidArmour;
+
+                    if (limb.name.Contains("LowerArm"))
+                    {
+                        Repulsor.SetPower(person, limb, null);
+                        RepulsorCannons.SetPower(person, limb, null);
+                        NanoBlade.SetPower(person, limb, null);
+                        NanoShield.SetPower(person, limb, null);
+                        NanoHammer.SetPower(person, limb, null);
+                        limb.gameObject.AddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
+                    }
+
+                    if (limb.name.Contains("Foot"))
+                        Thruster.SetPower(person, limb, null);
+                }
                 var menu = Instance.GetComponent<TextureMenu>();
 
                 menu.AddButton("Ultimate", ModAPI.LoadSprite("Art/Thumbnails/Ultimate Iron Lad.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ultimate Iron Lad/"));
@@ -1828,15 +1863,22 @@ namespace Mod
             ModAPIPlus.CreateHuman("Hulkling", "Peace takes strength. I've got both.", "Hulkling", "Hulkling", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
-                SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
-
-                person.GetComponent<SpeedHealing>().EnablePower();
-                person.GetComponent<SuperMass>().EnablePower();
-
                 var menu = Instance.GetComponent<TextureMenu>();
 
                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Casual Hulkling.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Casual Hulkling/"));
+
+                SpeedHealing.SetPower(person, null, true).EnablePower();
+                SuperMass.SetPower(person, null, 10, 30).EnablePower();
+
+                foreach (var limb in person.Limbs)
+                {
+                    limb.BreakingThreshold = Mathf.Infinity;
+
+                    if (limb.name.Contains("LowerArm"))
+                    {
+                        SuperPunch.SetPower(person, limb, null);
+                    }
+                }
 
                 if (Instance.transform.localScale.x > 0)
                 {
@@ -12634,7 +12676,7 @@ namespace Mod
     {
         public bool usingBlade = false;
         public Sprite OGArmSprite;
-        public Sprite Nanoblade = Mod.NanoBlade;
+        public Sprite Nanoblade = Mod.NanoBladeS;
         public Vector2 OGBoxColliderSize;
         PhysicalProperties stabhandproperties;
 
@@ -12645,7 +12687,7 @@ namespace Mod
             power.Name = "Nanoblade";
             power.Description = "Creates a dangerously sharp nanotech blade!";
             power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
-            power.Nanoblade = Nanoblade ?? Mod.NanoBlade;
+            power.Nanoblade = Nanoblade ?? Mod.NanoBladeS;
             return power;
         }
 
@@ -12743,7 +12785,7 @@ namespace Mod
     {
         public bool usingBlade = false;
         public Sprite OGArmSprite;
-        public Sprite Nanoblade = Mod.NanoBlade;
+        public Sprite Nanoblade = Mod.NanoBladeS;
         public BoxCollider2D col;
         public LimbBehaviour Limb;
 
@@ -12754,7 +12796,7 @@ namespace Mod
             power.Name = "Nano Shield";
             power.Description = "Creates an impenetrable shield";
             power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
-            power.Nanoblade = Nanoshield ?? Mod.NanoShield;
+            power.Nanoblade = Nanoshield ?? Mod.NanoShieldS;
             power.Limb = limb;
             power.col = limb.gameObject.AddComponent<BoxCollider2D>();
             power.col.size = new Vector2(0.145226479f, 1.24006033f);
@@ -12860,7 +12902,7 @@ namespace Mod
     {
         public bool usingBlade = false;
         public Sprite OGArmSprite;
-        public Sprite Nanoblade = Mod.NanoHammer;
+        public Sprite Nanoblade = Mod.NanoHammerS;
         public BoxCollider2D col;
         public LimbBehaviour Limb;
         public ParticleSystem effect;
@@ -12872,7 +12914,7 @@ namespace Mod
             power.Name = "Nano Hammer";
             power.Description = "Creates a powerful hammer that can destroy the target!";
             power.targetLimb = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
-            power.Nanoblade = Nanoshield ?? Mod.NanoHammer;
+            power.Nanoblade = Nanoshield ?? Mod.NanoHammerS;
             power.Limb = limb;
             power.col = limb.gameObject.AddComponent<BoxCollider2D>();
             power.col.size = new Vector2(0.342398643f, 0.684489965f);
