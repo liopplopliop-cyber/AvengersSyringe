@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using static Mod.Transformation;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -146,6 +147,10 @@ namespace Mod
         public static Sprite Webshot = ModAPI.LoadSprite("Art/UI/Webshot.png");
         public static Sprite None = ModAPI.LoadSprite("Art/UI/None.png");
         public static Sprite ToggledSprite = ModAPI.LoadSprite("Art/UI/off.png");
+        public static List<Sprite> SandmanSkin = ModAPIPlus.LimbSprites("Art/AltSkins/Sandminion/");
+        public static List<Sprite> SandmanOGSkin = ModAPIPlus.LimbSprites("Art/Skins/Sandman/");
+
+        public static List<Sprite> Loki;
 
         public static Sprite RepulsorCannon = ModAPI.LoadSprite("Art/Objects/Cannon.png");
         public static Sprite NanoBladeS = ModAPI.LoadSprite("Art/Objects/Sword.png");
@@ -211,9 +216,10 @@ namespace Mod
         public static Sprite ElectricArrow = ModAPI.LoadSprite("Art/Objects/ElectroArrow.png");
         public static Sprite PunchArrow = ModAPI.LoadSprite("Art/Objects/PunchArrow.png");
 
+
         #endregion
 
-        #region LoadSounds
+            #region LoadSounds
         public static AudioClip WebStretch = ModAPI.LoadSound("Sounds/WebStretch.wav");
         public static AudioClip ClawSound = ModAPI.LoadSound("Sounds/Claw.wav");
         public static AudioClip TransformationSound = ModAPI.LoadSound("Sounds/Nanotech.wav");
@@ -238,7 +244,16 @@ namespace Mod
             ModAPI.LoadSound("Sounds/Web5.wav"),
             ModAPI.LoadSound("Sounds/Web6.wav")
         };
-        
+
+
+        public static Sprite[] SandBlood =
+{
+            ModAPI.LoadSprite("Art/TempForScripts/Sand1.png"),
+            ModAPI.LoadSprite("Art/TempForScripts/Sand2.png"),
+            ModAPI.LoadSprite("Art/TempForScripts/Sand3.png"),
+            ModAPI.LoadSprite("Art/TempForScripts/Sand4.png")
+          };
+
         public static AudioClip ArcBlast = ModAPI.LoadSound("Sounds/Repulsor.wav");
         public static AudioClip ArcBlast2 = ModAPI.LoadSound("Sounds/Repulsor2.wav");
         public static AudioClip ThrusterClip = ModAPI.LoadSound("Sounds/Thruster.wav");
@@ -266,6 +281,7 @@ namespace Mod
         #region LoadOther
         public static List<SkinsDictionary> skinsIcons = new List<SkinsDictionary>();
         public static string ModLocation = ModAPI.Metadata.MetaLocation;
+        public static GameObject SandImpact;
 
         #endregion
 
@@ -277,6 +293,7 @@ namespace Mod
 
             Destroy(person.Limbs[1].GetComponent<DynamicCape>());
         });
+        private static GameObject a;
 
         public static UnityEvent HulkSkinAddEvent(List<Sprite> skin, PersonBehaviour person, Action<GameObject> addon = null)
         {
@@ -908,10 +925,13 @@ namespace Mod
 
         public static void Main()
         {
+
+
             //Category
             ModAPI.RegisterCategory(CategoryName, "Category for Nova's Avengers Mod", ModAPI.LoadSprite("icon.png"));
 
             #region Heros
+
 
             //Tony Stark
             ModAPIPlus.CreateHuman("Tony Stark (Iron Man)", "", "Tony Stark", "Iron Man", (Instance) =>
@@ -1756,8 +1776,8 @@ namespace Mod
                         Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
                     }
                 }
-               // StretchyManager.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Stretch.png"));
-               // person.Limbs[0].GetComponent<StretchyManager>().EnablePower();
+
+                StretchyManager.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Stretch.png")).EnablePower();
 
                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Kamala Kahn.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Kamala Kahn/"));
                 menu.AddButton("X-Men", ModAPI.LoadSprite("Art/Thumbnails/Ms. Marvel X-Men.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ms. Marvel X-Men/"));
@@ -2099,8 +2119,15 @@ namespace Mod
                     }
                 }
                 BifrostTeleportation.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Lightning.png")).EnablePower();
-                LokiMirage.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Mirage.png"));
+                Transformation.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Transform.png")).EnablePower();
 
+                Clone.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Minion.png"), a, new List<List<Sprite>>()
+                {
+                    ModAPIPlus.LimbSprites("Art/Skins/Loki/")
+                },
+               (Instanc) =>
+               {
+               }, true).EnablePower();
 
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("End of Time", ModAPI.LoadSprite("Art/Thumbnails/Loki End of Time.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Loki End of Time/"));
@@ -2373,11 +2400,11 @@ namespace Mod
 
                 if (Instance.transform.localScale.x > 0)
                 {
-                    Instance.transform.localScale = new Vector3(1.25f, 1.25f, 1.25f);
+                    Instance.transform.localScale = new Vector3(1.32f, 1.32f, 1.32f);
                 }
                 else
                 {
-                    Instance.transform.localScale = new Vector3(-1.25f, 1.25f, 1.25f);
+                    Instance.transform.localScale = new Vector3(-1.32f, 1.32f, 1.32f);
                 }
 
 
@@ -2434,6 +2461,15 @@ namespace Mod
 
                 Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+
+                if (Instance.transform.localScale.x > 0)
+                {
+                    Instance.transform.localScale = new Vector3(1.25f, 1.25f, 1.25f);
+                }
+                else
+                {
+                    Instance.transform.localScale = new Vector3(-1.25f, 1.25f, 1.25f);
+                }
 
                 menu.AddButton("Cull Obsidian Mcu", ModAPI.LoadSprite("Art/Thumbnails/Cull Obsidian Mcu.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Cull Obsidian Mcu/"));
 
@@ -5899,6 +5935,7 @@ namespace Mod
             stretching = false;
         }
     }
+
     public class StretchyManager : Power
     {
         public static Power SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
@@ -5984,6 +6021,7 @@ namespace Mod
             }
         }
     }
+
     public class MysticFist : Power, Mod.ModAPIPlus.IUse2
     {
         GameObject PFX;
@@ -14302,6 +14340,406 @@ namespace Mod
                 limb.GetComponent<SpriteRenderer>().color = Vibrating ? new Color(1, 1, 1, 0.4f) : Color.white;
 
                 limb.gameObject.layer = Vibrating ? 10 : 9;
+            }
+        }
+    }
+
+    public class SMLiquid : Liquid
+    {
+        public const string ID = "SANDMANLIQUID";
+        public override string GetDisplayName() => "Sand";
+
+        public SMLiquid()
+        {
+            Color = new UnityEngine.Color32(244, 233, 164, 255);
+
+        }
+
+        public override void OnEnterContainer(BloodContainer container)
+        {
+
+        }
+
+        public override void OnEnterLimb(LimbBehaviour limb)
+        {
+
+        }
+
+        public override void OnUpdate(BloodContainer c)
+        {
+            base.OnUpdate(c);
+            if (c is CirculationBehaviour circ)
+            {
+                var limb = circ.Limb;
+
+                if (limb.SpeciesIdentity == Species.Android)
+                    return;
+
+                limb.CirculationBehaviour.HealBleeding();
+            }
+        }
+
+        public override void OnExitContainer(BloodContainer container)
+        {
+
+        }
+    }
+
+    public class DestroyAfterTime : MonoBehaviour
+    {
+        public float time = 1f;
+        private void Start()
+        {
+            Destroy(gameObject, time);
+        }
+    }
+
+    public class Sandman : Power
+    {
+        public static GameObject sand;
+        public List<Sprite> sandsprites = Mod.SandmanSkin;
+        public List<Sprite> original = Mod.SandmanOGSkin;
+        public static Sandman SetPower(PersonBehaviour Person, Sprite icon)
+        {
+            var power = Person.gameObject.AddComponent<Sandman>();
+            power.Name = "Sand morph";
+            power.Description = "Allows the user to morph their body with sand, allowing them to exponentially increase their strength while gaining size.";
+            power.icon = icon;
+            power.targetLimb = TargettedLimb.Internal;
+
+            foreach (var limb in Person.Limbs)
+            {
+                var san = limb.gameObject.AddComponent<Sandlimb>();
+                san.man = power;
+                san.SandPFX = Instantiate(sand).GetComponent<ParticleSystem>();
+                san.SandPFX.transform.SetParent(limb.transform);
+                san.SandPFX.transform.localPosition = Vector3.zero;
+                san.SandPFX.transform.localScale = Vector3.one * 0.25f;
+                san.SandPFX.transform.localRotation = Quaternion.identity;
+
+                if (limb.Joint)
+                    limb.Joint.autoConfigureConnectedAnchor = false;
+            }
+            return power;
+        }
+
+        public class Sandlimb : MonoBehaviour
+        {
+            public Sandman man;
+            public ParticleSystem SandPFX;
+            public float sandScale = 0f;
+            public float baseMass;
+            public bool changeSprite = true;
+            PhysicalBehaviour phys;
+            LimbBehaviour limb;
+
+            public void Start()
+            {
+                baseMass = GetComponent<Rigidbody2D>().mass;
+                phys = GetComponent<PhysicalBehaviour>();
+                limb = GetComponent<LimbBehaviour>();
+                limb.Person.SetBloodColour(244, 233, 164);
+                limb.Person.SetRottenColour(244, 233, 164);
+                limb.Person.SetBruiseColor(244, 233, 164);
+                limb.Person.SetSecondBruiseColor(244, 233, 164);
+                limb.Person.SetThirdBruiseColor(244, 233, 164);
+                limb.ImmuneToDamage = true;
+                limb.BloodLiquidType = SMLiquid.ID;
+                limb.CirculationBehaviour.ClearLiquid();
+                limb.CirculationBehaviour.AddLiquid(Liquid.GetLiquid(SMLiquid.ID), 1f);
+                PhysicalProperties sand = Instantiate(ModAPI.FindPhysicalProperties("Rock"));
+                limb.PhysicalBehaviour.Properties = sand;
+                limb.CirculationBehaviour.ImmuneToDamage = true;
+                limb.BloodDecal = Instantiate(limb.BloodDecal);
+                limb.BloodDecal.name = "Sandman Blood Decal";
+                limb.BloodDecal.Sprites = Mod.SandBlood;
+            }
+
+            private void CollectAllPushesTo(CirculationBehaviour root, HashSet<CirculationBehaviour> visited)
+            {
+                if (root == null || visited.Contains(root))
+                    return;
+
+                visited.Add(root);
+
+                foreach (var child in root.PushesTo)
+                {
+                    CollectAllPushesTo(child, visited);
+                }
+            }
+
+            public void FixedUpdate()
+            {
+                if (limb.Broken)
+                    limb.HealBone();
+
+                if (phys.IsBeingUsedContinuously() && man.Enabled)
+                {
+                    if (!SandPFX.isPlaying)
+                        SandPFX.Play();
+
+                    StartCoroutine(DelayedSandEffect(limb, man));
+                }
+                else
+                {
+                    SandPFX.Stop();
+                }
+            }
+
+            private IEnumerator DelayedSandEffect(LimbBehaviour limb, Sandman man)
+            {
+                yield return new WaitForSeconds(1f);
+
+                var allPushesTo = new HashSet<CirculationBehaviour>();
+                foreach (var circ in limb.CirculationBehaviour.PushesTo)
+                {
+                    CollectAllPushesTo(circ, allPushesTo);
+                }
+                allPushesTo.Add(limb.CirculationBehaviour);
+
+                foreach (var circ in allPushesTo)
+                {
+                    foreach (var sprite in man.sandsprites)
+                        if (circ.gameObject.name.Contains(sprite.name) && changeSprite)
+                            circ.gameObject.GetComponent<SpriteRenderer>().sprite = sprite;
+
+                    circ.transform.localScale += new Vector3(0.01f, 0.01f, 0);
+                    circ.GetComponent<Sandlimb>().sandScale = circ.transform.localScale.x - 1;
+                }
+            }
+
+            public void OnCollisionEnter2D(Collision2D collision)
+            {
+                if (collision.relativeVelocity.magnitude > 4 && sandScale > 0)
+                {
+                    var sandimp = Instantiate(Mod.SandImpact);
+                    sandimp.transform.SetPositionAndRotation(collision.contacts[0].point, Quaternion.identity);
+                    sandimp.transform.localScale = Vector3.one * 0.3f;
+                    sandimp.AddComponent<DestroyAfterTime>().time = 2f;
+                    sandimp.GetComponent<ParticleSystem>().Play();
+
+                    sandScale -= (collision.relativeVelocity.magnitude * 0.05f);
+
+                    if (sandScale < 0)
+                        sandScale = 0;
+                    foreach (var sprite in man.original)
+                        if (gameObject.name.Contains(sprite.name) && sandScale < 0.01f)
+                            limb.SkinMaterialHandler.renderer.sprite = sprite;
+
+                    transform.localScale = new Vector3(1 + sandScale, 1 + sandScale, 0);
+
+                    float impactStrength = collision.relativeVelocity.magnitude * 2 + sandScale * 10;
+
+                    Vector2 relativeVelocity = collision.relativeVelocity;
+
+                    if (collision.gameObject.GetComponent<Rigidbody2D>() && collision.relativeVelocity.magnitude > 3)
+                    {
+                        Vector2 directionToThisObject = (GetComponent<Rigidbody2D>().position - collision.rigidbody.position).normalized;
+
+                        float dotProduct = Vector2.Dot(relativeVelocity, directionToThisObject);
+
+                        if (dotProduct > 0)
+                        {
+                            collision.gameObject.GetComponent<Rigidbody2D>().velocity += -relativeVelocity.normalized * impactStrength;
+                            CameraShakeBehaviour.main.Shake(sandScale * 10, base.transform.position);
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+
+
+    public class Clone : Power, Mod.ModAPIPlus.IUse2
+    {
+        public PersonBehaviour person;
+        //Resources.Load<GameObject>("Prefabs/SyringeExplosion") mysterio
+        public GameObject prefab;
+        public string pfxname;
+        public List<List<Sprite>> cloneSprite;
+        public List<GameObject> clones = new List<GameObject>();
+        public Action<GameObject> edit;
+        bool weak;
+
+        public static Clone SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon, GameObject prefab, List<List<Sprite>> cloneSprite, Action<GameObject> edit = null, bool weak = false)
+        {
+            var power = Limb.gameObject.AddComponent<Clone>();
+            power.Name = "Minions";
+            power.Description = "Allows the user to create minions by pressing H on their upper body!";
+            power.icon = icon;
+            power.prefab = prefab;
+            power.pfxname = null;
+            power.targetLimb = TargettedLimb.Body;
+            power.cloneSprite = cloneSprite;
+            power.person = Person;
+            power.weak = weak;
+            power.edit = edit;
+            return power;
+        }
+
+        public static Clone SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon, string prefabname, List<List<Sprite>> cloneSprite, Action<GameObject> edit = null, bool weak = false)
+        {
+            var power = Limb.gameObject.AddComponent<Clone>();
+            power.Name = "Minions";
+            power.Description = "Allows the user to create minions by pressing H on their upper body!";
+            power.icon = icon;
+            power.pfxname = prefabname;
+            power.prefab = null;
+            power.targetLimb = TargettedLimb.Body;
+            power.cloneSprite = cloneSprite;
+            power.person = Person;
+            power.weak = weak;
+            power.edit = edit;
+            return power;
+        }
+
+        public void Use2()
+        {
+            if (Enabled && person != null && person.IsAlive())
+            {
+                Debug.Log(1);
+                var spawnable = ModAPI.FindSpawnable(person.name);
+                if (spawnable == null || spawnable.Prefab == null || person.Limbs == null || person.Limbs.Length <= 2)
+                    return;
+
+                var copy = GameObject.Instantiate(spawnable.Prefab, person.Limbs[2].transform.position, Quaternion.identity);
+                if (copy == null || copy.transform == null || transform == null || transform.root == null)
+                    return;
+                Debug.Log(2);
+                copy.transform.root.transform.localScale = transform.root.transform.localScale;
+                if (clones == null)
+                    clones = new List<GameObject>();
+                clones.Add(copy);
+                Debug.Log(3);
+                var cloneComponent = copy.GetComponentInChildren<Clone>();
+                if (cloneComponent != null)
+                    Destroy(cloneComponent);
+                Debug.Log(4);
+                var clon = copy.gameObject.AddComponent<ClonedPerson>();
+                clon.PersonBehaviour = copy.GetComponent<PersonBehaviour>();
+                clon.clone = this;
+                clon.ParticlePrefab = !prefab ? null : prefab;
+                clon.pfxname = pfxname;
+                clon.weak = weak;
+
+                edit?.Invoke(copy);
+
+                Debug.Log(5);
+                Timtam.MakeCustomSkin(copy.GetComponent<PersonBehaviour>(), cloneSprite[UnityEngine.Random.Range(0, cloneSprite.Count)], false, true);
+                Debug.Log(6);
+
+                var copyPerson = copy.GetComponent<PersonBehaviour>();
+                if (copyPerson != null && copyPerson.Limbs != null && person.Limbs != null)
+                {
+                    foreach (var limb in copyPerson.Limbs)
+                    {
+                        foreach (var limbb in person.Limbs)
+                        {
+                            if (limb != null && limbb != null && limb.name == limbb.name)
+                            {
+                                if (person.GetComponent<Sandman>() == null)
+                                {
+                                    limb.transform.position = limbb.transform.position;
+                                    limb.transform.rotation = limbb.transform.rotation;
+                                }
+                            }
+
+                            if (limb != null && limbb != null && limb.Collider != null && limbb.Collider != null)
+                                Physics2D.IgnoreCollision(limb.Collider, limbb.Collider, true);
+                        }
+
+                        GameObject effect = null;
+                        if (prefab != null)
+                        {
+                            effect = Instantiate(prefab);
+                        }
+                        else if (!string.IsNullOrEmpty(pfxname))
+                        {
+                            effect = ModAPI.CreateParticleEffect(pfxname, limb.transform.position);
+                        }
+
+                        if (effect != null)
+                        {
+                            effect.transform.position = limb.transform.position;
+                            var ps = effect.GetComponent<ParticleSystem>();
+                            if (ps != null) ps.Play();
+                            var audio = effect.GetComponent<AudioSource>();
+                            if (audio != null) Destroy(audio);
+                            var lightFlash = effect.transform.Find("SpriteLightFlash");
+                            if (lightFlash != null) Destroy(lightFlash.gameObject);
+                        }
+                    }
+                    Debug.Log(7);
+                }
+
+                var clonPerson = clon.GetComponent<PersonBehaviour>();
+                if (clonPerson != null && clonPerson.Limbs != null && clones != null)
+                {
+                    foreach (var limb in clonPerson.Limbs)
+                        if (limb != null && limb.Collider != null)
+                            foreach (var clone2 in clones)
+                                if (clone2 != null)
+                                {
+                                    var clone2Person = clone2.GetComponent<PersonBehaviour>();
+                                    if (clone2Person != null && clone2Person.Limbs != null)
+                                        foreach (var limb2 in clone2Person.Limbs)
+                                            if (limb2 != null && limb2.Collider != null)
+                                                Physics2D.IgnoreCollision(limb.Collider, limb2.Collider, true);
+                                }
+                }
+            }
+        }
+
+        public class ClonedPerson : MonoBehaviour
+        {
+            public Clone clone;
+            public PersonBehaviour PersonBehaviour;
+            public GameObject ParticlePrefab;
+            public string pfxname;
+            public bool weak;
+
+            public void FixedUpdate()
+            {
+                if (PersonBehaviour == null || clone == null || clone.person == null)
+                    return;
+
+                if (PersonBehaviour.Consciousness == 0 || !PersonBehaviour.IsAlive() ||
+                    clone.person.Consciousness == 0 || !clone.person.IsAlive() ||
+                    (weak && clone.person.PainLevel > 0))
+                {
+                    if (PersonBehaviour.Limbs != null)
+                    {
+                        foreach (var limb in PersonBehaviour.Limbs)
+                        {
+                            if (limb == null) continue;
+                            GameObject effect = null;
+                            if (ParticlePrefab != null)
+                            {
+                                effect = Instantiate(ParticlePrefab);
+                            }
+                            else if (!string.IsNullOrEmpty(pfxname))
+                            {
+                                effect = ModAPI.CreateParticleEffect(pfxname, limb.transform.position);
+                            }
+                            if (effect != null)
+                            {
+                                effect.transform.position = limb.transform.position;
+                                var ps = effect.GetComponent<ParticleSystem>();
+                                if (ps != null) ps.Play();
+                                var audio = effect.GetComponent<AudioSource>();
+                                if (audio != null) Destroy(audio);
+                                var lightFlash = effect.transform.Find("SpriteLightFlash");
+                                if (lightFlash != null) Destroy(lightFlash.gameObject);
+                            }
+                        }
+                    }
+                    if (clone.clones != null)
+                    {
+                        clone.clones.Remove(gameObject);
+                    }
+                    Destroy(gameObject);
+                }
             }
         }
     }
