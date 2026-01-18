@@ -1,18 +1,14 @@
-﻿using JetBrains.Annotations;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static FunLittleGames.Linkage.Linkage;
-using static Mod.HatBehaviour;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -2492,7 +2488,7 @@ namespace Mod
             }, "2", false);
 
             //Hawkeye's Bow
-            ModAPIPlus.CreateObject("Rod", "Hawkeye's Bow", "", "Bow", "Bow", (Instance) =>
+            ModAPIPlus.CreateObject("Rod", "Hawkeye's Bow", "Contains 5 modes: normal, bomb, stun, emp, and boxing glove arrows!", "Bow", "Bow", (Instance) =>
             {
                 Instance.AddComponent<Bow>();
                 Instance.GetComponent<PhysicalBehaviour>().Properties = PhysicalProperty.Weapon;
@@ -2506,6 +2502,14 @@ namespace Mod
                 Instance.GetComponent<PhysicalBehaviour>().Properties = PhysicalProperty.Weapon;
                 Instance.GetComponent<PhysicalBehaviour>().HoldingPositions = null;
                 Instance.AddComponent<WidowGauntlet>();
+            }, "2");
+
+            //Infinity Gauntlet
+            ModAPIPlus.CreateObject("Rod", "Infinity Gauntlet", "", "Gauntlet", "Gauntlet", (Instance) =>
+            {
+                Instance.GetComponent<PhysicalBehaviour>().Properties = PhysicalProperty.HollowMetal;
+                Instance.GetComponent<PhysicalBehaviour>().HoldingPositions = null;
+                Instance.AddComponent<InfinityGauntlet>();
             }, "2");
 
             #endregion
@@ -2588,6 +2592,163 @@ namespace Mod
                 {
                     Destroy(this);
                 }
+            }
+        }
+    }
+
+    public class InfinityGauntlet : MonoBehaviour, Mod.ModAPIPlus.ISwap
+    {
+        PhysicalBehaviour _physicalBehaviour;
+
+        GameObject contextMenu;
+
+        public Collider2D triggerCol;
+        public FixedJoint2D Joint;
+
+        private bool _cooldownActive;
+        private float _cooldownEndTime;
+
+        public bool HasSpace;
+        public bool HasMind;
+        public bool HasReality;
+        public bool HasPower;
+        public bool HasTime;
+        public bool HasSoul;
+
+        public void Start()
+        {
+            _physicalBehaviour = GetComponent<PhysicalBehaviour>();
+            var rb = GetComponent<Rigidbody2D>();
+            rb.mass = 1f;
+
+            var col = GetComponent<Collider2D>();
+            if (col) Destroy(col);
+            gameObject.GetOrAddComponent<PolygonCollider2D>();
+            Timtam.CreateCollider(GetComponent<SpriteRenderer>());
+
+            _physicalBehaviour.ContextMenuOptions.Buttons.Add(new ContextMenuButton(() => !ColorpickerDialogBehaviour.IsOpen, "StoneMenu", "<color=\"yellow\">Gauntlet Menu", "Change Size", delegate
+            {
+                // Open stone menu
+            }));
+
+        }
+
+        public void Swap()
+        {
+            if (Joint)
+            {
+                foreach (var col in Joint.connectedBody.transform.root.GetComponentsInChildren<Collider2D>())
+                {
+                    foreach (var ocol in GetComponents<Collider2D>())
+                    {
+                        Physics2D.IgnoreCollision(col, ocol, false);
+                    }
+                }
+
+                Destroy(Joint);
+            }
+
+            transform.parent = null;
+            var rb = GetComponent<Rigidbody2D>();
+            rb.mass = 0.1f;
+
+            // Start 2 second cooldown before it can be worn again
+            _cooldownActive = true;
+            _cooldownEndTime = Time.time + 2f;
+        }
+
+        public void OnCollisionEnter2D(Collision2D col)
+        {
+            if (_cooldownActive && Time.time < _cooldownEndTime)
+            {
+                return;
+            }
+
+            if (Joint)
+            {
+                return;
+            }
+
+            if (col.collider.TryGetComponent<LimbBehaviour>(out var limb) &&
+                col.collider.gameObject.name.Contains("LowerArmFront") &&
+                !col.collider.GetComponentInChildren<WidowGauntlet>() && !col.collider.GetComponentInChildren<InfinityGauntlet>())
+            {
+                Connect(limb);
+            }
+        }
+
+        public void Connect(LimbBehaviour connected)
+        {
+            if (_cooldownActive && Time.time < _cooldownEndTime)
+            {
+                return;
+            }
+
+            StartCoroutine(fuckyouunitykys(connected));
+        }
+
+        public IEnumerator fuckyouunitykys(LimbBehaviour connected)
+        {
+            // Wait until physics step to avoid attaching in same frame as Rigidbody2D update
+            yield return new WaitForFixedUpdate();
+
+            if (Joint)
+            {
+                transform.parent = null;
+                Destroy(Joint);
+            }
+
+            var rb = GetComponent<Rigidbody2D>();
+            rb.mass = connected.PhysicalBehaviour.rigidbody.mass;
+
+            var sr = GetComponent<SpriteRenderer>();
+            var limbSr = connected.GetComponent<SpriteRenderer>();
+            sr.sortingLayerName = limbSr.sortingLayerName;
+            sr.sortingOrder = limbSr.sortingOrder + 1;
+
+            transform.parent = connected.transform;
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+            transform.localScale = Vector3.one;
+
+            rb.position = connected.transform.position;
+            rb.rotation = 0f; // Ensure overlay has zero local rotation
+            rb.angularVelocity = 0f;
+
+            Joint = gameObject.AddComponent<FixedJoint2D>();
+            Joint.connectedBody = connected.PhysicalBehaviour.rigidbody;
+            Joint.autoConfigureConnectedAnchor = false;
+            Joint.anchor = Vector2.zero;
+            Joint.connectedAnchor = Vector2.zero;
+
+            foreach (var col in Joint.connectedBody.transform.root.GetComponentsInChildren<Collider2D>())
+            {
+                foreach (var ocol in GetComponents<Collider2D>())
+                {
+                    Physics2D.IgnoreCollision(col, ocol, true);
+                }
+            }
+
+            // Clear cooldown when successfully attached
+            _cooldownActive = false;
+        }
+
+        public void FixedUpdate()
+        {
+            _physicalBehaviour.ObjectArea = 0.001f;
+
+            if (!contextMenu)
+                contextMenu = GameObject.Find("Scrolling context menu");
+
+            if (contextMenu)
+                if (contextMenu.activeInHierarchy)
+                    foreach (var text in contextMenu.transform.GetChild(0).GetChild(0).GetComponentsInChildren<TextMeshProUGUI>())
+                        if (text.text == "Ability Menus")
+                            text.transform.parent.SetSiblingIndex(0);
+
+            if (!Joint && _cooldownActive && Time.time >= _cooldownEndTime)
+            {
+                _cooldownActive = false;
             }
         }
     }
@@ -3180,6 +3341,9 @@ namespace Mod
 
     public class WidowGauntlet : MonoBehaviour, Mod.ModAPIPlus.ISwap, Mod.ModAPIPlus.IUse2
     {
+        
+        PhysicalBehaviour _physicalBehaviour;
+
         public FixedJoint2D Joint;
 
         public ProjectileLauncherBehaviour stunner;
@@ -3204,6 +3368,7 @@ namespace Mod
 
         public void Start()
         {
+            _physicalBehaviour = GetComponent<PhysicalBehaviour>();
             var newCol = gameObject.AddComponent<BoxCollider2D>();
 
             newCol.size = new Vector2(0.142849f, 0.2273769f);
@@ -3508,6 +3673,8 @@ namespace Mod
 
         public void FixedUpdate()
         {
+            _physicalBehaviour.ObjectArea = 0.001f;
+
             if (Joint)
             {
                 Joint.anchor = Vector2.zero;
@@ -15858,6 +16025,12 @@ namespace Mod
         public Sprite FrontView;
 
         GripBehaviour gripBehaviour;
+        PhysicalBehaviour physicalBehaviour;
+
+        public void Start()
+        {
+            physicalBehaviour = GetComponent<PhysicalBehaviour>();
+        }
 
         public void Use(ActivationPropagation activation)
         {
@@ -15891,6 +16064,8 @@ namespace Mod
 
         public void FixedUpdate()
         {
+            physicalBehaviour.ObjectArea = 100;
+
             if (gripBehaviour != null)
             {
                 foreach (var col in GetComponents<Collider2D>())
