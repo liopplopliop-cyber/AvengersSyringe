@@ -867,6 +867,7 @@ namespace Mod
             Settings.main.AddSetting("Capes", "When disabled, no characters will spawn with capes", "UseCapes", true, typeof(bool));
             Settings.main.AddSetting("Legacy Mass System", "When enabled, it will force all 'stronger' characters masses to be 0.5, negating issues with characters jumping around too much", "LegacyMass", true, typeof(bool));
             Settings.main.AddSetting("Stronger healing", "Automatically enables the Speed Healing power on entities using the slower varient.", "SpeedHeal", false, typeof(bool));
+            Settings.main.AddSetting("Slow Motion Speed", "Adjust the slow motion speed", "SlowMotionSpeed", 0.1f, typeof(float), 0.01f, 0.1f);
             Settings.main.AddSetting("Flight Stun", "Adjust the duration that a character is stunned when hit while flying", "KnockoutTime", 1.5f, typeof(float), 0f, 5f);
             Settings.main.AddSetting("Durability", "Changes the damage dampening on speed healing and super strength, divides impact damage variable by whatever is inputted in this setting, and stacks if it has both strength and healing.", "DamDamp", 10, typeof(int), 1, 40);
             Settings.main.AddSetting("Ultron Body Swapping", "Toggles whether Ultron can swap bodies when killed automatically", "UltronSwapping", true, typeof(bool));
