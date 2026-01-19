@@ -920,6 +920,7 @@ namespace Mod
             WandaAreaBlast.BlastPrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Area");
             WandaProjectile.ProjectilePrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "WandaProjectile");
             WandaAreaBlast.DamageVictim.PFXPrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Damage");
+            SpacePortals.PortalPrefab = ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Teleportal");
             #endregion
         }
 
@@ -2804,6 +2805,136 @@ namespace Mod
         }
     }
 
+    public class SpaceTeleport : StoneAbility, Messages.IUse
+    {
+        public Teleportation teleportation;
+
+        public void Start()
+        {
+            var teleportthing = new GameObject("teleportHandler" + UnityEngine.Random.Range(0, 200000));
+            teleportthing.AddComponent<Teleportation>().person = transform.root.GetComponent<PersonBehaviour>();
+
+            teleportation = teleportthing.GetComponent<Teleportation>();
+
+            foreach (var limb in GetComponent<LimbBehaviour>().Person.Limbs)
+            {
+                if (limb.HasJoint)
+                {
+                    limb.Joint.autoConfigureConnectedAnchor = false;
+                }
+            }
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (Enabled)
+                teleportation.Use();
+        }
+
+        public class Teleportation : MonoBehaviour
+        {
+            public bool teleporting;
+            public PersonBehaviour person;
+            public GameObject Smoke;
+
+            public void Start()
+            {
+                Smoke = Instantiate(ModAPI.FindSpawnable("Particle Projector").Prefab.transform.GetChild(0).gameObject);
+                var pfx = Smoke.GetComponent<ParticleSystem>();
+                pfx.playOnAwake = false;
+                pfx.Stop();
+                pfx.gravityModifier = 0;
+                pfx.startSpeed = 0;
+                pfx.startColor = new Color(0.7f, 0.7f, 1f, 0.102f);
+            }
+
+            public void Use()
+            {
+                Instantiate(ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Teleport")).gameObject.AddComponent<DeleteAfterTime>().Life = 10;
+                
+                Smoke.GetComponent<ParticleSystem>().Play();
+                person.gameObject.SetActive(false);
+
+                var limbStatusObjects = Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.name == "Limb status(Clone)");
+
+                foreach (var status in limbStatusObjects)
+                {
+                    foreach (var limb in person.Limbs)
+                    {
+                        if (status.GetComponent<LimbStatusBehaviour>().limb == limb)
+                        {
+                            status.GetComponent<LimbStatusBehaviour>().enabled = false;
+                            var color = status.GetComponent<SpriteRenderer>().color;
+                            status.GetComponent<SpriteRenderer>().color = new Color(color.r, color.g, color.b, 0);
+                            var color2 = status.transform.GetChild(0).GetComponent<SpriteRenderer>().color;
+                            status.transform.GetChild(0).GetComponent<SpriteRenderer>().color = new Color(color2.r, color2.g, color2.b, 0);
+                        }
+                    }
+                }
+
+                teleporting = true;
+            }
+
+            public void Update()
+            {
+                Vector3 mouseScreenPosition = Input.mousePosition;
+                Smoke.transform.position = Camera.main.ScreenToWorldPoint(new Vector3(mouseScreenPosition.x, mouseScreenPosition.y, Camera.main.nearClipPlane));
+
+                if (Input.GetKey(KeyCode.Mouse0) && teleporting)
+                {
+                    teleporting = false;
+                    Smoke.GetComponent<ParticleSystem>().Stop();
+                    CameraShakeBehaviour.main.Shake(1, person.Limbs[0].transform.position);
+                    Vector3 mouseWorldPosition = Camera.main.ScreenToWorldPoint(new Vector3(mouseScreenPosition.x, mouseScreenPosition.y, Camera.main.nearClipPlane));
+
+                    foreach (var limb in person.Limbs)
+                    {
+                        Vector3 newPosition = new Vector3(mouseWorldPosition.x, mouseWorldPosition.y, limb.transform.position.z);
+                        limb.transform.position = newPosition;
+
+                        if (limb.TryGetComponent<HatBehaviour.HasHat>(out var hatt))
+                        {
+                            var hat = hatt.hat;
+                            Destroy(hatt);
+                            hat.Wear(limb);
+                        }
+                    }
+                    person.gameObject.SetActive(true);
+
+                    Instantiate(ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "Teleport")).gameObject.AddComponent<DeleteAfterTime>().Life = 10;
+
+                    foreach (var limb in person.Limbs)
+                    {
+                        foreach (var limb2 in person.Limbs)
+                        {
+                            foreach (AudioSource aud in limb.GetComponents<AudioSource>())
+                                aud.Stop();
+                            Physics2D.IgnoreCollision(limb.GetComponent<Collider2D>(), limb2.GetComponent<Collider2D>());
+                        }
+                    }
+
+                    var limbStatusObjects = Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.name == "Limb status(Clone)");
+
+                    foreach (var status in limbStatusObjects)
+                    {
+                        foreach (var limb in person.Limbs)
+                        {
+                            if (status.GetComponent<LimbStatusBehaviour>().limb == limb)
+                            {
+                                status.GetComponent<LimbStatusBehaviour>().enabled = true;
+                                var color = status.GetComponent<SpriteRenderer>().color;
+                                status.GetComponent<SpriteRenderer>().color = new Color(color.r, color.g, color.b, 1);
+                                var color2 = status.transform.GetChild(0).GetComponent<SpriteRenderer>().color;
+                                status.transform.GetChild(0).GetComponent<SpriteRenderer>().color = new Color(color2.r, color2.g, color2.b, 1);
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
     public class InfinityGauntlet : MonoBehaviour, Mod.ModAPIPlus.ISwap
     {
         PhysicalBehaviour _physicalBehaviour;
@@ -2957,6 +3088,178 @@ namespace Mod
             if (!Joint && _cooldownActive && Time.time >= _cooldownEndTime)
             {
                 _cooldownActive = false;
+            }
+        }
+
+        public void EnableStoneAbility(StoneAbility stoneAbility)
+        {
+
+        }
+    }
+
+    public class SpacePortals : StoneAbility, Messages.IUse, Mod.ModAPIPlus.IUse2
+    {
+        public static GameObject PortalPrefab;
+
+        public GameObject Portal1;
+        public GameObject Portal2;
+
+        bool OnFirstPortal = true;
+
+        public List<Transform> cooldowned = new List<Transform>();
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled)
+                return;
+
+            if (Portal1 == null)
+            {
+                Portal1 = Instantiate(PortalPrefab);
+                Portal1.AddComponent<Portal>().parentPower = this;
+                Portal1.transform.position = transform.position + -transform.up * 1.5f;
+                Portal1.transform.localScale = Vector3.one * 0.75f;
+                Portal1.transform.rotation = Quaternion.Euler(89, 0, 0);
+                Portal1.transform.GetChild(0).transform.localScale = Vector3.one;
+                Portal1.transform.GetChild(1).transform.localScale = Vector3.one;
+            }
+            else if (Portal2 == null)
+            {
+                Portal2 = Instantiate(PortalPrefab);
+                Portal2.AddComponent<Portal>().parentPower = this;
+                Portal2.transform.position = transform.position + -transform.up * 1.5f;
+                Portal2.transform.localScale = Vector3.one * 0.75f;
+                Portal2.transform.rotation = Quaternion.Euler(89, 0, 0);
+                Portal2.transform.GetChild(0).transform.localScale = Vector3.one;
+                Portal2.transform.GetChild(1).transform.localScale = Vector3.one;
+            }
+            else
+            {
+                if (OnFirstPortal)
+                {
+                    Portal1.SetActive(false);
+                    Portal1.transform.position = transform.position + -transform.up * 1.5f;
+                    Portal1.SetActive(true);
+                    OnFirstPortal = false;
+                }
+                else
+                {
+                    Portal2.SetActive(false);
+                    Portal2.transform.position = transform.position + -transform.up * 1.5f;
+                    Portal2.SetActive(true);
+                    OnFirstPortal = true;
+                }
+            }
+        }
+
+        public void Use2()
+        {
+            Destroy(Portal1);
+            Destroy(Portal2);
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+
+            Destroy(Portal1);
+            Destroy(Portal2);
+        }
+
+        public class Portal : MonoBehaviour
+        {
+            public SpacePortals parentPower;
+
+            public void Start()
+            {
+                gameObject.layer = Layers.Objects;
+                gameObject.AddComponent<DebrisComponent>();
+                var col = gameObject.AddComponent<BoxCollider2D>();
+                col.size = new Vector2(2, 2);
+                col.isTrigger = true;
+            }
+
+            public void OnTriggerEnter2D(Collider2D collision)
+            {
+                var otherPortal = parentPower.Portal1 == gameObject ? parentPower.Portal2 : parentPower.Portal1;
+                if (otherPortal == null) return;
+
+                var root = collision.transform.root;
+                if (root == null) return;
+
+                if (parentPower.cooldowned.Contains(root)) return;
+
+                if (root == otherPortal.transform.root) return;
+
+                StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Teleport));
+
+                foreach (var ph in root.GetComponentsInChildren<PhysicalBehaviour>())
+                {
+                    ModAPI.CreateParticleEffect("Flash", ph.transform.position);
+                }
+
+                Vector3 offsetFromPortal = root.position - transform.position;
+
+                Quaternion originalRotation = root.rotation;
+
+                CameraShakeBehaviour.main.Shake(1, transform.position, 0.5f);
+
+                root.position = otherPortal.transform.position + offsetFromPortal;
+                root.rotation = originalRotation;
+
+                foreach (var ph in root.GetComponentsInChildren<PhysicalBehaviour>())
+                {
+                    ModAPI.CreateParticleEffect("Flash", ph.transform.position);
+                }
+
+                StartCoroutine(TempCooldown(root));
+            }
+
+            private IEnumerator TempCooldown(Transform target)
+            {
+                parentPower.cooldowned.Add(target);
+                yield return new WaitForSeconds(0.5f);
+                parentPower.cooldowned.Remove(target);
+            }
+        }
+    }
+
+    public class StoneAbility : MonoBehaviour
+    {
+        InfinityGauntlet gauntlet;
+
+        public bool Enabled = false;
+        public GameObject button = null;
+        public TargettedLimb targetLimb;
+
+        public virtual void EnablePower()
+        {
+            Enabled = true;
+            button?.transform.GetChild(0)?.gameObject.SetActive(false);
+
+            if (targetLimb != TargettedLimb.Internal)
+            {
+                foreach (StoneAbility power2 in transform.root.GetComponentsInChildren<StoneAbility>())
+                {
+                    if (power2 != this && power2.targetLimb == targetLimb && power2.Enabled)
+                        power2.DisablePower();
+                }
+
+                foreach (var abilityCycler in transform.root.GetComponentsInChildren<AbilityCycler>())
+                {
+                    abilityCycler.UpdateText();
+                }
+            }
+        }
+
+        public virtual void DisablePower()
+        {
+            Enabled = false;
+            button?.transform.GetChild(0)?.gameObject.SetActive(true);
+
+            foreach (var abilityCycler in transform.root.GetComponentsInChildren<AbilityCycler>())
+            {
+                abilityCycler.UpdateText();
             }
         }
     }
@@ -5819,6 +6122,7 @@ namespace Mod
             }
         }
     }
+
     public class StretchyBody : MonoBehaviour, Messages.IUse
     {
         public float SizeAdded = 0;
@@ -6808,7 +7112,7 @@ namespace Mod
 
         public List<Transform> cooldowned= new List<Transform>();
 
-        public static Portaller SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
+        public static Portaller SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon, GameObject customPrefab = null)
         {
             var power = Limb.gameObject.AddComponent<Portaller>();
             power.Name = "Magic Portal";
@@ -10009,7 +10313,6 @@ namespace Mod
             }
         }
     }
-
 
     public class EnergyExplosion : Power, Messages.IUse
     {
@@ -17940,7 +18243,6 @@ namespace Mod
 
         }
     }
-
 
     public class Fighter : Power
     {
