@@ -1014,6 +1014,7 @@ namespace Mod
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers Unmasked/"));
                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers Casual/"));
+                menu.AddButton("Secret Avenger", ModAPI.LoadSprite("Art/Thumbnails/Cap Secret Avenger.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Cap Secret Avenger/"));
                 menu.AddButton("EMH", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers EMH/"));
 
             }, "a");
@@ -1021,7 +1022,45 @@ namespace Mod
             //Sam Wilson
             ModAPIPlus.CreateHuman("Sam Wilson (Captain America)", "", "Sam Wilson", "Sam Wilson", (Instance) =>
             {
-                var person = Instance.GetComponent<PersonBehaviour>();              
+                UnityEvent comicevent = new UnityEvent();
+                
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                var wing = ModAPI.LoadSprite("Art/Skins/Sam Wilson/Wings.png");
+                foreach (var limb in person.Limbs)
+                {
+                    if (limb.name.Contains("UpperBody"))
+                    {
+                        limb.gameObject.AddComponent<ThrusterHaver>().person = person;
+                        limb.gameObject.GetComponent<ThrusterHaver>().ThrustColor = new Color(0.8f, 0.8f, 0.8f, 4);
+                        limb.gameObject.GetComponent<ThrusterHaver>().ThrustColor2 = new Color(0.8f, 0.8f, 0.8f, 2);
+                        limb.GetComponent<ThrusterHaver>().wings = wing;
+                    }
+                }
+                var wingcomic = ModAPI.LoadSprite("Art/AltSkins/Sam Wilson/Wings.png");
+                comicevent.AddListener(() =>
+                {
+                    foreach (var limb in person.Limbs)
+                    {
+                        if (limb.name.Contains("UpperBody"))
+                        {
+                            limb.GetComponent<ThrusterHaver>().wingss.GetComponent<SpriteRenderer>().sprite = wingcomic;
+                        }
+                    }
+                });
+                UnityEvent removeevent = new UnityEvent();
+
+                removeevent.AddListener(() =>
+                {
+                    foreach (var limb in person.Limbs)
+                    {
+                        if (limb.name.Contains("UpperBody"))
+                        {
+                            limb.GetComponent<ThrusterHaver>().wingss.GetComponent<SpriteRenderer>().sprite = wing;
+                        }
+                    }
+                });
+
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Sam Wilson Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Sam Wilson Unmasked/"));
                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Sam Wilson Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Sam Wilson Casual/"));
@@ -2596,6 +2635,24 @@ namespace Mod
                 Instance.GetComponent<ShieldModeSwitch>().FrontView = ModAPI.LoadSprite("Art/Objects/Cap's Shield.png");
                 Instance.GetComponent<ShieldModeSwitch>().SideView = ModAPI.LoadSprite("Art/Objects/Cap's ShieldSide.png");
                 
+                Instance.AddComponent<FighterObject>();
+            }, "2", false);
+
+            //Sam Cap's Shield
+            ModAPIPlus.CreateObject("Rod", "Sam Captain America's Shield", "", "Sam Cap's Shield", "Sam Cap's Shield", (Instance) =>
+            {
+                Instance.GetComponent<SpriteRenderer>().sprite = ModAPI.LoadSprite("Art/Objects/Sam Cap's Shield.png");
+                Destroy(Instance.GetComponent<Collider2D>());
+                Timtam.CreateCollider(Instance.GetComponent<SpriteRenderer>());
+                Instance.GetComponent<PhysicalBehaviour>().TrueInitialMass = 1;
+                Instance.GetComponent<SpriteRenderer>().sortingOrder += 10;
+                Instance.GetComponent<SpriteRenderer>().sortingLayerName = "Foreground";
+                Instance.AddComponent<ShieldBounce>();
+                Instance.AddComponent<ShieldModeSwitch>();
+
+                Instance.GetComponent<ShieldModeSwitch>().FrontView = ModAPI.LoadSprite("Art/Objects/Sam Cap's Shield.png");
+                Instance.GetComponent<ShieldModeSwitch>().SideView = ModAPI.LoadSprite("Art/Objects/Sam Cap's ShieldSide.png");
+
                 Instance.AddComponent<FighterObject>();
             }, "2", false);
 
@@ -18057,6 +18114,188 @@ namespace Mod
 
     }
 
+    public class ThrusterHaver : MonoBehaviour, Messages.IUse
+    {
+        public bool InFlight = false;
+
+        public PersonBehaviour person;
+
+        GameObject SpriteLightFlash;
+        public Sprite wings;
+        float gravity;
+        float ogbasestrength = 8.5f;
+        public GameObject wingss;
+        public Color ThrustColor = new Color(0.2064f, 0.8f, 1, 4);
+        public Color ThrustColor2 = new Color(0.377f, 0.8438f, 1f, 0.08f);
+
+        void OnDestroy()
+        {
+            Destroy(SpriteLightFlash);
+        }
+
+        public void Start()
+        {
+            SpriteLightFlash = Instantiate(ModAPI.FindSpawnable("Mini Thruster").Prefab.gameObject);
+            foreach (Component comp in SpriteLightFlash.GetComponents<MonoBehaviour>())
+            {
+                if (comp.GetType() != typeof(ParticleSystem) || comp.GetType() != typeof(ParticleSystemRenderer) || comp.GetType() != typeof(Transform) || comp.GetType() != typeof(GameObject))
+                {
+                    Destroy(comp);
+                }
+            }
+            Destroy(SpriteLightFlash.GetComponent<GlowingHotMetalBehaviour>());
+            Destroy(SpriteLightFlash.GetComponent<PhysicalBehaviour>());
+            Destroy(SpriteLightFlash.GetComponent<Rigidbody2D>());
+            Destroy(SpriteLightFlash.GetComponent<BoxCollider2D>());
+            Destroy(SpriteLightFlash.GetComponent<AudioSource>());
+            Destroy(SpriteLightFlash.GetComponent<AudioSource>());
+            Destroy(SpriteLightFlash.GetComponent<SpriteRenderer>());
+            SpriteLightFlash.GetComponent<ParticleSystem>().startColor = ThrustColor;
+            SpriteLightFlash.transform.GetChild(0).gameObject.GetComponent<ParticleSystem>().startColor = ThrustColor2;
+            SpriteLightFlash.transform.parent = transform;
+            SpriteLightFlash.transform.localPosition = new Vector2(-0.1f, 0);
+            if (person.transform.localScale.x > 0)
+            {
+                SpriteLightFlash.transform.localRotation = Quaternion.Euler(0, 0, 70);
+            }
+            else
+            {
+                SpriteLightFlash.transform.localRotation = Quaternion.Euler(0, 0, 250);
+            }
+
+            SpriteLightFlash.transform.localScale = new Vector3(0.5f, 0.3f, 0.4f);
+
+            if (wings != null)
+            {
+                wingss = new GameObject("Wings");
+                wingss.transform.parent = transform;
+                wingss.transform.localPosition = Vector3.zero;
+                wingss.transform.localRotation = Quaternion.identity;
+                wingss.transform.localScale = Vector3.one;
+                wingss.AddComponent<SpriteRenderer>().sprite = wings;
+                wingss.GetComponent<SpriteRenderer>().sortingLayerName = GetComponent<SpriteRenderer>().sortingLayerName;
+                wingss.GetComponent<SpriteRenderer>().sortingOrder = GetComponent<SpriteRenderer>().sortingOrder - 1;
+                wingss.SetActive(false);
+            }
+        }
+
+
+        public void FixedUpdate()
+        {
+            if (InFlight)
+            {
+                foreach (var limb in person.Limbs)
+                {
+                    if (limb.GetComponent<Rigidbody2D>().bodyType != RigidbodyType2D.Static)
+                    {
+                        limb.GetComponent<Rigidbody2D>().angularVelocity *= 0.98f;
+                        limb.GetComponent<Rigidbody2D>().velocity *= 0.98f;
+
+                        if (limb.name.Contains("Body"))
+                        {
+                            float num2 = limb.gameObject.GetComponent<PhysicalBehaviour>().rigidbody.mass / 1.5f;
+                            float num3 = 10 * Mathf.Clamp(limb.gameObject.GetComponent<PhysicalBehaviour>().Charge, 1f, 5f) * num2 * num2;
+                            limb.gameObject.GetComponent<PhysicalBehaviour>().rigidbody.angularVelocity *= Mathf.Pow(0.5f, 1f);
+                            limb.gameObject.GetComponent<Rigidbody2D>().AddTorque(Mathf.DeltaAngle(limb.transform.eulerAngles.z, 0f) * num3);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void StopThrusting()
+        {
+            InFlight = false;
+            SpriteLightFlash.GetComponent<ParticleSystem>().Stop();
+            person.OverridePoseIndex = -1;
+            foreach (var limb in person.Limbs)
+            {
+                if (limb.name.Contains("Arm"))
+                {
+                    limb.BaseStrength = ogbasestrength;
+                }
+
+                if (limb.GetComponent<ThrusterHaver>())
+                {
+                    if (limb.GetComponent<ThrusterHaver>().InFlight)
+                    {
+                        limb.GetComponent<ThrusterHaver>().StopThrusting();
+                    }
+                }
+                limb.GetComponent<Rigidbody2D>().gravityScale = gravity;
+            }
+        }
+
+        public void StartThrusting()
+        {
+            if (!InFlight)
+            {
+                person.OverridePoseIndex = 8;
+                InFlight = true;
+                SpriteLightFlash.GetComponent<ParticleSystem>().Play();
+                foreach (var limb in person.Limbs)
+                {
+                    if (limb.name.Contains("Arm"))
+                    {
+                        limb.BaseStrength = 0;
+                    }
+                    gravity = limb.GetComponent<PhysicalBehaviour>().InitialGravityScale;
+                    limb.GetComponent<Rigidbody2D>().gravityScale = 0;
+                }
+            }
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!InFlight)
+            {
+                person.OverridePoseIndex = 8;
+                InFlight = true;
+                SpriteLightFlash.GetComponent<ParticleSystem>().Play();
+                wingss.SetActive(true);
+                foreach (var limb in person.Limbs)
+                {
+                    if (limb.name.Contains("Arm"))
+                    {
+                        limb.BaseStrength = 0;
+                    }
+                    if (limb.GetComponent<ThrusterHaver>())
+                    {
+                        if (!limb.GetComponent<ThrusterHaver>().InFlight)
+                        {
+                            limb.GetComponent<ThrusterHaver>().StartThrusting();
+                        }
+                    }
+                    gravity = limb.GetComponent<PhysicalBehaviour>().InitialGravityScale;
+                    limb.GetComponent<Rigidbody2D>().gravityScale = 0;
+                }
+            }
+            else
+            {
+                InFlight = false;
+                SpriteLightFlash.GetComponent<ParticleSystem>().Stop();
+                wingss.SetActive(false);
+                person.OverridePoseIndex = -1;
+                foreach (var limb in person.Limbs)
+                {
+                    if (limb.name.Contains("Arm"))
+                    {
+                        limb.BaseStrength = ogbasestrength;
+                    }
+
+                    if (limb.GetComponent<ThrusterHaver>())
+                    {
+                        if (limb.GetComponent<ThrusterHaver>().InFlight)
+                        {
+                            limb.GetComponent<ThrusterHaver>().StopThrusting();
+                        }
+                    }
+                    limb.GetComponent<Rigidbody2D>().gravityScale = gravity;
+                }
+            }
+        }
+
+    }
     public class SpeedHealing : Power
     {
         public bool immortal = false;
