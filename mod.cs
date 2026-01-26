@@ -1120,6 +1120,19 @@ namespace Mod
                 ElectricAuraFlight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Lightning.png")).EnablePower();
                 BifrostTeleportation.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Lightning.png")).EnablePower();
 
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                menu.AddButton("No Helmet", ModAPI.LoadSprite("Art/Thumbnails/Thor No Helmet.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Thor No Helmet/"), null, null, ModAPI.LoadSprite("Art/SkinsAltSkins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
+                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Thor Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Thor Casual/"));
+                menu.AddButton("Battle Damaged", ModAPI.LoadSprite("Art/Thumbnails/Battle Damaged Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Battle Damaged Thor/"), null, null, ModAPI.LoadSprite("Art/SkinsAltSkins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
+                menu.AddButton("Classic", ModAPI.LoadSprite("Art/Thumbnails/Classic Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Classic Thor/"), null, null, ModAPI.LoadSprite("Art/SkinsAltSkins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
+                menu.AddButton("Herald", ModAPI.LoadSprite("Art/Thumbnails/Herald of Galactus.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Herald of Galactus/"), null, null, ModAPI.LoadSprite("Art/SkinsAltSkins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
+                menu.AddButton("Masterson's Mask", ModAPI.LoadSprite("Art/Thumbnails/Masterson’s Mask.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Masterson’s Mask/"), null, null, ModAPI.LoadSprite("Art/SkinsAltSkins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
+                menu.AddButton("Unworthy", ModAPI.LoadSprite("Art/Thumbnails/Unworthy Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Unworthy Thor/"), null, null, ModAPI.LoadSprite("Art/SkinsAltSkins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
+                menu.AddButton("Ragnarok", ModAPI.LoadSprite("Art/Thumbnails/Ragnarok Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ragnarok Thor/"), null, null, ModAPI.LoadSprite("Art/SkinsAltSkins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
+                menu.AddButton("Love and Thunder", ModAPI.LoadSprite("Art/Thumbnails/Love and Thunder.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Love and Thunder/"), null, null, ModAPI.LoadSprite("Art/SkinsAltSkins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
+                menu.AddButton("Fat Thor", ModAPI.LoadSprite("Art/Thumbnails/Fat Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Fat Thor/"));
+                menu.AddButton("Rivals", ModAPI.LoadSprite("Art/Thumbnails/Rivals Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Rivals Thor/"), null, null, ModAPI.LoadSprite("Art/SkinsAltSkins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
                 Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
 
             }, "a");
@@ -1139,6 +1152,7 @@ namespace Mod
                 menu.AddFakeButton("Gladiator Hulk", ModAPI.LoadSprite("Art/Thumbnails/Gladiator.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Gladiator/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Gladiator/"), person));
                 menu.AddFakeButton("Professor Hulk", ModAPI.LoadSprite("Art/Thumbnails/Professor Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Professor Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Professor Hulk/"), person));
                 menu.AddFakeButton("Smart Hulk", ModAPI.LoadSprite("Art/Thumbnails/Smart Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Smart Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Smart Hulk/"), person));
+                menu.AddFakeButton("Rivals", ModAPI.LoadSprite("Art/Thumbnails/Rivals Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Rivals Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Rivals Hulk/"), person));
 
                 HulkTransform.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Hulk.png")).EnablePower();
             }, "a");
@@ -1177,7 +1191,8 @@ namespace Mod
                     }
 
                     HulkTransform.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Hulk.png"), ModAPIPlus.LimbSprites("Art/Skins/She-Hulk/")).EnablePower();
-                    menu.AddFakeButton("F4", ModAPI.LoadSprite("Art/Thumbnails/She-Hulk F4.png"), ModAPIPlus.LimbSprites("Art/AltSkins/She-Hulk F4/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/She-Hulk F4/"), person));
+                    menu.AddFakeButton("Lawyer", ModAPI.LoadSprite("Art/Thumbnails/Lawyer She-Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Lawyer She-Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Lawyer She-Hulk/"), person));
+                    menu.AddFakeButton("Fantastic 4", ModAPI.LoadSprite("Art/Thumbnails/Fantastic 4 She-Hulk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Fantastic 4 She-Hulk/"), HulkSkinAddEvent(ModAPIPlus.LimbSprites("Art/AltSkins/Fantastic 4 She-Hulk/"), person));
                 }
             }, "a");
 
@@ -1228,11 +1243,14 @@ namespace Mod
 
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Antman Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman Unmasked/"));
                 menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Antman Civil War.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman Civil War/"));
+                menu.AddButton("Debut", ModAPI.LoadSprite("Art/Thumbnails/Debut Antman.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Debut Antman/"));
                 menu.AddButton("Giant-Man", ModAPI.LoadSprite("Art/Thumbnails/Giant-Man.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Giant-Man/"));
-                menu.AddButton("Goliath", ModAPI.LoadSprite("Art/Thumbnails/Goliath.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Goliath/"));
+                menu.AddButton("Hank Pym", ModAPI.LoadSprite("Art/Thumbnails/Hank Pym.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Hank Pym/"));
+                menu.AddButton("Unmasked (Hank)", ModAPI.LoadSprite("Art/Thumbnails/Hank Pym Head.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Hank Pym Head/"));
                 menu.AddButton("Antman EMH", ModAPI.LoadSprite("Art/Thumbnails/Antman EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Antman EMH/"));
                 menu.AddButton("Giant-Man EMH", ModAPI.LoadSprite("Art/Thumbnails/Giant-Man EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Giant-Man EMH/"));
                 menu.AddButton("Yellowjacket", ModAPI.LoadSprite("Art/Thumbnails/Yellowjacket.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Yellowjacket/"));
+                menu.AddButton("West Coast Avengers", ModAPI.LoadSprite("Art/Thumbnails/West Coast Avengers Hank Pym.png"), ModAPIPlus.LimbSprites("Art/AltSkins/West Coast Avengers Hank Pym/"));
 
                 SizeChange.SetPower(person, person.Limbs[11], null, 3, "Grow").EnablePower();
                 SizeChange.SetPower(person, person.Limbs[11], null, 0.1f);
