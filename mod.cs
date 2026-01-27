@@ -1452,8 +1452,9 @@ namespace Mod
                     var menu = Instance.GetComponent<TextureMenu>();
 
                        menu.AddButton("Mcu Strange", ModAPI.LoadSprite("Art/Thumbnails/Mcu Strange.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Mcu Strange/"), null, null, ModAPI.LoadSprite("Art/AltSkins/Mcu Strange/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/Mcu Strange/CapeThing.png"));
-
-
+                       menu.AddButton("Casual Strange", ModAPI.LoadSprite("Art/Thumbnails/Casual Strange.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Casual Strange/"));
+                       menu.AddButton("Defender Strange", ModAPI.LoadSprite("Art/Thumbnails/Defender Strange.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Defender Strange/"));
+                       menu.AddButton("Rivals Strange", ModAPI.LoadSprite("Art/Thumbnails/Rivals Strange.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Rivals Strange/"), null, null, ModAPI.LoadSprite("Art/AltSkins/Rivals Strange/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/Rivals Strange/CapeThing.png"));
                     if (Limbs.gameObject.name.Contains("ArmFront"))
                     {
                         Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
