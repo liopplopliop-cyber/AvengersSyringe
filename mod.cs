@@ -1570,6 +1570,15 @@ namespace Mod
 
                 EnergyExplosion.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Energy Explosion.png"), new Color(0.7f, 0f, 0.9f, 1f), ModAPIPlus.LimbGlowSprites("Art/Skins/Black Panther/")).EnablePower();
 
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Black Panther Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Black Panther Unmasked/"));
+                menu.AddButton("Unmasked No Beard", ModAPI.LoadSprite("Art/Thumbnails/Black Panther Unmasked No Beard.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Black Panther Unmasked No Beard/"));
+                menu.AddButton("No Cape", ModAPI.LoadSprite("Art/Thumbnails/Black Panther No Cape.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Black Panther No Cape/"));
+                menu.AddButton("T'Challa", ModAPI.LoadSprite("Art/Thumbnails/T'Challa.png"), ModAPIPlus.LimbSprites("Art/AltSkins/T'Challa/"));
+                menu.AddButton("Ultimate", ModAPI.LoadSprite("Art/Thumbnails/Ultimate Black Panther.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ultimate Black Panther/"));
+                menu.AddButton("Mcu", ModAPI.LoadSprite("Art/Thumbnails/MCU Black Panther.png"), ModAPIPlus.LimbSprites("Art/AltSkins/MCU Black Panther/"));
+                menu.AddButton("Primal", ModAPI.LoadSprite("Art/Thumbnails/Primal Black Panther.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Primal Black Panther/"));
                 Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Black Panther/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Black Panther/CapeThing.png"));
 
             }, "a");
