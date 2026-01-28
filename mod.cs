@@ -1424,6 +1424,13 @@ namespace Mod
                 }
 
                 Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Vision/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Vision/CapeThing.png"));
+
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                menu.AddButton("White Vision", ModAPI.LoadSprite("Art/Thumbnails/White Vision.png"), ModAPIPlus.LimbSprites("Art/AltSkins/White Vision/"), null, null, ModAPI.LoadSprite("Art/AltSkins/White Vision/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/White Vision/CapeThing.png"));
+                menu.AddButton("Vision Mcu", ModAPI.LoadSprite("Art/Thumbnails/Vision Mcu.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Vision Mcu/"), null, null, ModAPI.LoadSprite("Art/AltSkins/Vision Mcu/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/Vision Mcu/CapeThing.png"));
+
             }, "a");
 
             //Doctor Strange
@@ -2272,7 +2279,14 @@ namespace Mod
 
                     if (limb.name.Contains("Foot"))
                         Thruster.SetPower(person, limb, null, new Color32(230, 0, 0, 200), new Color32(230, 0, 0, 200)).EnablePower();
+                
                 }
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                menu.AddButton("X-Tron", ModAPI.LoadSprite("Art/Thumbnails/X-Tron.png"), ModAPIPlus.LimbSprites("Art/AltSkins/X-Tron/"), null, null, ModAPI.LoadSprite("Art/AltSkins/X-Tron/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/X-Tron/CapeThing.png"));
+                menu.AddButton("İnfinity Ultron", ModAPI.LoadSprite("Art/Thumbnails/İnfinity Ultron.png"), ModAPIPlus.LimbSprites("Art/AltSkins/İnfinity Ultron/"), null, null, ModAPI.LoadSprite("Art/AltSkins/İnfinity Ultron/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/İnfinity Ultron/CapeThing.png"));
+
             }, "a");
 
             //Ultron Bot
