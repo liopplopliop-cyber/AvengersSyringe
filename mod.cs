@@ -2282,7 +2282,7 @@ namespace Mod
                 
                 }
 
-                var menu = Instance.GetComponent<TextureMenu>();
+                
 
                 menu.AddButton("X-Tron", ModAPI.LoadSprite("Art/Thumbnails/X-Tron.png"), ModAPIPlus.LimbSprites("Art/AltSkins/X-Tron/"), null, null, ModAPI.LoadSprite("Art/AltSkins/X-Tron/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/X-Tron/CapeThing.png"));
                 menu.AddButton("İnfinity Ultron", ModAPI.LoadSprite("Art/Thumbnails/İnfinity Ultron.png"), ModAPIPlus.LimbSprites("Art/AltSkins/İnfinity Ultron/"), null, null, ModAPI.LoadSprite("Art/AltSkins/İnfinity Ultron/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/İnfinity Ultron/CapeThing.png"));
