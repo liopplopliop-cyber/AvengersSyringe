@@ -1228,9 +1228,48 @@ namespace Mod
                 Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
 
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    Limbs.ImmuneToDamage = true;
+
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 2;
+                    }
+
+                    if (Limbs.name.Contains("UpperBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.name.Contains("Head"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 2;
+                    }
+
+                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
+                    }
+
+                    if (Limbs.name.Contains("LowerBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
+                    }
+                }
+
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("Clint Barton", ModAPI.LoadSprite("Art/Thumbnails/Clint Barton.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Clint Barton/"));
                 menu.AddButton("Classic Suit", ModAPI.LoadSprite("Art/Thumbnails/Classic Hawkeye.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Classic Hawkeye/"));
+                menu.AddButton("Ronin", ModAPI.LoadSprite("Art/Thumbnails/Ronin.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ronin/"));
+                menu.AddButton("Rivals", ModAPI.LoadSprite("Art/Thumbnails/Rivals Hawkeye.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Rivals Hawkeye/"));
+                menu.AddButton("Ultimate", ModAPI.LoadSprite("Art/Thumbnails/Ultimate Hawkeye.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ultimate Hawkeye/"));
+                menu.AddButton("2012", ModAPI.LoadSprite("Art/Thumbnails/Hawkeye 2012.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Hawkeye 2012/"));
+                menu.AddButton("2012 No Glasses", ModAPI.LoadSprite("Art/Thumbnails/Hawkeye 2012 No Glasses.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Hawkeye 2012 No Glasses/"));
+                menu.AddButton("Show", ModAPI.LoadSprite("Art/Thumbnails/Show Hawkeye.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Show Hawkeye/"));
+                menu.AddButton("Old Hawkeye", ModAPI.LoadSprite("Art/Thumbnails/Old Hawkeye.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Old Hawkeye/"), null, null, ModAPI.LoadSprite("Art/AltSkins/Old Hawkeye/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/Old Hawkeye/CapeThing.png"));
             }, "a");
 
             //Antman
@@ -1358,6 +1397,7 @@ namespace Mod
                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Quicksilver Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Quicksilver Casual/"));
                 menu.AddButton("Mcu", ModAPI.LoadSprite("Art/Thumbnails/Quicksilver Age Of Ultron.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Quicksilver Age Of Ultron/"));
                 menu.AddButton("Peters", ModAPI.LoadSprite("Art/Thumbnails/Quicksilver Evan Peters.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Quicksilver Evan Peters/"));
+                menu.AddButton("Avengers Crossing", ModAPI.LoadSprite("Art/Thumbnails/Quicksilver Avengers Crossing.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Quicksilver Avengers Crossing/"));
 
             }, "a");
 
