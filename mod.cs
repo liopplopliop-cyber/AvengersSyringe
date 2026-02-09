@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -9,7 +10,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static Mod.Transformation;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -156,6 +156,8 @@ namespace Mod
         public static Sprite NanoBladeS = ModAPI.LoadSprite("Art/Objects/Sword.png");
         public static Sprite NanoShieldS = ModAPI.LoadSprite("Art/Objects/Shield.png");
         public static Sprite NanoHammerS = ModAPI.LoadSprite("Art/Objects/Hammer.png");
+        public static Sprite NanoLaser = ModAPI.LoadSprite("Art/Objects/Laser.png");
+        public static Sprite NanoLaserGlow = ModAPI.LoadSprite("Art/Objects/Laserglow.png");
 
         public static Sprite WidowGauntlet = ModAPI.LoadSprite("Art/Objects/WidowGauntlet.png");
         public static Sprite WidowGauntletKnife = ModAPI.LoadSprite("Art/Objects/WidowGauntletSword.png");
@@ -219,7 +221,7 @@ namespace Mod
 
         #endregion
 
-            #region LoadSounds
+        #region LoadSounds
         public static AudioClip WebStretch = ModAPI.LoadSound("Sounds/WebStretch.wav");
         public static AudioClip ClawSound = ModAPI.LoadSound("Sounds/Claw.wav");
         public static AudioClip TransformationSound = ModAPI.LoadSound("Sounds/Nanotech.wav");
@@ -230,8 +232,10 @@ namespace Mod
         public static AudioClip Shrink = ModAPI.LoadSound("Sounds/Shrink.wav");
 
         public static AudioClip Laser = ModAPI.LoadSound("Sounds/Laser.wav");
+        public static AudioClip IronLaserSFX = ModAPI.LoadSound("Sounds/IronLaser.wav");
         public static AudioClip LaserStart = ModAPI.LoadSound("Sounds/LaserStart.wav");
         public static AudioClip LaserEnd = ModAPI.LoadSound("Sounds/LaserEnd.wav");
+        public static AudioClip AstralBlastSound = ModAPI.LoadSound("Sounds/Soul.wav");
 
         public static AudioClip Swap = ModAPI.LoadSound("Sounds/Swap.wav");
 
@@ -926,8 +930,6 @@ namespace Mod
 
         public static void Main()
         {
-
-
             //Category
             ModAPI.RegisterCategory(CategoryName, "Category for Nova's Avengers Mod", ModAPI.LoadSprite("icon.png"));
 
@@ -2795,10 +2797,79 @@ namespace Mod
             ModAPI.Register<AlternateMouseActivator>();
             ModAPI.Register<CategoryButtonEditor>();
             ModAPI.Register<SlowMotionController>();
+            ModAPI.Register<TimeHandler>();
             ModAPI.Register<BifrostTeleportation.BifrostTeleportHandler>();
             ModAPI.RegisterLiquid(TBLiquid.ID, new TBLiquid());
             ModAPI.OnItemSpawned += AddLimbLogger;
+            ModAPI.OnItemSpawned += AddBulletListener;
             #endregion
+        }
+
+        #region static shit
+        public static void AddBulletListener(object sender, UserSpawnEventArgs args)
+        {
+            if (args.Instance.TryGetComponent(out FirearmBehaviour gun))
+            {
+                gun.StartCoroutine(silly(gun));
+            }
+            else if (args.Instance.TryGetComponent(out MachineGunBehaviour mach))
+            {
+                mach.StartCoroutine(sillymach(mach));
+            }
+        }
+
+        public static IEnumerator sillymach(MachineGunBehaviour firearm)
+        {
+            yield return new WaitForSecondsRealtime(0.01f);
+
+            firearm.BallisticsEmitter.OnTracerCreation.AddListener((tracer) =>
+            {
+                var info = tracer.gameObject.AddComponent<BulletInfo>();
+                info.speed = firearm.Cartridge.StartSpeed;
+                info.damage = firearm.Cartridge.Damage;
+                info.Cart = firearm.Cartridge;
+                info.ConnectedBehaviour = firearm;
+                TimeHandler.Instance.bulletTracers.Add(tracer);
+                if (FindObjectOfType<TimeHandler>() && FindObjectOfType<TimeHandler>().stopped)
+                {
+                    firearm.StartCoroutine(aa(firearm));
+                }
+            });
+        }
+
+        public static IEnumerator silly(FirearmBehaviour firearm)
+        {
+            yield return new WaitForSecondsRealtime(0.01f);
+            firearm.BallisticsEmitter.OnTracerCreation.AddListener((tracer) =>
+            {
+                var info = tracer.gameObject.AddComponent<BulletInfo>();
+                info.speed = firearm.Cartridge.StartSpeed;
+                info.damage = firearm.Cartridge.Damage;
+                info.Cart = firearm.Cartridge;
+                info.ConnectedBehaviour = firearm;
+                TimeHandler.Instance.bulletTracers.Add(tracer);
+                if (FindObjectOfType<TimeHandler>() && FindObjectOfType<TimeHandler>().stopped)
+                {
+                    firearm.StartCoroutine(aa(firearm));
+                }
+
+            });
+        }
+
+        public static IEnumerator aa(FirearmBehaviour firearm)
+        {
+            yield return new WaitForSecondsRealtime(0.0001f);
+
+            firearm.BallisticsEmitter.DoTraversal = false;
+            firearm.StopAllCoroutines();
+        }
+
+        public static IEnumerator aa(MachineGunBehaviour firearm)
+        {
+            yield return new WaitForSecondsRealtime(0.0001f);
+
+            firearm.BallisticsEmitter.DoTraversal = false;
+            firearm.StopAllCoroutines();
         }
 
         private static void AddLimbLogger(object sender, UserSpawnEventArgs args)
@@ -2811,6 +2882,9 @@ namespace Mod
                 }
             }
         }
+
+        #endregion
+
 
         [SkipSerialisation]
         public class LimbLoggerBehaviour : MonoBehaviour
@@ -2847,6 +2921,2169 @@ namespace Mod
                 {
                     Destroy(this);
                 }
+            }
+        }
+    }
+
+    public class IronLaser : Power, Mod.ModAPIPlus.IUse2
+    {
+        public bool IsLasering = false;
+
+        public LineRenderer line;
+
+        private GameObject LaserObject;
+
+        private SpriteRenderer glow;
+
+        private Rigidbody2D _laserRb;
+
+        private const float FollowKp = 20f;
+
+        private const float FollowKd = 6f;
+
+        private const float RotationKp = 12f;
+
+        private const float OutVelocity = 25f;
+
+        public AudioSource laserSound;
+
+        public static IronLaser SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
+        {
+            var power = Limb.gameObject.AddComponent<IronLaser>();
+            power.Name = "Arial Attack Laser";
+            power.Description = "Summons a large floating laser generator that shoots extremely powerful beams of energy at anything in front of it.";
+            power.icon = icon;
+
+            if (power.name.Contains("Front"))
+            {
+                power.targetLimb = TargettedLimb.FrontArm;
+            }
+            else
+            {
+                power.targetLimb = TargettedLimb.BackArm;
+            }
+
+            power.laserSound = power.gameObject.AddComponent<AudioSource>();
+            power.laserSound.clip = Mod.IronLaserSFX;
+            power.laserSound.loop = true;
+            power.laserSound.playOnAwake = false;
+            power.laserSound.spatialBlend = 1f;
+            power.laserSound.maxDistance = 0.85f;
+
+            return power;
+        }
+
+        public void Use2()
+        {
+            if (!Enabled)
+                return;
+
+            IsLasering = !IsLasering;
+            if(IsLasering)
+            {
+                Mod.ModAPIPlus.PlaySound(transform.position, ModAPI.FindSpawnable("Detached Ray Cannon").Prefab.GetComponent<RayCannonBehaviour>().CannonClip);
+                laserSound.Play();
+            }
+            else
+            {
+                laserSound.Stop();
+            }
+            line.SetColors(IsLasering?new Color(0.2941f, 0.6902f, 1f, 0.4f) :Color.clear, IsLasering ? new Color(0.84f, 0.99f, 1, 0.1f) : Color.clear);
+        }
+
+        public override void EnablePower()
+        {
+            base.EnablePower();
+
+            Vector3 spawnPos = GetSpawnPositionOutsideCamera(transform.position);
+
+            LaserObject = ModAPI.CreatePhysicalObject("Iron Laser", Mod.NanoLaser);
+
+            LaserObject.transform.position = spawnPos;
+            LaserObject.layer = 10;
+            var pb = LaserObject.GetComponent<PhysicalBehaviour>();
+
+            pb.rigidbody.gravityScale = 0;
+            pb.rigidbody.drag = 0.8f;
+
+            _laserRb = pb.rigidbody;
+
+            line = LaserObject.AddComponent<LineRenderer>();
+            line.sortingLayerName = "Top";
+            line.startWidth = 0.05f;
+            line.endWidth = 0.05f;
+            line.positionCount = 2;
+            line.material = ModAPI.FindMaterial("VeryBright");
+            line.startColor = new Color32(100, 100, 255, 0);
+            line.endColor = new Color32(100, 100, 255, 0);
+
+            glow = new GameObject("Glow").AddComponent<SpriteRenderer>();
+            glow.transform.parent = LaserObject.transform;
+            glow.transform.localPosition = Vector3.zero;
+            glow.transform.rotation = Quaternion.identity;
+            glow.transform.localScale = Vector3.one;
+            glow.sprite = Mod.NanoLaserGlow;
+            glow.sortingLayerName = "Top";
+            glow.material = ModAPI.FindMaterial("VeryBright");
+            glow.color = Color.clear;
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+
+            laserSound.Stop();
+
+            IsLasering = false;
+
+            if (line != null)
+            {
+                line.enabled = false;
+            }
+
+            if (glow != null)
+            {
+                glow.color = new Color32(100, 100, 255, 0);
+            }
+
+            if (_laserRb != null)
+            {
+                Vector3 camPos = Camera.main != null ? Camera.main.transform.position : transform.position;
+                Vector2 away = ((Vector2)_laserRb.position - (Vector2)camPos).normalized;
+                if (away == Vector2.zero)
+                {
+                    away = Vector2.up;
+                }
+
+                _laserRb.velocity = away * OutVelocity;
+                _laserRb.angularVelocity = 0f;
+            }
+
+            LaserObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(LaserObject.GetComponent<SpriteRenderer>().sprite, Mod.Dot, LaserObject.GetComponent<SpriteRenderer>().material, true, 2, AnimationType.CircleIn, true);
+
+            UnityEngine.Object.Destroy(LaserObject, 2f);
+        }
+
+        private static Vector3 GetSpawnPositionOutsideCamera(Vector3 fallback)
+        {
+            var cam = Camera.main;
+            if (cam == null || !cam.orthographic)
+            {
+                return fallback + new Vector3(3f, 3f, 0f);
+            }
+
+            Vector3 camPos = cam.transform.position;
+            float halfH = cam.orthographicSize;
+            float halfW = halfH * cam.aspect;
+
+            float margin = 2.5f;
+            int side = UnityEngine.Random.Range(0, 4);
+            Vector2 spawn = Vector2.zero;
+
+            switch (side)
+            {
+                case 0:
+                    spawn.x = camPos.x - halfW - margin;
+                    spawn.y = UnityEngine.Random.Range(camPos.y - halfH, camPos.y + halfH);
+                    break;
+                case 1:
+                    spawn.x = camPos.x + halfW + margin;
+                    spawn.y = UnityEngine.Random.Range(camPos.y - halfH, camPos.y + halfH);
+                    break;
+                case 2:
+                    spawn.y = camPos.y + halfH + margin;
+                    spawn.x = UnityEngine.Random.Range(camPos.x - halfW, camPos.x + halfW);
+                    break;
+                case 3:
+                    spawn.y = camPos.y - halfH - margin;
+                    spawn.x = UnityEngine.Random.Range(camPos.x - halfW, camPos.x + halfW);
+                    break;
+            }
+
+            return new Vector3(spawn.x, spawn.y, 0f);
+        }
+
+        public void Update()
+        {
+            if (LaserObject == null || line == null || glow == null)
+            {
+                return;
+            }
+
+            glow.color = Color.Lerp(glow.color, IsLasering ? new Color32(235, 235, 235, 150) : new Color32(255, 235, 235, 0), Time.deltaTime * 10f);
+            //line.enabled = Enabled;
+
+            line.SetPosition(0, LaserObject.transform.position);
+            line.SetPosition(1, LaserObject.transform.position + LaserObject.transform.right * 50000);
+        }
+
+        public void FixedUpdate()
+        {
+            if (!Enabled || _laserRb == null)
+            {
+                return;
+            }
+
+            if (IsLasering && line != null)
+            {
+                CameraShakeBehaviour.main.Shake(0.1f, transform.position, 1f);
+                var a = UnityEngine.Random.Range(0.3f, 0.65f);
+                line.startWidth = a;
+                line.endWidth = a;
+            }
+
+            Vector2 targetPos = (Vector2)transform.position + (Vector2)transform.up * 2f;
+            Vector2 toTarget = targetPos - _laserRb.position;
+            Vector2 desiredVel = toTarget * FollowKp;
+            Vector2 force = (desiredVel - _laserRb.velocity) * FollowKd;
+
+            _laserRb.AddForce(force, ForceMode2D.Force);
+
+            Vector2 targetDir = -(Vector2)transform.up;
+            float targetAngle = Mathf.Atan2(targetDir.y, targetDir.x) * Mathf.Rad2Deg;
+            float angle = Mathf.LerpAngle(_laserRb.rotation, targetAngle, RotationKp * Time.fixedDeltaTime);
+
+            _laserRb.MoveRotation(angle);
+
+            RaycastHit2D[] hits = Physics2D.RaycastAll(LaserObject.transform.position, LaserObject.transform.right, 50000f, LayerMask.GetMask("Objects"));
+
+            var hitss = Physics2D.RaycastAll(LaserObject.transform.position, LaserObject.transform.right, 50000f);
+
+            foreach (var hit in hitss)
+            {
+                if (hit.collider != null && hit.collider.gameObject != LaserObject && hit.collider.transform.root != transform.root)
+                {
+                    ModAPI.CreateParticleEffect(ParticleEffects.Flash, hit.point).transform.localScale = Vector3.one * 5f;
+                }
+            }
+
+            foreach (var hit in hits)
+            {
+                if (hit.collider != null && hit.collider.gameObject != LaserObject && hit.collider.transform.root != transform.root)
+                {
+                    hit.rigidbody.AddForce(-transform.up * 150, ForceMode2D.Force);
+
+                    if (hit.collider.TryGetComponent<PhysicalBehaviour>(out var ph))
+                        ph.charge += 0.01f;
+
+                    if (hit.collider.TryGetComponent<LimbBehaviour>(out var limb))
+                    {
+                        if (limb.ImpactDamageMultiplier < 2 && !limb.ImmuneToDamage && limb.PhysicalBehaviour.rigidbody.mass > 0.1f)
+                            limb.Crush();
+
+                        limb.Damage(limb.InitialHealth / 100);
+
+                        limb.SkinMaterialHandler.AddDamagePoint(DamageType.Bullet, hit.point, UnityEngine.Random.Range(1, 50));
+                    }
+
+                    if (hit.collider.TryGetComponent<DestroyableBehaviour>(out var des))
+                        des.Break();
+                }
+            }
+        }
+    }
+
+    public class HeldTimeManager : MonoBehaviour, Messages.IOnDrop, Messages.IOnGripped
+    {
+        private bool addedUneffected;
+        private bool subscribed;
+        private PhysicalBehaviour phys;
+
+        private void Start()
+        {
+            phys = GetComponent<PhysicalBehaviour>();
+            addedUneffected = true;
+            if (TimeHandler.Instance)
+            {
+                TimeHandler.Instance.OnTimeResumed.AddListener(OnGlobalResume);
+                subscribed = true;
+            }
+        }
+
+        private void OnGlobalResume()
+        {
+            if (addedUneffected && TimeHandler.Instance)
+            {
+                TimeHandler.Instance.RemoveUneffected(gameObject);
+                addedUneffected = false;
+            }
+
+            var f2 = GetComponent<FreezeBehaviour2>();
+            if (f2) Destroy(f2);
+        }
+
+        public void OnGripped(GripBehaviour gripper)
+        {
+            var handler = TimeHandler.Instance;
+            handler.AddUneffected(gripper.CurrentlyHolding.gameObject);
+
+            if (gripper.CurrentlyHolding.GetComponent<FreezeBehaviour2>())
+                Destroy(gripper.CurrentlyHolding.GetComponent<FreezeBehaviour2>());
+        }
+
+        public void OnDrop(GripBehaviour dropper)
+        {
+            if (addedUneffected && TimeHandler.Instance)
+            {
+                TimeHandler.Instance.RemoveUneffected(gameObject);
+                addedUneffected = false;
+            }
+
+            if (TimeHandler.Instance && TimeHandler.Instance.stopped && !GetComponent<FreezeBehaviour2>())
+                gameObject.AddComponent<FreezeBehaviour2>();
+
+            Cleanup();
+        }
+
+        private void OnDestroy()
+        {
+            Cleanup();
+        }
+
+        private void Cleanup()
+        {
+            if (subscribed && TimeHandler.Instance)
+            {
+                TimeHandler.Instance.OnTimeResumed.RemoveListener(OnGlobalResume);
+                subscribed = false;
+            }
+        }
+    }
+
+    public class BulletInfo : MonoBehaviour
+    {
+        public float speed;
+        public float damage;
+        public Cartridge Cart;
+        public MonoBehaviour ConnectedBehaviour;
+    }
+
+    public class Timestop : Power, Messages.IUse
+    {
+        public PersonBehaviour person;
+        private Coroutine tickCoroutine;
+        private bool stopped = false;
+        public UnityEvent OnStop = new UnityEvent();
+        public UnityEvent OnResume = new UnityEvent();
+        public static GameObject VFXPrefab;
+        public GameObject VFX;
+        public GameObject VFX2;
+
+        private static readonly HashSet<Timestop> ActiveStops = new HashSet<Timestop>();
+        public static int ActiveStopsCount => ActiveStops.Count;
+
+        public override void Start()
+        {
+            base.Start();
+
+            var cam = Camera.main;
+
+            foreach (var child in person.Limbs)
+                TryAddTimeGrab(child);
+
+            if (!GameObject.Find("HasAddedFreeze"))
+            {
+                new GameObject("HasAddedFreeze");
+                ModAPI.OnItemSpawned += AddFreezeBehaviour;
+            }
+        }
+
+        private void TryAddTimeGrab(LimbBehaviour limb)
+        {
+            if (limb.name.Contains("LowerArm") && !limb.GetComponent<TimeGrab>())
+            {
+                limb.gameObject.AddComponent<TimeGrab>().user = this;
+            }
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+            if (!stopped) return;
+            InternalResume(true);
+        }
+
+        private void LocalFreeze()
+        {
+            var pb = transform.root.GetComponent<PersonBehaviour>();
+            foreach (var limb in pb.Limbs)
+                if (!limb.GetComponent<FreezeBehaviour2>())
+                    limb.gameObject.AddComponent<FreezeBehaviour2>();
+
+            var hats = new List<HatBehaviour.HasHat>();
+            hats.AddRange(transform.root.GetComponentsInChildren<HatBehaviour.HasHat>());
+
+            foreach (var hat in hats)
+                if (hat != null && hat.hat != null && TimeHandler.Instance != null)
+                {
+                    hat.hat.gameObject.GetOrAddComponent<FreezeBehaviour2>();
+                }
+        }
+
+        private void RemoveTargetsForPerson(PersonBehaviour pb)
+        {
+            Debug.Log("Removing targets for " + pb.name);
+            if (!pb) return;
+        }
+
+        private void InternalResume(bool disabling = false)
+        {
+            if (!stopped) return;
+
+            VFX2 = Instantiate(VFXPrefab);
+            Destroy(VFX2, 5);
+            VFX2.transform.position = transform.root.Find("Body/MiddleBody").position;
+            VFX2.GetComponent<ParticleSystem>().Play();
+            VFX2.GetComponent<ParticleSystem>().startSize *= 3;
+
+            foreach (var child in VFX2.GetComponentsInChildren<ParticleSystem>())
+            {
+                if (child.gameObject != VFX2) Destroy(child.gameObject);
+            }
+
+            var ps2 = VFX2.GetComponent<ParticleSystem>();
+            var main2 = ps2.main;
+            main2.startDelay = 0;
+            var sizeOverLifetime = ps2.sizeOverLifetime;
+            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1, flipCurve(sizeOverLifetime.size.curve));
+
+            OnResume?.Invoke();
+
+            stopped = false;
+
+            if (tickCoroutine != null)
+            {
+                StopCoroutine(tickCoroutine);
+                tickCoroutine = null;
+            }
+
+            RemoveTargetsForPerson(person);
+
+            if (TimeHandler.Instance != null)
+            {
+                foreach (var limb in person.Limbs)
+                    TimeHandler.Instance.RemoveUneffected(limb.gameObject);
+            }
+
+            var hats = new List<HatBehaviour.HasHat>();
+            hats.AddRange(transform.root.GetComponentsInChildren<HatBehaviour.HasHat>());
+
+            foreach (var hat in hats)
+                if (hat != null && hat.hat != null && TimeHandler.Instance != null)
+                {
+                    TimeHandler.Instance.RemoveUneffected(hat.hat.gameObject);
+                }
+
+            if (TimeHandler.Instance) TimeHandler.Instance.CleanupNulls();
+
+            ActiveStops.Remove(this);
+
+            if (ActiveStops.Count > 0)
+            {
+                LocalFreeze();
+            }
+            else
+            {
+                TimeHandler.Instance.ResumeTime();
+                RemoveFreezeFromPerson(person);
+            }
+        }
+
+        public void OnDestroy()
+        {
+            if (VFX != null) Destroy(VFX);
+            if (VFX2 != null) Destroy(VFX2);
+
+
+            if (stopped && ActiveStops.Contains(this))
+            {
+                ActiveStops.Remove(this);
+
+                if (TimeHandler.Instance)
+                {
+                    foreach (var limb in person.Limbs)
+                        TimeHandler.Instance.RemoveUneffected(limb.gameObject);
+
+                    TimeHandler.Instance.CleanupNulls();
+                }
+
+                if (ActiveStops.Count == 0 && TimeHandler.Instance)
+                {
+                    TimeHandler.Instance.ResumeTime();
+                    
+                    RemoveFreezeFromPerson(person);
+                }
+                else
+                {
+                    LocalFreeze();
+                }
+            }
+            else
+            {
+                ActiveStops.Remove(this);
+            }
+        }
+
+        private AnimationCurve flipCurve(AnimationCurve curve)
+        {
+            AnimationCurve flipped = new AnimationCurve(curve.keys);
+
+            Keyframe[] keys = flipped.keys;
+
+            for (int i = 0; i < keys.Length; i++)
+            {
+                keys[i].value = 1f - keys[i].value;
+                keys[i].inTangent = -keys[i].inTangent;
+                keys[i].outTangent = -keys[i].outTangent;
+            }
+
+            flipped.keys = keys;
+            return flipped;
+        }
+
+        public IEnumerator Stop(bool quick = true)
+        {
+            if (!stopped)
+            {
+                if (quick == false)
+                {
+                    yield return new WaitForSeconds(1.8f);
+                }
+                VFX = Instantiate(VFXPrefab);
+                Destroy(VFX, 5);
+                VFX.transform.position = transform.root.Find("Body/MiddleBody").position;
+                VFX.GetComponent<ParticleSystem>().Play();
+                VFX.GetComponent<ParticleSystem>().startSize *= 3;
+
+                var ps = VFX.GetComponent<ParticleSystem>();
+                var main = ps.main;
+                main.startDelay = 0;
+
+                var specs = VFX.transform.Find("Specs").gameObject.GetComponent<ParticleSystem>();
+                var emission = specs.emission;
+                ParticleSystem.Burst[] bursts = new ParticleSystem.Burst[emission.burstCount];
+                emission.GetBursts(bursts);
+                bursts[1].time = 0;
+                emission.SetBursts(bursts);
+
+                OnStop?.Invoke();
+
+                stopped = true;
+
+                if (!ActiveStops.Contains(this))
+                    ActiveStops.Add(this);
+
+                if (TimeHandler.Instance != null)
+                {
+                    foreach (var limb in person.Limbs)
+                        TimeHandler.Instance.AddUneffected(limb.gameObject);
+
+                }
+
+                foreach (var freeze in transform.root.GetComponentsInChildren<FreezeBehaviour2>())
+                    Destroy(freeze);
+
+                if (tickCoroutine == null)
+                    tickCoroutine = StartCoroutine(TickSoundLoop());
+
+                if (ActiveStops.Count == 1 && TimeHandler.Instance)
+                    TimeHandler.Instance.PauseTime();
+
+                var hats = new List<HatBehaviour.HasHat>();
+                hats.AddRange(transform.root.GetComponentsInChildren<HatBehaviour.HasHat>());
+
+                foreach (var hat in hats)
+                    if (hat != null && hat.hat != null && TimeHandler.Instance != null)
+                    {
+                        TimeHandler.Instance.AddUneffected(hat.hat.gameObject);
+                        if (hat.hat.TryGetComponent<FreezeBehaviour2>(out var fre))
+                            Destroy(fre);
+                    }
+            }
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled) return;
+            if (stopped) InternalResume();
+            else StartCoroutine(Stop(false));
+        }
+
+        public void Resume()
+        {
+            InternalResume();
+        }
+
+        private void AddFreezeBehaviour(object sender, UserSpawnEventArgs args)
+        {
+            if (ActiveStops.Count == 0) return;
+            if (!TimeHandler.Instance.stopped) return;
+
+            foreach (PhysicalBehaviour i in args.Instance.GetComponentsInChildren<PhysicalBehaviour>())
+                if (!i.GetComponent<FreezeBehaviour>())
+                    i.gameObject.AddComponent<FreezeBehaviour2>();
+        }
+
+        private void RemoveFreezeFromPerson(PersonBehaviour pb)
+        {
+            if (!pb) return;
+            foreach (var limb in pb.Limbs)
+            {
+                var fb = limb.GetComponent<FreezeBehaviour2>();
+                if (fb) Destroy(fb);
+            }
+        }
+
+        private IEnumerator PlaySound(AudioClip clip)
+        {
+            if (!clip) yield break;
+            var sound = new GameObject("SFX");
+            sound.transform.position = transform.position;
+            var src = sound.AddComponent<AudioSource>();
+            src.playOnAwake = false;
+            src.clip = clip;
+            src.spatialBlend = 1;
+            src.volume = 5f;
+            sound.AddComponent<AudioDistortionFilter>().distortionLevel = 0.85f;
+            sound.AddComponent<AudioSourceTimeScaleBehaviour>();
+            src.Play();
+            sound.AddComponent<DestroyAfterTime>().time = clip.length;
+            yield return new WaitForSeconds(clip.length);
+            if (sound) Destroy(sound);
+        }
+
+        private IEnumerator TickSoundLoop()
+        {
+            while (stopped && ActiveStops.Contains(this) && TimeHandler.Instance.stopped)
+            {
+                //StartCoroutine(PlaySound(Mod.ClockTick));
+                yield return new WaitForSeconds(1f);
+            }
+        }
+    }
+
+    public class TimeGrab : MonoBehaviour, Mod.ModAPIPlus.IUse2
+    {
+        PhysicalBehaviour potentialGrab;
+        Vector2 hitpoint;
+        PhysicalBehaviour grabbed;
+        public HingeJoint2D joint;
+        TimeHandler handler;
+        public Timestop user;
+
+        public void Start()
+        {
+            handler = TimeHandler.Instance ?? GameObject.FindObjectOfType<TimeHandler>();
+            user.OnResume.AddListener(OnUserResume);
+        }
+
+        private void OnUserResume()
+        {
+            if (TryGetComponent<GripBehaviour>(out var gripper) && gripper.CurrentlyHolding)
+            {
+                handler.RemoveUneffected(gripper.CurrentlyHolding.gameObject);
+                if (handler.stopped)
+                    gripper.CurrentlyHolding.gameObject.AddComponent<FreezeBehaviour2>();
+            }
+
+            if (grabbed)
+            {
+                foreach (var phys in grabbed.transform.root.GetComponentsInChildren<PhysicalBehaviour>())
+                    handler.RemoveUneffected(phys.gameObject);
+
+                if (handler.stopped)
+                    foreach (var phys in grabbed.transform.root.GetComponentsInChildren<PhysicalBehaviour>())
+                        if (!phys.GetComponent<FreezeBehaviour2>())
+                            phys.gameObject.AddComponent<FreezeBehaviour2>();
+
+                if (joint) Destroy(joint);
+                grabbed = null;
+            }
+        }
+
+        public void Use2()
+        {
+            if (grabbed)
+            {
+                foreach (var phys in grabbed.transform.root.GetComponentsInChildren<PhysicalBehaviour>())
+                    handler.RemoveUneffected(phys.gameObject);
+
+                if (handler.stopped)
+                    foreach (var phys in grabbed.transform.root.GetComponentsInChildren<PhysicalBehaviour>())
+                        if (!phys.GetComponent<FreezeBehaviour2>())
+                            phys.gameObject.AddComponent<FreezeBehaviour2>();
+
+                if (joint) Destroy(joint);
+                grabbed = null;
+            }
+            else if (potentialGrab && handler.stopped)
+            {
+                foreach (var phys in potentialGrab.transform.root.GetComponentsInChildren<PhysicalBehaviour>())
+                    handler.AddUneffected(phys.gameObject);
+
+                grabbed = potentialGrab;
+                potentialGrab = null;
+
+                foreach (var phys in grabbed.transform.root.GetComponentsInChildren<PhysicalBehaviour>())
+                    if (phys.TryGetComponent<FreezeBehaviour2>(out var freeze))
+                    {
+                        freeze.velocity = Vector2.zero;
+                        Destroy(freeze);
+                    }
+
+                foreach (var phys in grabbed.transform.root.GetComponentsInChildren<PhysicalBehaviour>())
+                    phys.rigidbody.velocity = Vector3.zero;
+
+                joint = gameObject.AddComponent<HingeJoint2D>();
+                joint.autoConfigureConnectedAnchor = false;
+                joint.anchor = new Vector2(0, -0.4f);
+                joint.connectedAnchor = Vector2.zero;
+                joint.connectedBody = grabbed.rigidbody;
+            }
+        }
+
+        public void FixedUpdate()
+        {
+            if (TryGetComponent<GripBehaviour>(out var gripper) && gripper.CurrentlyHolding && !gripper.CurrentlyHolding.GetComponent<HeldTimeManager>())
+            {
+                gripper.CurrentlyHolding.gameObject.AddComponent<HeldTimeManager>();
+                handler.AddUneffected(gripper.CurrentlyHolding.gameObject);
+
+                if (gripper.CurrentlyHolding.GetComponent<FreezeBehaviour2>())
+                    Destroy(gripper.CurrentlyHolding.GetComponent<FreezeBehaviour2>());
+            }
+
+            if (joint == null || !handler.stopped)
+            {
+                grabbed = null;
+                joint = null;
+            }
+        }
+
+        public void OnCollisionEnter2D(Collision2D col)
+        {
+            if (col.gameObject.TryGetComponent<PhysicalBehaviour>(out var phys))
+            {
+                potentialGrab = phys;
+                hitpoint = col.contacts[0].point;
+            }
+        }
+
+        public void OnCollisionExit2D(Collision2D col)
+        {
+            if (col.gameObject.TryGetComponent<PhysicalBehaviour>(out var phys))
+            {
+                if (potentialGrab == phys)
+                    potentialGrab = null;
+            }
+        }
+    }
+
+    public class TimeHandler : MonoBehaviour
+    {
+        public static TimeHandler Instance;
+
+        public List<GameObject> uneffected = new List<GameObject>();
+
+        private readonly Dictionary<GameObject, int> _uneffectedRefCounts = new Dictionary<GameObject, int>(128);
+
+        public bool stopped = false;
+        public List<FreezeBehaviour> frozen;
+        public List<FirearmBehaviour> cartridgespeeds = new List<FirearmBehaviour>();
+        public List<MachineGunBehaviour> macartridgespeeds = new List<MachineGunBehaviour>();
+        public List<PoolableSizeHelper> tracers = new List<PoolableSizeHelper>();
+        public List<Coroutine> FakeBallistics = new List<Coroutine>();
+        public Dictionary<TrailRenderer, float> trails = new Dictionary<TrailRenderer, float>();
+        public Dictionary<ParticleSystem, float> particles = new Dictionary<ParticleSystem, float>();
+        public Dictionary<LaunchedRocketBehaviour, float> rockets = new Dictionary<LaunchedRocketBehaviour, float>();
+        public List<BlasterBehaviour> blasters = new List<BlasterBehaviour>();
+        public List<AcceleratorGunBehaviour> accel = new List<AcceleratorGunBehaviour>();
+        public Dictionary<AcceleratorBoltBehaviour, float> accelbolts = new Dictionary<AcceleratorBoltBehaviour, float>();
+        public UnityEvent OnTimePaused = new UnityEvent();
+        public UnityEvent OnTimeResumed = new UnityEvent();
+        public bool Simplified = false;
+
+        public List<LineRenderer> bulletTracers = new List<LineRenderer>();
+
+        public int UneffectedCount => _uneffectedRefCounts.Count;
+
+        private void Awake()
+        {
+            Instance = this;
+        }
+
+        #region Ref Count API
+        public void AddUneffected(GameObject go)
+        {
+            if (!go) return;
+            if (_uneffectedRefCounts.TryGetValue(go, out var c))
+                _uneffectedRefCounts[go] = c + 1;
+            else
+                _uneffectedRefCounts.Add(go, 1);
+            SyncLegacyList();
+        }
+
+        public void RemoveUneffected(GameObject go)
+        {
+            if (!go) return;
+            if (_uneffectedRefCounts.TryGetValue(go, out var c))
+            {
+                c--;
+                if (c <= 0) _uneffectedRefCounts.Remove(go);
+                else _uneffectedRefCounts[go] = c;
+                SyncLegacyList();
+            }
+        }
+
+        public void CleanupNulls()
+        {
+            if (_uneffectedRefCounts.Count == 0) return;
+            _nullBuffer.Clear();
+            foreach (var kv in _uneffectedRefCounts)
+                if (!kv.Key) _nullBuffer.Add(kv.Key);
+            for (int i = 0; i < _nullBuffer.Count; i++)
+                _uneffectedRefCounts.Remove(_nullBuffer[i]);
+            _nullBuffer.Clear();
+            SyncLegacyList();
+        }
+
+        private static readonly List<GameObject> _nullBuffer = new List<GameObject>(32);
+
+        private void SyncLegacyList()
+        {
+            uneffected.Clear();
+            foreach (var kv in _uneffectedRefCounts)
+                if (kv.Key) uneffected.Add(kv.Key);
+        }
+        #endregion
+
+        public void PauseTime()
+        {
+            if (stopped) return;
+            Simplified = Settings.main.Get<bool>("SimpleStop");
+            OnTimePaused?.Invoke();
+
+            frozen = new List<FreezeBehaviour>();
+            stopped = true;
+
+            foreach (var coroutine in FakeBallistics)
+                if (coroutine != null)
+                    StopCoroutine(coroutine);
+
+            cartridgespeeds.Clear();
+            macartridgespeeds.Clear();
+            tracers.Clear();
+            trails.Clear();
+            particles.Clear();
+            rockets.Clear();
+            blasters.Clear();
+            accel.Clear();
+            accelbolts.Clear();
+
+            CleanupNulls();
+
+            foreach (var gun in GameObject.FindObjectsOfType<FirearmBehaviour>())
+            {
+                cartridgespeeds.Add(gun);
+                gun.BallisticsEmitter.DoTraversal = false;
+                gun.StopAllCoroutines();
+            }
+
+            foreach (var gun in GameObject.FindObjectsOfType<MachineGunBehaviour>())
+            {
+                macartridgespeeds.Add(gun);
+                gun.BallisticsEmitter.DoTraversal = false;
+                gun.StopAllCoroutines();
+            }
+
+            foreach (PhysicalBehaviour phys in GameObject.FindObjectsOfType<PhysicalBehaviour>())
+            {
+                if (phys.transform.root.name != "WORLD" && !phys.GetComponent<FreezeBehaviour2>() &&
+                    phys.rigidbody.bodyType != RigidbodyType2D.Static)
+                {
+                    if (phys.TryGetComponent<FreezeBehaviour>(out var freeze))
+                    {
+                        frozen.Add(freeze);
+                    }
+                    else if (!_uneffectedRefCounts.ContainsKey(phys.gameObject) && !phys.gameObject.GetComponent<FreezeBehaviour2>())
+                    {
+                        if (phys.TryGetComponent<HatBehaviour>(out var hat))
+                            if (hat.joint)
+                                continue;
+                        phys.gameObject.AddComponent<FreezeBehaviour2>();
+                    }
+                }
+            }
+
+            foreach (var rocket in FindObjectsOfType<LaunchedRocketBehaviour>())
+            {
+                if (rocket.isActiveAndEnabled)
+                {
+                    rockets.Add(rocket, rocket.MaxSpeed);
+                    rocket.MaxSpeed = 0f;
+                }
+            }
+
+            if (!Simplified)
+            {
+                foreach (var blaster in FindObjectsOfType<BlasterboltBehaviour>())
+                {
+                    blaster.enabled = false;
+                    var tr = blaster.GetComponent<TrailRenderer>();
+                    if (tr)
+                    {
+                        if (!trails.ContainsKey(tr))
+                            trails.Add(tr, tr.time);
+                        tr.time = Mathf.Infinity;
+                    }
+                }
+
+                foreach (var sound in FindObjectsOfType<AudioSource>())
+                {
+                    if (sound.gameObject.name != "UI Sound Controller" && !sound.transform.root.gameObject.name.Contains("SFX") &&
+                        !_uneffectedRefCounts.ContainsKey(sound.gameObject))
+                    {
+                        sound.pitch = 0f;
+                        sound.volume = 0f;
+                    }
+                }
+
+                foreach (var particle in FindObjectsOfType<ParticleSystem>())
+                {
+                    if (particle.isPlaying && !particle.transform.root.gameObject.name.Contains("Timestop"))
+                    {
+                        particles.Add(particle, particle.main.simulationSpeed);
+                        var main = particle.main;
+                        main.simulationSpeed = 0f;
+                        particle.Pause();
+                    }
+                }
+
+                foreach (var trail in FindObjectsOfType<TrailRenderer>())
+                {
+                    if (!trails.ContainsKey(trail))
+                    {
+                        trails.Add(trail, trail.time);
+                        trail.time = Mathf.Infinity;
+                    }
+                }
+
+                foreach (var blaster in FindObjectsOfType<BlasterBehaviour>())
+                {
+                    if (blaster.enabled)
+                    {
+                        blasters.Add(blaster);
+                        blaster.enabled = false;
+                    }
+                }
+
+                foreach (var ag in FindObjectsOfType<AcceleratorGunBehaviour>())
+                {
+                    if (ag.enabled)
+                    {
+                        accel.Add(ag);
+                        ag.enabled = false;
+                    }
+                }
+
+                foreach (var bolt in FindObjectsOfType<AcceleratorBoltBehaviour>())
+                {
+                    if (bolt.enabled && !accelbolts.ContainsKey(bolt))
+                    {
+                        accelbolts.Add(bolt, bolt.Speed);
+                        bolt.Speed = 0f;
+                    }
+                }
+            }
+        }
+
+        public void ResumeTime()
+        {
+            if (!stopped) return;
+
+            OnTimeResumed?.Invoke();
+            stopped = false;
+            CleanupNulls();
+
+            foreach (PoolableSizeHelper a in GameObject.FindObjectsOfType<PoolableSizeHelper>())
+            {
+                if (a.name == "Tracer poolable(Clone)" && a.GetComponent<LineRenderer>())
+                {
+                    tracers.Add(a);
+                }
+            }
+
+            foreach (var gun in GameObject.FindObjectsOfType<FirearmBehaviour>(true))
+                if (cartridgespeeds.Contains(gun))
+                {
+                    gun.BallisticsEmitter.DoTraversal = true;
+                    gun.enabled = true;
+                }
+
+            foreach (var gun in GameObject.FindObjectsOfType<MachineGunBehaviour>(true))
+                if (macartridgespeeds.Contains(gun))
+                {
+                    gun.BallisticsEmitter.DoTraversal = true;
+                    gun.enabled = true;
+                }
+
+            foreach (var tracer in tracers)
+                if (tracer)
+                    FakeBallistics.Add(StartCoroutine(BallisticIteration(tracer.transform.position, tracer.transform.right, tracer.GetComponent<LineRenderer>(), 10)));
+
+            if (!Simplified)
+            {
+                foreach (var trail in trails)
+                {
+                    if (trail.Key)
+                        trail.Key.time = trail.Value;
+                }
+
+                foreach (var sound in FindObjectsOfType<AudioSource>())
+                {
+                    if (sound.name != "UI Sound Controller" && !sound.name.Contains("SFX"))
+                    {
+                        sound.pitch = Time.timeScale;
+                        sound.volume = 1f;
+                    }
+                }
+
+                foreach (var particle in particles)
+                {
+                    if (particle.Key)
+                    {
+                        var main = particle.Key.main;
+                        main.simulationSpeed = particle.Value;
+                        particle.Key.Play();
+                    }
+                }
+
+                foreach (var rocket in rockets)
+                {
+                    if (rocket.Key)
+                        rocket.Key.MaxSpeed = rocket.Value;
+                }
+
+                foreach (var bolt in FindObjectsOfType<BlasterboltBehaviour>())
+                    bolt.enabled = true;
+
+                foreach (var b in blasters)
+                    if (b) b.enabled = true;
+
+                foreach (var a in accel)
+                    if (a) a.enabled = true;
+
+                foreach (var bolt in accelbolts)
+                    if (bolt.Key)
+                        bolt.Key.Speed = bolt.Value;
+            }
+
+            foreach (FreezeBehaviour2 freeze in GameObject.FindObjectsOfType<FreezeBehaviour2>())
+                Destroy(freeze);
+        }
+
+        private void Update()
+        {
+            if (stopped && !Simplified)
+            {
+                foreach (var source in FindObjectsOfType<AudioSource>())
+                {
+                    if (source.name != "UI Sound Controller" && !source.gameObject.name.Contains("SFX") &&
+                        !_uneffectedRefCounts.ContainsKey(source.gameObject))
+                    {
+                        source.pitch = 0f;
+                        source.volume = 0f;
+                    }
+                }
+            }
+
+            if (stopped && Timestop.ActiveStopsCount == 0)
+            {
+                ResumeTime();
+            }
+        }
+
+        private void FixedUpdate()
+        {
+            CleanupNulls();
+            if (stopped && Timestop.ActiveStopsCount == 0)
+            {
+                ResumeTime();
+            }
+        }
+
+        private IEnumerator BallisticIteration(Vector2 origin, Vector2 direction, LineRenderer tracer, float speed)
+        {
+            if (!tracer) yield break;
+
+            const string maskA = "Bounds";
+            const string maskB = "Objects";
+            const string maskC = "CollidingDebris";
+            int layerMask = LayerMask.GetMask(maskA, maskB, maskC);
+
+            direction = tracer.transform.right.normalized;
+
+            float segmentDist = Vector2.Distance(tracer.GetPosition(0), tracer.GetPosition(1));
+            if (segmentDist < 0.01f) segmentDist = 1f;
+
+            Cartridge cart = ModAPI.FindCartridge("5.56x45mm");
+            BulletInfo binfo;
+            if (tracer.TryGetComponent(out binfo))
+                speed = binfo.speed;
+
+            cart = binfo ? binfo.Cart : cart;
+            float baseDamage = binfo ? binfo.damage : 5f;
+            float maxDistance = 200f;
+            float traveled = 0f;
+            float minSpeed = 0.5f;
+            int maxPenetrations = 6;
+            int penetrations = 0;
+
+            float CalcHardness(PhysicalBehaviour phys)
+            {
+                float num = 1f - Mathf.Clamp01(phys.Properties.Softness + phys.Properties.Brittleness);
+                return 2f * 0.35f * (4.5f * num) + phys.Properties.BulletSpeedAbsorptionPower;
+            }
+
+            bool ShouldRicochet(Vector2 incoming, RaycastHit2D hit, PhysicalBehaviour phys)
+            {
+                if (!hit.transform) return false;
+                float ndot = Mathf.Abs(Vector2.Dot(hit.normal, incoming));
+                float softBrit = Mathf.Clamp01(phys.Properties.Softness + phys.Properties.Brittleness);
+                float val = 1f - (softBrit * 150f + ndot);
+                if (val > 0.05f)
+                    return val > UnityEngine.Random.value;
+                return false;
+            }
+
+            const float moveScale = 15f;
+
+            while (speed > minSpeed && traveled < maxDistance && penetrations <= maxPenetrations && tracer)
+            {
+                direction = tracer.transform.right.normalized;
+
+                RaycastHit2D hit = Physics2D.Raycast(tracer.transform.position, direction, segmentDist, layerMask, -0.1f, 0.1f);
+
+                if (!hit.collider)
+                {
+                    float stepDist = speed * moveScale * Time.deltaTime;
+                    tracer.transform.position += (Vector3)(direction * stepDist);
+                    traveled += stepDist;
+                    yield return null;
+                    continue;
+                }
+
+                PhysicalBehaviour phys;
+                if (!hit.collider.TryGetComponent(out phys))
+                {
+                    tracer.transform.position = hit.point;
+                    break;
+                }
+
+                hit.collider.SendMessage("Shot",
+                    new Shot(direction * -1f, hit.point, baseDamage, triggerExplosiveOverride: true, cart),
+                    SendMessageOptions.DontRequireReceiver);
+
+                phys.rigidbody.AddForceAtPosition(direction * cart.ImpactForce, hit.point, ForceMode2D.Force);
+
+                float softnessFactor = 1f - Mathf.Clamp01(phys.Properties.Softness + phys.Properties.Brittleness);
+                float penetrationMetric = 2f * (4.5f * softnessFactor) + phys.Properties.BulletSpeedAbsorptionPower;
+                float penetrationRoll = UnityEngine.Random.Range(0f, penetrationMetric);
+
+                bool ricochet = ShouldRicochet(direction, hit, phys);
+                bool penetrate = !ricochet && penetrationRoll <= 2.4f;
+
+                if (ricochet)
+                {
+                    Vector2 reflectDir = (Vector2.Reflect(direction, hit.normal) + UnityEngine.Random.insideUnitCircle * 0.05f).normalized;
+                    tracer.transform.position = hit.point - hit.normal * 0.02f;
+                    tracer.transform.right = reflectDir;
+                    direction = reflectDir;
+                    speed *= 0.6f;
+                    traveled += 0.015f;
+                    yield return null;
+                    continue;
+                }
+
+                if (!penetrate)
+                {
+                    Vector2 exitPoint = hit.point + direction * 0.02f;
+                    hit.collider.SendMessage("ExitShot",
+                        new Shot(direction, exitPoint, baseDamage, triggerExplosiveOverride: true, cart),
+                        SendMessageOptions.DontRequireReceiver);
+                    tracer.transform.position = hit.point;
+                    break;
+                }
+
+                penetrations++;
+
+                Collider2D col = hit.collider;
+                Vector2 probe = hit.point + direction * 0.001f;
+
+                float marchStep = 0.02f;
+                float maxThickness = Mathf.Clamp(Mathf.Max(col.bounds.extents.x, col.bounds.extents.y) * 2f, 0.05f, 3f);
+                float traveledInside = 0f;
+                int maxSteps = Mathf.CeilToInt(maxThickness / marchStep) + 5;
+                int steps = 0;
+
+                while (steps < maxSteps && traveledInside < maxThickness && col.OverlapPoint(probe))
+                {
+                    probe += direction * marchStep;
+                    traveledInside += marchStep;
+                    steps++;
+                }
+
+                if (col.OverlapPoint(probe))
+                {
+                    Vector2 failExit = hit.point + direction * 0.02f;
+                    col.SendMessage("ExitShot",
+                        new Shot(direction, failExit, baseDamage, triggerExplosiveOverride: true, cart),
+                        SendMessageOptions.DontRequireReceiver);
+                    tracer.transform.position = hit.point;
+                    break;
+                }
+
+                Vector2 exitPointFinal = probe - direction * 0.005f;
+                RaycastHit2D refine = Physics2D.Raycast(probe, -direction, 0.06f, layerMask);
+                if (refine.collider == col)
+                    exitPointFinal = refine.point;
+
+                col.SendMessage("ExitShot",
+                    new Shot(direction, exitPointFinal, baseDamage, triggerExplosiveOverride: true, cart),
+                    SendMessageOptions.DontRequireReceiver);
+
+                float hardness = CalcHardness(phys);
+                speed = Mathf.Max(minSpeed * 0.75f, speed - hardness);
+
+                tracer.transform.position = exitPointFinal + direction * 0.01f;
+                traveled += traveledInside;
+
+                yield return null;
+            }
+
+            if (tracer)
+            {
+                Vector3 p0 = tracer.GetPosition(0);
+                Vector3 p1 = tracer.GetPosition(1);
+                float collapseSpeed = 500f;
+                while (tracer && Vector2.Distance(p0, p1) > 0.1f)
+                {
+                    p0 = Vector2.Lerp(p0, p1, Time.deltaTime * collapseSpeed);
+                    tracer.SetPosition(0, p0);
+                    yield return null;
+                }
+                if (tracer) Destroy(tracer.gameObject);
+            }
+        }
+    }
+
+    public class TimeFreezeStone : StoneAbility, Messages.IUse
+    {
+        public static GameObject RunePrefab;
+
+        public Transform Stopped;
+        public GameObject PFX;
+
+        public void Start()
+        {
+            PFX = Instantiate(RunePrefab);
+            PFX.GetComponent<ParticleSystem>().Stop();
+        }
+
+        public void OnDestroy()
+        {
+            if (Stopped != null)
+            {
+                foreach (var physicalBehaviour in Stopped.GetComponentsInChildren<PhysicalBehaviour>())
+                {
+                    var freeze = physicalBehaviour.GetComponent<FreezeBehaviour2>();
+                    if (freeze != null)
+                    {
+                        Destroy(freeze);
+                    }
+                }
+            }
+
+            Destroy(PFX);
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+
+            if (Stopped != null)
+            {
+                foreach (var physicalBehaviour in Stopped.GetComponentsInChildren<PhysicalBehaviour>())
+                {
+                    var freeze = physicalBehaviour.GetComponent<FreezeBehaviour2>();
+                    if (freeze != null)
+                    {
+                        Destroy(freeze);
+                    }
+                }
+                PFX.GetComponent<ParticleSystem>().Stop();
+                Stopped = null;
+            }
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled)
+                return;
+
+            if (Stopped != null)
+            {
+                foreach (var physicalBehaviour in Stopped.GetComponentsInChildren<PhysicalBehaviour>())
+                {
+                    var freeze = physicalBehaviour.GetComponent<FreezeBehaviour2>();
+                    if (freeze != null)
+                    {
+                        Destroy(freeze);
+                    }
+                }
+                PFX.GetComponent<ParticleSystem>().Stop();
+                Stopped = null;
+                return;
+            }
+
+            var origin = (Vector2)transform.position;
+            var dir = -(Vector2)transform.up;
+
+            RaycastHit2D[] hits = Physics2D.RaycastAll(origin, dir, 10);
+            RaycastHit2D chosen = new RaycastHit2D();
+            foreach (var hit in hits)
+            {
+                if (hit.collider == null) continue;
+                if (hit.transform == null) continue;
+                if (hit.transform.root == transform.root) continue;
+                if (hit.rigidbody && hit.rigidbody.bodyType != RigidbodyType2D.Dynamic) continue;
+
+                if (hit.collider.GetComponent<PhysicalBehaviour>())
+                {
+                    chosen = hit;
+                    break;
+                }
+            }
+
+            if (chosen.collider == null)
+            {
+                return;
+            }
+
+            StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Clock));
+
+            Stopped = chosen.transform.root;
+
+            Vector2 pfxPos = Vector2.zero;
+
+            List<PhysicalBehaviour> colliders = Stopped.GetComponentsInChildren<PhysicalBehaviour>().ToList();
+
+            foreach (var physicalBehaviour in colliders)
+            {
+                pfxPos += (Vector2)physicalBehaviour.transform.position;
+
+                if (physicalBehaviour.GetComponent<FreezeBehaviour2>() == null)
+                {
+                    physicalBehaviour.gameObject.AddComponent<FreezeBehaviour2>();
+                }
+            }
+
+            pfxPos /= colliders.Count;
+
+            PFX.transform.position = pfxPos;
+
+            PFX.GetComponent<ParticleSystem>().Play();
+        }
+
+    }
+
+    public class PersonTimeRecord : MonoBehaviour
+    {
+        public class LimbRecord
+        {
+            public Vector3 position;
+            public Quaternion rotation;
+            public Vector2 velocity;
+            public float angularVelocity;
+            public float health;
+            public float maxHealth;
+            public float bloodAmount;
+            public float pressure;
+            public Vector4[] DamagePoints;
+            public bool Broken;
+            public bool Dismembered;
+        }
+
+        public class PersonRecord
+        {
+            public LimbRecord[] limbRecords;
+            public bool BrainDead;
+            public bool BrainDamage;
+            public float Consciousness;
+            public float heartRate;
+        }
+
+        public List<PersonRecord> timeRecords = new List<PersonRecord>();
+
+        public bool Rewinding;
+
+        public int MaxFrames = 300;
+        public float RecordInterval = 0.02f;
+        public float RewindSpeed = 1f;
+        public float RewindSmoothing = 0.85f;
+
+        private PersonBehaviour _person;
+        private int _head;
+        private int _count;
+        private float _recordTimer;
+        private float _rewindTimer;
+
+        private void Awake()
+        {
+            _person = GetComponent<PersonBehaviour>();
+            InitializeBuffer();
+        }
+
+        private void InitializeBuffer()
+        {
+            timeRecords.Clear();
+            timeRecords.Capacity = MaxFrames;
+            for (int i = 0; i < MaxFrames; i++)
+            {
+                timeRecords.Add(null);
+            }
+
+            _head = 0;
+            _count = 0;
+            _recordTimer = 0f;
+            _rewindTimer = 0f;
+        }
+
+        public void FixedUpdate()
+        {
+            if (_person == null)
+            {
+                return;
+            }
+
+            if (!Rewinding)
+            {
+                _recordTimer += Time.fixedDeltaTime;
+                if (_recordTimer >= RecordInterval)
+                {
+                    _recordTimer -= RecordInterval;
+                    WriteRecord();
+                }
+            }
+            else
+            {
+                _rewindTimer += Time.fixedDeltaTime * Mathf.Max(0.01f, RewindSpeed);
+                while (_rewindTimer >= RecordInterval && _count > 0)
+                {
+                    _rewindTimer -= RecordInterval;
+                    ReadRecord();
+                }
+            }
+        }
+
+        public void Update()
+        {
+            Rewinding = Input.GetKey(KeyCode.R);
+        }
+
+        private void WriteRecord()
+        {
+            if (_person == null)
+            {
+                return;
+            }
+
+            var limbs = _person.Limbs;
+            int limbCount = limbs.Length;
+
+            var record = timeRecords[_head];
+            if (record == null || record.limbRecords == null || record.limbRecords.Length != limbCount)
+            {
+                record = new PersonRecord
+                {
+                    limbRecords = new LimbRecord[limbCount]
+                };
+            }
+
+            record.BrainDead = _person.Braindead;
+            record.BrainDamage = _person.BrainDamaged;
+            record.Consciousness = _person.Consciousness;
+            record.heartRate = _person.Heartbeat;
+
+            for (int i = 0; i < limbCount; i++)
+            {
+                var limb = limbs[i];
+                var limbRecord = record.limbRecords[i];
+                if (limbRecord == null)
+                {
+                    limbRecord = new LimbRecord();
+                    record.limbRecords[i] = limbRecord;
+                }
+
+                limbRecord.position = limb.transform.position;
+                limbRecord.rotation = limb.transform.rotation;
+                limbRecord.velocity = limb.PhysicalBehaviour.rigidbody.velocity;
+                limbRecord.angularVelocity = limb.PhysicalBehaviour.rigidbody.angularVelocity;
+                limbRecord.health = limb.Health;
+                limbRecord.maxHealth = limb.InitialHealth;
+                limbRecord.bloodAmount = limb.CirculationBehaviour.GetAmountOfBlood();
+                limbRecord.pressure = limb.CirculationBehaviour.BloodFlow;
+                limbRecord.Broken = limb.Broken;
+                limbRecord.Dismembered = limb.IsDismembered;
+
+                CopyDamagePoints(limb.SkinMaterialHandler.damagePoints, ref limbRecord.DamagePoints);
+            }
+
+            timeRecords[_head] = record;
+            _head = (_head + 1) % MaxFrames;
+            if (_count < MaxFrames)
+            {
+                _count++;
+            }
+        }
+
+        private void ReadRecord()
+        {
+            if (_person == null || _count <= 0)
+            {
+                return;
+            }
+
+            int lastIndex = (_head - 1 + MaxFrames) % MaxFrames;
+            var record = timeRecords[lastIndex];
+            if (record == null)
+            {
+                _head = lastIndex;
+                _count--;
+                return;
+            }
+
+            ApplyRecord(record);
+
+            _head = lastIndex;
+            _count--;
+        }
+
+        private void ApplyRecord(PersonRecord record)
+        {
+            var limbs = _person.Limbs;
+            int limbCount = limbs.Length;
+            if (record.limbRecords == null || record.limbRecords.Length != limbCount)
+            {
+                return;
+            }
+
+            _person.Braindead = record.BrainDead;
+            _person.BrainDamaged = record.BrainDamage;
+            _person.Consciousness = record.Consciousness;
+            _person.Heartbeat = record.heartRate;
+
+            float smooth = Mathf.Clamp01(RewindSmoothing);
+
+            for (int i = 0; i < limbCount; i++)
+            {
+                var limb = limbs[i];
+                var limbRecord = record.limbRecords[i];
+                if (limbRecord == null)
+                {
+                    continue;
+                }
+
+                if (!limbRecord.Dismembered)
+                {
+                    TryRestoreDismemberedLimb(limb);
+                }
+
+                if (limbRecord.Broken && !limb.Broken)
+                {
+                    limb.BreakBone();
+                }
+                else if (!limbRecord.Broken && limb.Broken)
+                {
+                    limb.HealBone();
+                }
+
+                var rb = limb.PhysicalBehaviour.rigidbody;
+                rb.position = Vector2.Lerp(rb.position, limbRecord.position, smooth);
+                rb.rotation = Mathf.LerpAngle(rb.rotation, limbRecord.rotation.eulerAngles.z, smooth);
+
+                rb.velocity = limbRecord.velocity;
+                rb.angularVelocity = limbRecord.angularVelocity;
+
+                limb.Health = limbRecord.health;
+                limb.InitialHealth = limbRecord.maxHealth;
+
+                limb.CirculationBehaviour.ClearLiquid();
+                limb.CirculationBehaviour.AddLiquid(Liquid.GetLiquid(limb.BloodLiquidType), limbRecord.bloodAmount);
+                limb.CirculationBehaviour.BloodFlow = limbRecord.pressure;
+
+                ApplyDamagePoints(limb, limbRecord.DamagePoints);
+            }
+        }
+
+        private static void TryRestoreDismemberedLimb(LimbBehaviour limb)
+        {
+            if (limb == null)
+            {
+                return;
+            }
+
+            if (!limb.IsDismembered && limb.Joint != null)
+            {
+                return;
+            }
+
+            var logger = limb.GetComponent<Mod.LimbLoggerBehaviour>();
+            if (logger == null || logger.ConnectedBody == null)
+            {
+                return;
+            }
+
+            var connectedLimb = logger.ConnectedBody.GetComponent<LimbBehaviour>();
+            if (connectedLimb == null)
+            {
+                return;
+            }
+
+            var rb = limb.PhysicalBehaviour.rigidbody;
+            Vector3 targetPos = logger.Offset != Vector3.zero
+                ? logger.ConnectedBody.transform.TransformPoint(logger.Offset)
+                : logger.ConnectedBody.transform.position;
+            Quaternion targetRot = logger.ConnectedBody.transform.rotation;
+
+            rb.position = targetPos;
+            rb.rotation = targetRot.eulerAngles.z;
+            rb.velocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+
+            if (limb.Joint != null)
+            {
+                UnityEngine.Object.Destroy(limb.Joint);
+            }
+
+            var joint = limb.gameObject.AddComponent<HingeJoint2D>();
+            joint.autoConfigureConnectedAnchor = false;
+            joint.connectedBody = logger.ConnectedBody;
+            joint.anchor = logger.Anchor;
+            joint.connectedAnchor = logger.ConnectedAnchor;
+            joint.useLimits = logger.UseLimits;
+            joint.breakForce = logger.BreakingThreshold;
+            joint.breakTorque = logger.BreakingThreshold;
+
+            limb.BreakingThreshold = logger.BreakingThreshold;
+            limb.BaseStrength = logger.BaseStrength;
+
+            if (!connectedLimb.ConnectedLimbs.Contains(limb))
+            {
+                connectedLimb.ConnectedLimbs.Add(limb);
+            }
+
+            if (!limb.ConnectedLimbs.Contains(connectedLimb))
+            {
+                limb.ConnectedLimbs.Add(connectedLimb);
+            }
+
+            var lc = limb.NodeBehaviour.Connections.ToList();
+            if (!lc.Contains(connectedLimb.NodeBehaviour))
+            {
+                lc.Add(connectedLimb.NodeBehaviour);
+            }
+            limb.NodeBehaviour.Connections = lc.ToArray();
+
+            var connectedLc = connectedLimb.NodeBehaviour.Connections.ToList();
+            if (!connectedLc.Contains(limb.NodeBehaviour))
+            {
+                connectedLc.Add(limb.NodeBehaviour);
+            }
+            connectedLimb.NodeBehaviour.Connections = connectedLc.ToArray();
+
+            limb.CirculationBehaviour.IsDisconnected = false;
+
+            var connectedPt = connectedLimb.CirculationBehaviour.PushesTo.ToList();
+            if (!connectedPt.Contains(limb.CirculationBehaviour))
+            {
+                connectedPt.Add(limb.CirculationBehaviour);
+            }
+            connectedLimb.CirculationBehaviour.PushesTo = connectedPt.ToArray();
+
+            limb.IsDismembered = false;
+            limb.HasJoint = true;
+            limb.Joint = joint;
+        }
+
+        private static void CopyDamagePoints(Vector4[] source, ref Vector4[] destination)
+        {
+            if (source == null)
+            {
+                destination = null;
+                return;
+            }
+
+            if (destination == null || destination.Length != source.Length)
+            {
+                destination = new Vector4[source.Length];
+            }
+
+            Array.Copy(source, destination, source.Length);
+        }
+
+        private static void ApplyDamagePoints(LimbBehaviour limb, Vector4[] source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            var dest = limb.SkinMaterialHandler.damagePoints;
+            if (dest == null || dest.Length != source.Length)
+            {
+                dest = new Vector4[source.Length];
+            }
+
+            Array.Copy(source, dest, source.Length);
+            limb.SkinMaterialHandler.damagePoints = dest;
+            limb.SkinMaterialHandler.Sync();
+        }
+    }
+
+    public class RevivalBlast : StoneAbility, Messages.IUse
+    {
+        public LineRenderer line;
+        public GameObject RaycastPoint;
+        public GameObject RaycastPoint2;
+
+        RaycastHit2D hit;
+
+        public void Start()
+        {
+            RaycastPoint = new GameObject("RaycastPoint");
+            RaycastPoint.transform.parent = transform;
+            RaycastPoint.transform.localPosition = new Vector2(0, -8) * ModAPI.PixelSize;
+            RaycastPoint.transform.localRotation = Quaternion.identity;
+            RaycastPoint2 = new GameObject("RaycastPoint2");
+            RaycastPoint2.transform.parent = transform;
+            RaycastPoint2.transform.localPosition = new Vector2(0, -8) * ModAPI.PixelSize;
+            RaycastPoint2.transform.localRotation = Quaternion.identity;
+
+            line = new GameObject("SoulLaser").AddComponent<LineRenderer>();
+            line.startColor = new Color(1f, 0.5f, 0f, 0.5f);
+            line.endColor = new Color(1f, 0.5f, 0f, 0.5f);
+            line.startWidth = 0f;
+            line.endWidth = 0f;
+            line.material = UnityEngine.Object.Instantiate<Material>(ModAPI.FindMaterial("VeryBright"));
+            line.material.SetFloat("_GlowIntensity", 0.05f);
+            line.material.mainTexture = ModAPI.FindMaterial("Sprites-Default").mainTexture;
+            line.sortingOrder = gameObject.GetComponent<SpriteRenderer>().sortingOrder + 1;
+            line.sortingLayerID = gameObject.GetComponent<SpriteRenderer>().sortingLayerID;
+            line.positionCount = 2;
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled) return;
+
+            var hits = Physics2D.RaycastAll(RaycastPoint2.transform.position, -RaycastPoint.transform.up, 200000, LayerMask.GetMask(new string[] { "Objects", "Bounds" }));
+
+            foreach (var hitt in hits)
+            {
+                if (hitt.collider != null && hitt.collider.transform.root != transform.root && hitt.collider.transform.root.GetComponent<PersonBehaviour>())
+                {
+                    hit = hitt;
+                    break;
+                }
+            }
+
+            if (hit.collider != null && hit.collider.transform.root.TryGetComponent<PersonBehaviour>(out var Person))
+            {
+                CameraShakeBehaviour.main.Shake(7, transform.position);
+
+                if (Person.GetComponentInChildren<AstralProjection>())
+                    Person.GetComponentInChildren<AstralProjection>().Unproject();
+
+                Person.Limbs[2].PhysicalBehaviour.rigidbody.velocity += (hit.point - (Vector2)RaycastPoint.transform.position).normalized * 15f;
+
+                Person.Limbs[1].CirculationBehaviour.AddLiquid(Liquid.GetLiquid(LifeSyringe.LifeSerumLiquid.ID), 1f);
+
+                line.SetPosition(0, RaycastPoint.transform.position);
+                line.SetPosition(1, hit.point);
+                line.startWidth = 0.2f;
+                line.endWidth = 0.25f;
+
+                StartCoroutine(Mod.ModAPIPlus.PlaySound(hit.point, Mod.AstralBlastSound, UnityEngine.Random.Range(0.85f, 1.15f)));
+
+                ModAPI.CreateParticleEffect("Flash", hit.point);
+            }
+        }
+
+        public void Update()
+        {
+            line.startWidth = Mathf.Lerp(line.startWidth, 0f, Time.deltaTime * 10);
+            line.endWidth = Mathf.Lerp(line.endWidth, 0f, Time.deltaTime * 10);
+        }
+    }
+
+    public class AstralBlast : StoneAbility, Messages.IUse
+    {
+        public LineRenderer line;
+        public GameObject RaycastPoint;
+        public GameObject RaycastPoint2;
+
+        RaycastHit2D hit;
+
+        public void Start()
+        {
+            RaycastPoint = new GameObject("RaycastPoint");
+            RaycastPoint.transform.parent = transform;
+            RaycastPoint.transform.localPosition = new Vector2(0, -8) * ModAPI.PixelSize;
+            RaycastPoint.transform.localRotation = Quaternion.identity;
+            RaycastPoint2 = new GameObject("RaycastPoint2");
+            RaycastPoint2.transform.parent = transform;
+            RaycastPoint2.transform.localPosition = new Vector2(0, -8) * ModAPI.PixelSize;
+            RaycastPoint2.transform.localRotation = Quaternion.identity;
+
+            line = new GameObject("SoulLaser").AddComponent<LineRenderer>();
+            line.startColor = new Color(1f, 0.5f, 0f, 0.5f);
+            line.endColor = new Color(1f, 0.5f, 0f, 0.5f);
+            line.startWidth = 0f;
+            line.endWidth = 0f;
+            line.material = UnityEngine.Object.Instantiate<Material>(ModAPI.FindMaterial("VeryBright"));
+            line.material.SetFloat("_GlowIntensity", 0.05f);
+            line.material.mainTexture = ModAPI.FindMaterial("Sprites-Default").mainTexture;
+            line.sortingOrder = gameObject.GetComponent<SpriteRenderer>().sortingOrder + 1;
+            line.sortingLayerID = gameObject.GetComponent<SpriteRenderer>().sortingLayerID;
+            line.positionCount = 2;
+        }
+
+        public override void DisablePower()
+        {
+            base.DisablePower();
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled) return;
+
+            var hits = Physics2D.RaycastAll(RaycastPoint2.transform.position, -RaycastPoint.transform.up, 200000, LayerMask.GetMask(new string[] { "Objects", "Bounds" }));
+
+            foreach (var hitt in hits)
+            {
+                if (hitt.collider != null && hitt.collider.transform.root != transform.root && hitt.collider.transform.root.GetComponent<PersonBehaviour>())
+                {
+                    hit = hitt;
+                    break;
+                }
+            }
+
+            if (hit.collider != null && hit.collider.transform.root.TryGetComponent<PersonBehaviour>(out var Person))
+            {
+                CameraShakeBehaviour.main.Shake(7, transform.position);
+
+                if (!Person.GetComponentInChildren<AstralProjection>())
+                    AstralProjection.SetPower(Person, Person.Limbs[0], null, true).EnablePower();
+                else
+                    Person.GetComponentInChildren<AstralProjection>().Project();
+
+                Person.Limbs[2].PhysicalBehaviour.rigidbody.velocity += (hit.point - (Vector2)RaycastPoint.transform.position).normalized * 15f;
+
+                line.SetPosition(0, RaycastPoint.transform.position);
+                line.SetPosition(1, hit.point);
+                line.startWidth = 0.2f;
+                line.endWidth = 0.25f;
+
+                StartCoroutine(Mod.ModAPIPlus.PlaySound(hit.point, Mod.AstralBlastSound, UnityEngine.Random.Range(0.85f, 1.15f)));
+
+                var soul = Instantiate(ModAPI.FindSpawnable("Pumpkin").Prefab.GetComponent<DestroyableBehaviour>().DebrisPrefab.transform.FindChild("ghost").gameObject);
+                soul.GetComponent<ParticleSystem>().Play();
+                soul.transform.position = hit.point;
+            }
+        }
+
+        public void Update()
+        {
+            line.startWidth = Mathf.Lerp(line.startWidth, 0f, Time.deltaTime * 10);
+            line.endWidth = Mathf.Lerp(line.endWidth, 0f, Time.deltaTime * 10);
+        }
+    }
+
+    public class PowerBeam : StoneAbility, Messages.IUse
+    {
+        AudioSource Source;
+        bool Lasering;
+
+        RaycastHit2D hit;
+
+        public LineRenderer line;
+        public TrailRenderer trail;
+        public GameObject RaycastPoint;
+        public GameObject RaycastPoint2;
+        public float blastRadius = 25f;
+        public float maxForce = 15f;
+        public float crushRadius = 50f;
+
+        Vector3 offset;
+
+        public void Start()
+        {
+            line = gameObject.AddComponent<LineRenderer>();
+            line.startColor = new Color(0.5f, 0.1f, 0.7f, 0.5f);
+            line.endColor = new Color(0.5f, 0.1f, 0.7f, 0.5f);
+            line.startWidth = 0.2f;
+            line.endWidth = 0.2f;
+            line.material = UnityEngine.Object.Instantiate<Material>(ModAPI.FindMaterial("VeryBright"));
+            line.material.SetFloat("_GlowIntensity", 0.05f);
+            line.material.mainTexture = ModAPI.FindMaterial("Sprites-Default").mainTexture;
+            line.sortingOrder = gameObject.GetComponent<SpriteRenderer>().sortingOrder + 1;
+            line.sortingLayerID = gameObject.GetComponent<SpriteRenderer>().sortingLayerID;
+            line.positionCount = 2;
+            line.enabled = false;
+
+            trail = new GameObject("trail").AddComponent<TrailRenderer>();
+            trail.transform.parent = transform;
+            trail.transform.localPosition = (new Vector3(0, -8f, 0) * ModAPI.PixelSize) + offset;
+            trail.transform.localRotation = Quaternion.identity;
+            trail.transform.localScale = Vector3.one;
+            trail.gameObject.layer = gameObject.layer;
+            trail.time = 0.1f;
+            trail.startWidth = 0.02f;
+            trail.endWidth = 0.005f;
+            trail.material = UnityEngine.Object.Instantiate<Material>(ModAPI.FindMaterial("VeryBright"));
+            trail.startColor = new Color(0.5f, 0.1f, 0.8f, 0.2f);
+            trail.endColor = new Color(0, 0, 0, 0);
+            trail.sortingLayerName = gameObject.GetComponent<SpriteRenderer>().sortingLayerName;
+            trail.sortingOrder = gameObject.GetComponent<SpriteRenderer>().sortingOrder - 1;
+            trail.enabled = false;
+
+            Source = gameObject.AddComponent<AudioSource>();
+            Source.loop = true;
+            Source.clip = Mod.Laser;
+
+            if (!gameObject.GetComponent<AudioSourceTimeScaleBehaviour>())
+            {
+                gameObject.AddComponent<AudioSourceTimeScaleBehaviour>();
+            }else
+            {
+                Destroy(gameObject.GetComponent<AudioSourceTimeScaleBehaviour>());
+                gameObject.AddComponent<AudioSourceTimeScaleBehaviour>();
+            }
+
+                RaycastPoint = new GameObject("RaycastPoint");
+            RaycastPoint.transform.parent = transform;
+            RaycastPoint.transform.localPosition = (new Vector2(0, -8) * ModAPI.PixelSize) + (Vector2)offset;
+            RaycastPoint.transform.localRotation = Quaternion.identity;
+            RaycastPoint2 = new GameObject("RaycastPoint2");
+            RaycastPoint2.transform.parent = transform;
+            RaycastPoint2.transform.localPosition = (new Vector2(0, -8) * ModAPI.PixelSize) + (Vector2)offset;
+            RaycastPoint2.transform.localRotation = Quaternion.identity;
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            if (!Enabled)
+                return;
+
+            line.endWidth = 0.025f;
+
+            if (!Lasering)
+            {
+                line.enabled = true;
+                StartCoroutine(RendererColorTransition(line, new Color(0.5f, 0f, 0.8f, 1f), Color.clear, 0.1f));
+                Source.Play();
+                Lasering = true;
+                trail.enabled = true;
+                StartCoroutine(PlaySound(Mod.LaserStart));
+            }
+            else
+            {
+                Source.Stop();
+
+                StartCoroutine(RendererColorTransition(line, Color.clear, new Color(0.5f, 0f, 0.8f, 1f), 0.25f));
+
+                line.enabled = false;
+                Lasering = false;
+                trail.enabled = false;
+                StartCoroutine(PlaySound(Mod.LaserEnd));
+            }
+        }
+
+        public override void DisablePower()
+        {
+            Source.Stop();
+            if (Lasering)
+                Use(null);
+            base.DisablePower();
+        }
+
+        public IEnumerator RendererColorTransition(Renderer renderer, Color newColor, Color OriginalColor, float duration = 0.5f)
+        {
+            if (renderer.GetType() == typeof(SpriteRenderer))
+            {
+                var sr = renderer as SpriteRenderer;
+
+                float elapsedTime = 0;
+                while (elapsedTime < duration)
+                {
+                    sr.color = Color.Lerp(OriginalColor, newColor, (elapsedTime / duration));
+                    elapsedTime += Time.deltaTime;
+                    yield return null;
+                }
+                sr.color = newColor;
+            }
+            else if (renderer.GetType() == typeof(LineRenderer))
+            {
+                var l = renderer as LineRenderer;
+
+                float elapsedTime = 0;
+                while (elapsedTime < duration)
+                {
+                    l.startColor = Color.Lerp(OriginalColor, newColor, (elapsedTime / duration));
+                    l.endColor = Color.Lerp(OriginalColor, newColor, (elapsedTime / duration));
+                    elapsedTime += Time.deltaTime;
+                    yield return null;
+                }
+                l.startColor = newColor;
+                l.endColor = newColor;
+
+            }
+        }
+
+        private IEnumerator PlaySound(AudioClip SoundToPlay)
+        {
+            var sound = new GameObject();
+            sound.name = "SFX";
+            sound.transform.position = gameObject.transform.position;
+            sound.AddComponent<AudioSource>();
+            sound.GetComponent<AudioSource>().playOnAwake = false;
+            sound.GetComponent<AudioSource>().clip = SoundToPlay;
+            sound.GetComponent<AudioSource>().spatialBlend = 1;
+            sound.GetComponent<AudioSource>().volume = 5f;
+            sound.AddComponent<AudioDistortionFilter>().distortionLevel = 0.85f;
+            sound.AddComponent<AudioSourceTimeScaleBehaviour>();
+            sound.GetComponent<AudioSource>().Play();
+            sound.AddComponent<OBJDestroyer>();
+            yield return new WaitForSeconds(SoundToPlay.length);
+
+            Destroy(sound);
+        }
+
+        public void Update()
+        {
+            if (!Enabled || !Lasering)
+                return;
+
+            var hits = Physics2D.RaycastAll(RaycastPoint2.transform.position, -RaycastPoint.transform.up, 200000, LayerMask.GetMask(new string[] { "Objects", "Bounds" }));
+
+            foreach (var hitt in hits)
+            {
+                if (hitt.collider != null && hitt.collider.transform.root != transform.root)
+                {
+                    hit = hitt;
+                    break;
+                }
+            }
+
+            if (Lasering)
+            {
+                line.SetPosition(0, RaycastPoint.transform.position);
+                line.SetPosition(1, hit.point);
+            }
+        }
+
+        public void FixedUpdate()
+        {
+            if (!Enabled)
+                return;
+
+            Vector2 hitPoint = hit.point;
+
+            if (Lasering)
+            {
+                line.startWidth = UnityEngine.Random.Range(0.15f, 0.25f);
+                line.endWidth = UnityEngine.Random.Range(0.15f, 0.25f);
+
+                if (hit.collider != null)
+                {
+                    Mod.ModAPIPlus.SetPFXColors(ModAPI.CreateParticleEffect("Flash", hit.point), Mod.ColorPlus.Purple);
+                    if (hit.collider.TryGetComponent<LimbBehaviour>(out var limb))
+                    {
+                        if (limb.Person != transform.root.GetComponent<PersonBehaviour>())
+                        {
+                            limb.Damage(limb.Health / 50);
+                            limb.PhysicalBehaviour.Temperature += 1f;
+                            limb.SkinMaterialHandler.AddDamagePoint(DamageType.Stab, hit.point, 10);
+                            if (hit.collider.TryGetComponent<Rigidbody2D>(out var rb) && hit.collider.GetComponent<SpriteRenderer>())
+                            {
+                                Vector2 direction = (hit.point - (Vector2)transform.position).normalized;
+                                rb.AddForce(direction * maxForce, ForceMode2D.Impulse);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (hit.collider.TryGetComponent<Rigidbody2D>(out var rb) && hit.collider.GetComponent<SpriteRenderer>())
+                        {
+                            Vector2 direction = (hit.point - (Vector2)transform.position).normalized;
+                            rb.AddForce(direction * maxForce, ForceMode2D.Impulse);
+                        }
+                        else if (hit.collider.TryGetComponent<DestroyableBehaviour>(out var dest))
+                        {
+                            float dist = Vector2.Distance(dest.transform.position, hit.point);
+                            if (dist < crushRadius)
+                            {
+                                dest.Break();
+                            }
+                        }
+                    }
+                }
+
+                CameraShakeBehaviour.main.Shake(0.4f, transform.position);
+            }
+        }
+    }
+
+    public class PowerPunch : StoneAbility
+    {
+        void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (!Enabled)
+                return;
+
+            Vector2 relativeVelocity = collision.relativeVelocity;
+
+            float impactStrength = relativeVelocity.magnitude * 2;
+
+            if (collision.gameObject.GetComponent<Rigidbody2D>() && collision.relativeVelocity.magnitude > 3)
+            {
+                Vector2 directionToThisObject = (GetComponent<Rigidbody2D>().position - collision.rigidbody.position).normalized;
+
+                float dotProduct = Vector2.Dot(relativeVelocity, directionToThisObject);
+
+                if (dotProduct > 0)
+                {
+                    collision.gameObject.GetComponent<Rigidbody2D>().velocity += -relativeVelocity.normalized * impactStrength;
+                    var emp = Instantiate(ModAPI.FindSpawnable("EMP Generator").Prefab.GetComponent<EMPBehaviour>().Effect);
+                    ModAPI.CreateParticleEffect("Explosion", collision.contacts[0].point);
+                    emp.transform.position = transform.position;
+                    emp.transform.localScale = Vector3.one * (0.1f);
+                    var main = emp.GetComponent<ParticleSystem>().main;
+                    //main.startColor = color;
+                    var n = main.startLifetime;
+                    n.constantMax *= 0.5f;
+                    main.simulationSpeed *= 1.5f;
+                    foreach (var childPFX in emp.GetComponentsInChildren<ParticleSystem>())
+                        if (childPFX != emp.GetComponent<ParticleSystem>())
+                            childPFX.startColor = Mod.ColorPlus.Purple;
+                }
+
             }
         }
     }
@@ -14475,6 +16712,7 @@ namespace Mod
                     NanoBlade.SetPower(Person, limb, null);
                     NanoShield.SetPower(Person, limb, null);
                     NanoHammer.SetPower(Person, limb, null);
+                    IronLaser.SetPower(Person, limb, null);
                     limb.gameObject.AddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
                 }
 
@@ -14955,7 +17193,6 @@ namespace Mod
             }
         }
     }
-
 
     public class Clone : Power, Mod.ModAPIPlus.IUse2
     {

@@ -1,4 +1,0 @@
-D:\Programs\steamapps\common\People Playground\Mods\Novas-Cap-Mod\obj\Debug\Novas-Captain-America-Mod.csproj.AssemblyReference.cache
-D:\Programs\steamapps\common\People Playground\Mods\Novas-Cap-Mod\obj\Debug\Novas-Captain-America-Mod.csproj.CoreCompileInputs.cache
-D:\Programs\steamapps\common\People Playground\Mods\Novas-Cap-Mod\obj\Debug\Template Mod.dll
-D:\Programs\steamapps\common\People Playground\Mods\Novas-Cap-Mod\obj\Debug\Template Mod.pdb

@@ -1,4 +1,0 @@
-D:\SteamLibrary\steamapps\common\People Playground\Mods\Novas-Avengers-Mod\obj\Debug\Novas-Avengers-Mod.csproj.AssemblyReference.cache
-D:\SteamLibrary\steamapps\common\People Playground\Mods\Novas-Avengers-Mod\obj\Debug\Novas-Avengers-Mod.csproj.CoreCompileInputs.cache
-D:\SteamLibrary\steamapps\common\People Playground\Mods\Novas-Avengers-Mod\obj\Debug\Template Mod.dll
-D:\SteamLibrary\steamapps\common\People Playground\Mods\Novas-Avengers-Mod\obj\Debug\Template Mod.pdb
