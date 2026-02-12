@@ -2987,6 +2987,8 @@ namespace Mod
 
         public AudioSource laserSound;
 
+        public List<GameObject> pooledPFX = new List<GameObject>();
+
         public static IronLaser SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon)
         {
             var power = Limb.gameObject.AddComponent<IronLaser>();
@@ -3021,7 +3023,7 @@ namespace Mod
             IsLasering = !IsLasering;
             if(IsLasering)
             {
-                Mod.ModAPIPlus.PlaySound(transform.position, ModAPI.FindSpawnable("Detached Ray Cannon").Prefab.GetComponent<RayCannonBehaviour>().CannonClip);
+                StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, ModAPI.FindSpawnable("Detached Ray Cannon").Prefab.GetComponent<RayCannonBehaviour>().CannonClip));
                 laserSound.Play();
             }
             else
@@ -3072,7 +3074,8 @@ namespace Mod
         {
             base.DisablePower();
 
-            laserSound.Stop();
+            if(laserSound)
+                laserSound.Stop();
 
             IsLasering = false;
 
@@ -3099,9 +3102,11 @@ namespace Mod
                 _laserRb.angularVelocity = 0f;
             }
 
-            LaserObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(LaserObject.GetComponent<SpriteRenderer>().sprite, Mod.Dot, LaserObject.GetComponent<SpriteRenderer>().material, true, 2, AnimationType.CircleIn, true);
+            //if(LaserObject)
+                //LaserObject.AddComponent<SpriteMergerAnimatorAdvanced>().Initialize(LaserObject.GetComponent<SpriteRenderer>().sprite, Mod.Dot, LaserObject.GetComponent<SpriteRenderer>().material, true, 2, AnimationType.CircleIn, true);
 
-            UnityEngine.Object.Destroy(LaserObject, 2f);
+            if (LaserObject)
+                UnityEngine.Object.Destroy(LaserObject, 1f);
         }
 
         private static Vector3 GetSpawnPositionOutsideCamera(Vector3 fallback)
@@ -3164,14 +3169,6 @@ namespace Mod
                 return;
             }
 
-            if (IsLasering && line != null)
-            {
-                CameraShakeBehaviour.main.Shake(0.1f, transform.position, 1f);
-                var a = UnityEngine.Random.Range(0.3f, 0.65f);
-                line.startWidth = a;
-                line.endWidth = a;
-            }
-
             Vector2 targetPos = (Vector2)transform.position + (Vector2)transform.up * 2f;
             Vector2 toTarget = targetPos - _laserRb.position;
             Vector2 desiredVel = toTarget * FollowKp;
@@ -3185,39 +3182,48 @@ namespace Mod
 
             _laserRb.MoveRotation(angle);
 
-            RaycastHit2D[] hits = Physics2D.RaycastAll(LaserObject.transform.position, LaserObject.transform.right, 50000f, LayerMask.GetMask("Objects"));
-
-            var hitss = Physics2D.RaycastAll(LaserObject.transform.position, LaserObject.transform.right, 50000f);
-
-            foreach (var hit in hitss)
+            if (IsLasering && line != null)
             {
-                if (hit.collider != null && hit.collider.gameObject != LaserObject && hit.collider.transform.root != transform.root)
+                CameraShakeBehaviour.main.Shake(0.1f, transform.position, 1f);
+                var a = UnityEngine.Random.Range(0.3f, 0.65f);
+                line.startWidth = a;
+                line.endWidth = a;
+
+
+                RaycastHit2D[] hits = Physics2D.RaycastAll(LaserObject.transform.position, LaserObject.transform.right, 50000f, LayerMask.GetMask("Objects"));
+
+                var hitss = Physics2D.RaycastAll(LaserObject.transform.position, LaserObject.transform.right, 50000f);
+
+                foreach (var hit in hitss)
                 {
-                    ModAPI.CreateParticleEffect(ParticleEffects.Flash, hit.point).transform.localScale = Vector3.one * 5f;
-                }
-            }
-
-            foreach (var hit in hits)
-            {
-                if (hit.collider != null && hit.collider.gameObject != LaserObject && hit.collider.transform.root != transform.root)
-                {
-                    hit.rigidbody.AddForce(-transform.up * 150, ForceMode2D.Force);
-
-                    if (hit.collider.TryGetComponent<PhysicalBehaviour>(out var ph))
-                        ph.charge += 0.01f;
-
-                    if (hit.collider.TryGetComponent<LimbBehaviour>(out var limb))
+                    if (hit.collider != null && hit.collider.gameObject != LaserObject && hit.collider.transform.root != transform.root)
                     {
-                        if (limb.ImpactDamageMultiplier < 2 && !limb.ImmuneToDamage && limb.PhysicalBehaviour.rigidbody.mass > 0.1f)
-                            limb.Crush();
-
-                        limb.Damage(limb.InitialHealth / 100);
-
-                        limb.SkinMaterialHandler.AddDamagePoint(DamageType.Bullet, hit.point, UnityEngine.Random.Range(1, 50));
+                        ModAPI.CreateParticleEffect(ParticleEffects.Flash, hit.point).transform.localScale = Vector3.one * 5f;
                     }
+                }
 
-                    if (hit.collider.TryGetComponent<DestroyableBehaviour>(out var des))
-                        des.Break();
+                foreach (var hit in hits)
+                {
+                    if (hit.collider != null && hit.collider.gameObject != LaserObject && hit.collider.transform.root != transform.root)
+                    {
+                        hit.rigidbody.AddForce(-transform.up * 150, ForceMode2D.Force);
+
+                        if (hit.collider.TryGetComponent<PhysicalBehaviour>(out var ph))
+                            ph.charge += 0.01f;
+
+                        if (hit.collider.TryGetComponent<LimbBehaviour>(out var limb))
+                        {
+                            if (limb.ImpactDamageMultiplier < 2 && !limb.ImmuneToDamage && limb.PhysicalBehaviour.rigidbody.mass > 0.1f)
+                                limb.Crush();
+
+                            limb.Damage(limb.InitialHealth / 100);
+
+                            limb.SkinMaterialHandler.AddDamagePoint(DamageType.Bullet, hit.point, UnityEngine.Random.Range(1, 50));
+                        }
+
+                        if (hit.collider.TryGetComponent<DestroyableBehaviour>(out var des))
+                            des.Break();
+                    }
                 }
             }
         }
