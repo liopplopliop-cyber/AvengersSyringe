@@ -2173,10 +2173,41 @@ namespace Mod
                 person.GetComponent<SpeedHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
 
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    Limbs.ImmuneToDamage = true;
+
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 2;
+                    }
+
+                    if (Limbs.name.Contains("UpperBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.name.Contains("Head"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 2;
+                    }
+
+                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
+                    }
+
+                    if (Limbs.name.Contains("LowerBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
+                    }
+                }
+
                 var menu = Instance.GetComponent<TextureMenu>();
-                menu.AddButton("Eyepatch", ModAPI.LoadSprite("Art/Thumbnails/Nick Fury Eyepatch.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Nick Fury Eyepatch/"));
                 menu.AddButton("Shield", ModAPI.LoadSprite("Art/Thumbnails/Nick Fury Shield.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Nick Fury Shield/"));
-                menu.AddButton("Eyepatch (Shield)", ModAPI.LoadSprite("Art/Thumbnails/Nick Fury Shield Eyepatch.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Nick Fury Shield Eyepatch/"));
+                menu.AddButton("Eyepatch", ModAPI.LoadSprite("Art/Thumbnails/Nick Fury Shield Eyepatch.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Nick Fury Shield Eyepatch/"));
                 menu.AddButton("Nick Fury Sr", ModAPI.LoadSprite("Art/Thumbnails/Nick Fury Sr.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Nick Fury Sr/"));
                 menu.AddButton("Nick Fury Sr Eyepatch", ModAPI.LoadSprite("Art/Thumbnails/Nick Fury Sr Eyepatch.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Nick Fury Sr Eyepatch/"));
 
@@ -2681,6 +2712,26 @@ namespace Mod
                         Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
                     }
                 }
+            }, "a");
+
+            //Outrider
+            ModAPIPlus.CreateHuman("Outrider", "", "Outrider", "Outrider", (Instance) =>
+            {
+                var person = Instance.GetComponent<PersonBehaviour>();
+
+                var menu = Instance.GetComponent<TextureMenu>();
+
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (Limbs.name.Contains("LowerArm"))
+                    {
+                        Claws.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Claw.png"), ModAPI.LoadSprite("Art/Objects/Claws.png")).EnablePower();
+                    }
+                }
+
+                Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
+                SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+
             }, "a");
 
             #endregion

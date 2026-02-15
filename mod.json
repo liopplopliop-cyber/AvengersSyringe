@@ -12,7 +12,7 @@
   "Scripts": [
     "mod.cs"
   ],
-  "Active": false,
+  "Active": true,
   "UGCIdentity": "8246583",
   "CreatorUGCIdentity": null
 }
