@@ -1,5 +1,5 @@
 {
-  "Name": "Nova's Avengers",
+  "Name": "Nova's Avengers Mod",
   "Author": "Nova Interactive",
   "Description": "Adds The Avengers into PPG",
   "ModVersion": "1.0",
@@ -12,7 +12,7 @@
   "Scripts": [
     "mod.cs"
   ],
-  "Active": false,
+  "Active": true,
   "UGCIdentity": "8246583",
   "CreatorUGCIdentity": null
 }
