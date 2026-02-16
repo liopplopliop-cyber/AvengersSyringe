@@ -1809,6 +1809,7 @@ namespace Mod
                 menu.AddButton("Damaged", ModAPI.LoadSprite("Art/Thumbnails/Damaged Iron Spidey.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Damaged Iron Spidey/"));
                 menu.AddButton("Mcu Iron Spider", ModAPI.LoadSprite("Art/Thumbnails/Mcu Iron Spider.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Mcu Iron Spider/"));
                 menu.AddButton("Black Suit", ModAPI.LoadSprite("Art/Thumbnails/Black Iron Spider.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Black Iron Spider/"));
+                menu.AddButton("shh dont tell timtam that i added this", ModAPI.LoadSprite("Art/Thumbnails/Mk.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Mk/"));
 
                 SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, new Vector2(-5, 3), 140);
                 SpiderArm.SetArm(person.Limbs[2].PhysicalBehaviour, new List<Sprite> { ModAPI.LoadSprite("Art/Objects/ArmSeg1.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg2.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg3.png"), ModAPI.LoadSprite("Art/Objects/ArmSeg4.png") }, new Vector2(-5, 3), 140);
