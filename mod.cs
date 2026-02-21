@@ -1039,6 +1039,10 @@ namespace Mod
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers Unmasked/"));
                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers Casual/"));
                 menu.AddButton("Secret Avenger", ModAPI.LoadSprite("Art/Thumbnails/Cap Secret Avenger.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Cap Secret Avenger/"));
+                menu.AddButton("Secret Empire", ModAPI.LoadSprite("Art/Thumbnails/Secret Empire Steve.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Secret Empire Steve/"));
+                menu.AddButton("Ultimates WW2", ModAPI.LoadSprite("Art/Thumbnails/Steve Ultimates WW2.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Ultimates WW2/"));
+                menu.AddButton("MVC2", ModAPI.LoadSprite("Art/Thumbnails/MVC2 Steve.png"), ModAPIPlus.LimbSprites("Art/AltSkins/MVC2 Steve/"));
+                menu.AddButton("Rivals", ModAPI.LoadSprite("Art/Thumbnails/Rivals Steve.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Rivals Steve/"));
                 menu.AddButton("EMH", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers EMH/"));
 
             }, "a");
@@ -2348,6 +2352,12 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("End of Time", ModAPI.LoadSprite("Art/Thumbnails/Loki End of Time.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Loki End of Time/"));
+                menu.AddButton("God of Stories", ModAPI.LoadSprite("Art/Thumbnails/Loki God of Stories.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Loki God of Stories/"), null, null, ModAPI.LoadSprite("Art/Altskins/Loki God of Stories/Cape.png"), ModAPI.LoadSprite("Art/Altskins/Loki God of Stories/CapeThing.png"));
+                menu.AddButton("President", ModAPI.LoadSprite("Art/Thumbnails/President Loki.png"), ModAPIPlus.LimbSprites("Art/AltSkins/President Loki/"));
+                menu.AddButton("Classic", ModAPI.LoadSprite("Art/Thumbnails/Loki Classic.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Loki Classic/"), null, null, ModAPI.LoadSprite("Art/Altskins/Loki Classic/Cape.png"), ModAPI.LoadSprite("Art/Altskins/Loki Classic/CapeThing.png"));
+                menu.AddButton("Rivals", ModAPI.LoadSprite("Art/Thumbnails/Rivals Loki.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Rivals Loki/"), null, null, ModAPI.LoadSprite("Art/Altskins/Rivals Loki/Cape.png"), ModAPI.LoadSprite("Art/Altskins/Rivals Loki/CapeThing.png"));
+                menu.AddButton("Mcu", ModAPI.LoadSprite("Art/Thumbnails/Mcu Loki.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Mcu Loki/"), null, null, ModAPI.LoadSprite("Art/Altskins/Mcu Loki/Cape.png"), ModAPI.LoadSprite("Art/Altskins/Mcu Loki/CapeThing.png"));
+                menu.AddButton("Mcu no Helmet", ModAPI.LoadSprite("Art/Thumbnails/Mcu Loki No Helmet.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Mcu Loki No Helmet/"), null, null, ModAPI.LoadSprite("Art/Altskins/Mcu Loki No Helmet/Cape.png"), ModAPI.LoadSprite("Art/Altskins/Mcu Loki No Helmet/CapeThing.png"));
             }, "a");
 
             //Ultron
