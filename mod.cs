@@ -964,6 +964,8 @@ namespace Mod
       
                 var menu = Instance.GetComponent<TextureMenu>();
 
+                menu.AddButton("Mcu", ModAPI.LoadSprite("Art/Thumbnails/Mcu Tony.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Mcu Tony/"));
+
                 Nanotech.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Nanotech.png")).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
 
@@ -2021,7 +2023,8 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
 
-                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Casual Wiccan.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Casual Wiccan/"));
+                menu.AddButton("Galaxy Suit", ModAPI.LoadSprite("Art/Thumbnails/Wiccan Galaxy Suit.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wiccan Galaxy Suit/"), null, null, ModAPI.LoadSprite("Art/Altskins/Wiccan Galaxy Suit/Cape.png"), ModAPI.LoadSprite("Art/Altskins/Wiccan Galaxy Suit/CapeThing.png"));
+                menu.AddButton("Galaxy Suit (Hood)", ModAPI.LoadSprite("Art/Thumbnails/Wiccan Galaxy Suit Hood.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wiccan Galaxy Suit Hood/"), null, null, ModAPI.LoadSprite("Art/Altskins/Wiccan Galaxy Suit/Cape.png"), ModAPI.LoadSprite("Art/Altskins/Wiccan Galaxy Suit/CapeThing.png"));
 
                 AstralProjection.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Astral Projection.png"));
 
