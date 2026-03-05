@@ -10,6 +10,7 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using static Mod.InfinityGauntlet;
+using static Mod.Layers;
 
 #pragma warning disable CS0618
 
@@ -145,6 +146,7 @@ namespace Mod
         public static Sprite Electric = ModAPI.LoadSprite("Art/UI/Electric.png");
         public static Sprite Webshot = ModAPI.LoadSprite("Art/UI/Webshot.png");
         public static Sprite None = ModAPI.LoadSprite("Art/UI/None.png");
+        public static Sprite Bubble = ModAPI.LoadSprite("Art/Objects/Bubble.png");
         public static Sprite ToggledSprite = ModAPI.LoadSprite("Art/UI/off.png");
         public static List<Sprite> SandmanSkin = ModAPIPlus.LimbSprites("Art/AltSkins/Sandminion/");
         public static List<Sprite> SandmanOGSkin = ModAPIPlus.LimbSprites("Art/Skins/Sandman/");
@@ -252,6 +254,7 @@ namespace Mod
         public static AudioClip LaserStart = ModAPI.LoadSound("Sounds/LaserStart.wav");
         public static AudioClip LaserEnd = ModAPI.LoadSound("Sounds/LaserEnd.wav");
         public static AudioClip AstralBlastSound = ModAPI.LoadSound("Sounds/Soul.wav");
+        public static AudioClip Pop = ModAPI.LoadSound("Sounds/Pop.wav");
 
         public static AudioClip Swap = ModAPI.LoadSound("Sounds/Swap.wav");
 
@@ -427,7 +430,6 @@ namespace Mod
 
         public struct ModAPIPlus
         {
-
             public static Action<GameObject> removeCloth(int limb)
             {
                 return new Action<GameObject>((Instance) =>
@@ -1026,7 +1028,7 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1.1f, 4);
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1.1f, 15);
 
                 person.GetComponent<SpeedHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
@@ -1044,7 +1046,6 @@ namespace Mod
                 menu.AddButton("MVC2", ModAPI.LoadSprite("Art/Thumbnails/MVC2 Steve.png"), ModAPIPlus.LimbSprites("Art/AltSkins/MVC2 Steve/"));
                 menu.AddButton("Rivals", ModAPI.LoadSprite("Art/Thumbnails/Rivals Steve.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Rivals Steve/"));
                 menu.AddButton("EMH", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers EMH/"));
-
             }, "a");
 
             //Sam Wilson
@@ -1379,7 +1380,7 @@ namespace Mod
                 Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
 
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 0.8f, 5).EnablePower();
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1.1f, 15).EnablePower();
 
                 WandaAreaBlast.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Area Blast.png")).EnablePower();
                 AstralProjection.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Astral Projection.png"));
@@ -1533,7 +1534,7 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 0.5f, 15).EnablePower();
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1.1f, 15).EnablePower();
 
                 Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
                 AstralProjection.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Astral Projection.png")).EnablePower();
@@ -1603,7 +1604,7 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
-                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 0.5f, 15).EnablePower();
+                SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1.1f, 15).EnablePower();
 
                 Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
                 AstralProjection.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Astral Projection.png")).EnablePower();
@@ -1975,6 +1976,7 @@ namespace Mod
 
             }, "a");
             */
+
             //Iron Lad
             ModAPIPlus.CreateHuman("Iron Lad", "I know what I become. I know what I do. I know how many people I hurt. I won't let it happen.", "Iron Lad", "Iron Lad", (Instance) =>
             {
@@ -3152,21 +3154,22 @@ namespace Mod
                 Instance.GetComponent<PhysicalBehaviour>().HoldingPositions = null;
                 var ig = Instance.AddComponent<InfinityGauntlet>();
 
-                ig.AddAbility(typeof(PowerBeam), StoneAbilityEnum.Power, "Power Beam", "Unleashes a powerful beam of energy", null);
-                ig.AddAbility(typeof(PowerPunch), StoneAbilityEnum.Power, "Power Fist", "Unleashes a powerful blast of energy when hitting anything", null);
-                ig.AddAbility(typeof(Timestop), StoneAbilityEnum.Time, "Time Stop", "Stops time for everyone except the user", null);
-                ig.AddAbility(typeof(TimeFreezeStone), StoneAbilityEnum.Time, "Time Freeze", "Freezes anyone the gauntlet aims at", null);
-                ig.AddAbility(typeof(AstralBlast), StoneAbilityEnum.Soul, "Astral Blast", "Extracts the soul of anyone the gauntlet aims at", null);
-                ig.AddAbility(typeof(RevivalBlast), StoneAbilityEnum.Soul, "Revival Blast", "Revives anyone the gauntlet aims at", null);
-                ig.AddAbility(typeof(SpaceTeleport), StoneAbilityEnum.Space, "Space Teleport", "Teleports the user to a specified location", null);
-                ig.AddAbility(typeof(SpacePortals), StoneAbilityEnum.Space, "Space Portal", "Creates portals where the gauntlet aims", null);
-                ig.AddAbility(typeof(MindTelekinesis), StoneAbilityEnum.Mind, "Mind Telekinesis", "Manipulate objects with telekinesis", null);
-                ig.AddAbility(typeof(PowerStopper), StoneAbilityEnum.Mind, "Power Disabler", "Causes the victim to have their abilities disabled (can be re-enabled in the abilities menu)", null);
-                ig.AddAbility(typeof(MindCraze), StoneAbilityEnum.Mind, "Mind Craze", "Causes madness in the minds of those affected", null);
-                ig.AddAbility(typeof(BrainBlast), StoneAbilityEnum.Mind, "Brain Blast", "Unleashes a powerful mental attack that causes the victim's head to explode.", null);
-                ig.AddAbility(typeof(FakeoutDeath), StoneAbilityEnum.Reality, "Fakeout Death", "Once activated, it will cause the user to revive once killed a single time, rewriting reality.", null);
-                ig.AddAbility(typeof(Snap), StoneAbilityEnum.All, "50% Snap", "Erases 50% of all life on the map, when used again, all life will return.", null); 
-                ig.AddAbility(typeof(SingleSnap), StoneAbilityEnum.All, "Single Snap", "Erases the victim from existed, using H will cause.", null);
+                ig.AddAbility(typeof(PowerBeam), StoneAbilityEnum.Power, "Power Beam", "Unleashes a powerful beam of energy", ModAPI.LoadSprite("Art/UI/Icons/PBeam.png"));
+                ig.AddAbility(typeof(PowerPunch), StoneAbilityEnum.Power, "Power Fist", "Unleashes a powerful blast of energy when hitting anything", ModAPI.LoadSprite("Art/UI/Icons/PFist.png"));
+                ig.AddAbility(typeof(Timestop), StoneAbilityEnum.Time, "Time Stop", "Stops time for everyone except the user", ModAPI.LoadSprite("Art/UI/Icons/TStop.png"));
+                ig.AddAbility(typeof(TimeFreezeStone), StoneAbilityEnum.Time, "Time Freeze", "Freezes anyone the gauntlet aims at", ModAPI.LoadSprite("Art/UI/Icons/TFreeze.png"));
+                ig.AddAbility(typeof(AstralBlast), StoneAbilityEnum.Soul, "Astral Blast", "Extracts the soul of anyone the gauntlet aims at", ModAPI.LoadSprite("Art/UI/Icons/SSoul.png"));
+                ig.AddAbility(typeof(RevivalBlast), StoneAbilityEnum.Soul, "Revival Blast", "Revives anyone the gauntlet aims at", ModAPI.LoadSprite("Art/UI/Icons/SRevive.png"));
+                ig.AddAbility(typeof(SpaceTeleport), StoneAbilityEnum.Space, "Space Teleport", "Teleports the user to a specified location", ModAPI.LoadSprite("Art/UI/Icons/SPortal.png"));
+                ig.AddAbility(typeof(SpacePortals), StoneAbilityEnum.Space, "Space Portal", "Creates portals where the gauntlet aims", ModAPI.LoadSprite("Art/UI/Icons/SPortal.png"));
+                ig.AddAbility(typeof(MindTelekinesis), StoneAbilityEnum.Mind, "Mind Telekinesis", "Manipulate objects with telekinesis", ModAPI.LoadSprite("Art/UI/Icons/MTelekinesis.png"));
+                ig.AddAbility(typeof(PowerStopper), StoneAbilityEnum.Mind, "Power Disabler", "Causes the victim to have their abilities disabled (can be re-enabled in the abilities menu)", ModAPI.LoadSprite("Art/UI/Icons/None.png"));
+                ig.AddAbility(typeof(MindCraze), StoneAbilityEnum.Mind, "Mind Craze", "Causes madness in the minds of those affected", ModAPI.LoadSprite("Art/UI/Icons/MMind.png"));
+                ig.AddAbility(typeof(BrainBlast), StoneAbilityEnum.Mind, "Brain Blast", "Unleashes a powerful mental attack that causes the victim's head to explode.", ModAPI.LoadSprite("Art/UI/Icons/MBlast.png"));
+                ig.AddAbility(typeof(FakeoutDeath), StoneAbilityEnum.Reality, "Fakeout Death", "Once activated, it will cause the user to revive once killed a single time, rewriting reality.", ModAPI.LoadSprite("Art/UI/Icons/RRevive.png"));
+                ig.AddAbility(typeof(RealityBubble), StoneAbilityEnum.Reality, "Bubble Guns", "Makes anything that shoots projectiles instead shoot bubbles", ModAPI.LoadSprite("Art/UI/Icons/RBubble.png"));
+                ig.AddAbility(typeof(Snap), StoneAbilityEnum.All, "50% Snap", "Erases 50% of all life on the map, when used again, all life will return.", ModAPI.LoadSprite("Art/UI/Icons/Snap.png")); 
+                ig.AddAbility(typeof(SingleSnap), StoneAbilityEnum.All, "Single Snap", "Erases the victim from existed, using H will cause.", ModAPI.LoadSprite("Art/UI/Icons/Snap.png"));
             }, "2");
 
             //Nano Gauntlet
@@ -3183,7 +3186,7 @@ namespace Mod
                 ig.AddAbility(typeof(RevivalBlast), StoneAbilityEnum.Soul, "Revival Blast", "Revives anyone the gauntlet aims at", null);
                 ig.AddAbility(typeof(SpaceTeleport), StoneAbilityEnum.Space, "Space Teleport", "Teleports the user to a specified location", null);
                 ig.AddAbility(typeof(SpacePortals), StoneAbilityEnum.Space, "Space Portal", "Creates portals where the gauntlet aims", null);
-                ig.AddAbility(typeof(MindTelekinesis), StoneAbilityEnum.Mind, "Mind Telekinesis", "Manipulate objects with telekinesis", null);
+                ig.AddAbility(typeof(MindTelekinesis), StoneAbilityEnum.Mind, "Mind Telekinesis", "Manipulate objects with telekinesis", ModAPI.LoadSprite("Art/UI?Icons/MTelekinesis.png"));
                 ig.AddAbility(typeof(PowerStopper), StoneAbilityEnum.Mind, "Power Disabler", "Causes the victim to have their abilities disabled (can be re-enabled in the abilities menu)", null);
                 ig.AddAbility(typeof(MindCraze), StoneAbilityEnum.Mind, "Mind Craze", "Causes madness in the minds of those affected", null);
                 ig.AddAbility(typeof(BrainBlast), StoneAbilityEnum.Mind, "Brain Blast", "Unleashes a powerful mental attack that causes the victim's head to explode.", null);
@@ -3303,6 +3306,11 @@ namespace Mod
             {
                 mach.StartCoroutine(sillymach(mach));
             }
+
+            if (args.Instance.HasComponents(typeof(FirearmBehaviour), typeof(MachineGunBehaviour), typeof(BlasterBehaviour), typeof(RocketLauncherBehaviour), typeof(ProjectileLauncherBehaviour)))
+            {
+                args.Instance.AddComponent<BubbleGun>();
+            }
         }
 
         public static IEnumerator sillymach(MachineGunBehaviour firearm)
@@ -3409,6 +3417,226 @@ namespace Mod
         }
 
         #endregion
+    }
+
+    public static class FunExtensions
+    {
+        public static bool HasComponents(this GameObject go, params Type[] types)
+        {
+            for (int i = 0; i < types.Length; i++)
+            {
+                if (go.GetComponent(types[i]) != null)
+                    return true;
+            }
+            return false;
+        }
+
+        public static bool HasComponents(this Transform tr, params Type[] types)
+        {
+            return tr.gameObject.HasComponents(types);
+        }
+    }
+
+    public class BubbleGun : MonoBehaviour
+    {
+        public Vector2 Muzzle;
+        public Vector2 Direction;
+        PhysicalBehaviour PhysicalBehaviour;
+
+        bool isBubble = false;
+        float shootTimer = 0f;
+        const float shootInterval = 0.1f;
+
+        public void Start()
+        {
+            isBubble = RealityBubble.IsBubble;
+
+            ToggleBubble(isBubble);
+
+            PhysicalBehaviour = GetComponent<PhysicalBehaviour>();
+
+            var firearm = GetComponent<FirearmBehaviour>();
+            if (firearm != null)
+            {
+                Muzzle = firearm.barrelPosition;
+                Direction = firearm.barrelDirection;
+                return;
+            }
+
+            var blaster = GetComponent<BlasterBehaviour>();
+            if (blaster != null)
+            {
+                Muzzle = blaster.barrelPosition;
+                Direction = blaster.barrelDirection;
+                return;
+            }
+
+            var rocket = GetComponent<RocketLauncherBehaviour>();
+            if (rocket != null)
+            {
+                Muzzle = rocket.barrelPosition;
+                Direction = rocket.barrelDirection;
+                return;
+            }
+
+            var machineGun = GetComponent<MachineGunBehaviour>();
+            if (machineGun != null)
+            {
+                Muzzle = machineGun.barrelPosition;
+                Direction = machineGun.barrelDirection;
+                return;
+            }
+
+            var flamethrower = GetComponent<FlamethrowerBehaviour>();
+            if (flamethrower != null)
+            {
+                Muzzle = flamethrower.Point;
+                Direction = new Vector2(Mathf.Cos(flamethrower.Angle * Mathf.Deg2Rad), Mathf.Sin(flamethrower.Angle * Mathf.Deg2Rad));
+                return;
+            }
+
+            var projectileLauncher = GetComponent<ProjectileLauncherBehaviour>();
+            if (projectileLauncher != null)
+            {
+                Muzzle = projectileLauncher.barrelPosition;
+                Direction = projectileLauncher.barrelDirection;
+                return;
+            }
+        }
+
+        public void ToggleBubble(bool IsBubble)
+        {
+            isBubble = IsBubble;
+            if (GetComponent<FirearmBehaviour>())
+                GetComponent<FirearmBehaviour>().enabled = !IsBubble;
+
+            if (GetComponent<BlasterBehaviour>())
+                GetComponent<BlasterBehaviour>().enabled = !IsBubble;
+
+            if (GetComponent<RocketLauncherBehaviour>())
+                GetComponent<RocketLauncherBehaviour>().enabled = !IsBubble;
+
+            if (GetComponent<MachineGunBehaviour>())
+                GetComponent<MachineGunBehaviour>().enabled = !IsBubble;
+
+            if (GetComponent<FlamethrowerBehaviour>())
+                GetComponent<FlamethrowerBehaviour>().enabled = !IsBubble;
+
+            if (GetComponent<ProjectileLauncherBehaviour>())
+                GetComponent<ProjectileLauncherBehaviour>().enabled = !IsBubble;
+        }
+
+        public void Update()
+        {
+            if (PhysicalBehaviour.IsBeingUsedContinuously() && isBubble)
+            {
+                shootTimer += Time.deltaTime;
+                if (shootTimer >= shootInterval)
+                {
+                    shootTimer = 0f;
+                    SpawnBubble();
+                }
+            }
+        }
+
+        private void SpawnBubble()
+        {
+            StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Pop, UnityEngine.Random.Range(0.8f, 1.2f)));
+
+            Vector3 worldMuzzle = transform.TransformPoint(Muzzle);
+            Vector2 worldDirection = transform.TransformDirection(Direction * transform.localScale.x).normalized;
+
+            GameObject bubble = new GameObject("Bubble");
+            bubble.transform.position = worldMuzzle;
+            bubble.transform.localScale = Vector3.one * UnityEngine.Random.Range(1f, 1.5f);
+
+            var sr = bubble.AddComponent<SpriteRenderer>();
+            sr.sprite = Mod.Bubble;
+            sr.color = new Color(1f, 1f, 1f, 0.6f);
+            sr.sortingLayerName = Sorting.Foreground;
+
+            var rb = bubble.AddComponent<Rigidbody2D>();
+            rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+            rb.gravityScale = UnityEngine.Random.Range(-0.1f, -0.6f);
+            rb.drag = 1.5f;
+            rb.angularDrag = 1f;
+            rb.mass = 0.01f;
+
+            float spread = UnityEngine.Random.Range(-1f, 1f);
+            Vector2 launchDir = Quaternion.Euler(0, 0, spread) * worldDirection;
+            rb.velocity = launchDir * UnityEngine.Random.Range(1f, 2.8f);
+
+            bubble.AddComponent<BubbleFloat>();
+
+            float lifetime = UnityEngine.Random.Range(3f, 8f);
+            Destroy(bubble, lifetime);
+        }
+    }
+
+    public class RealityBubble : StoneAbility, Messages.IUse
+    {
+        public static bool IsBubble;
+
+        public void Use(ActivationPropagation activation)
+        {
+            IsBubble = !IsBubble;
+
+
+            var flash = ModAPI.CreateParticleEffect(ParticleEffects.Flash, transform.position);
+            flash.transform.localScale = Vector3.one * 2f;
+            foreach (var part in flash.GetComponentsInChildren<ParticleSystem>())
+            {
+                var main = part.main;
+                main.startColor = new Color(1f, 0f, 0f);
+            }
+
+            foreach (var bubbleGun in FindObjectsOfType<BubbleGun>())
+            {
+                bubbleGun.ToggleBubble(IsBubble);
+            }
+        }
+    }
+
+    public class BubbleFloat : MonoBehaviour
+    {
+        public GameObject shooter;
+        private Rigidbody2D rb;
+        private float driftTimer;
+        private float driftInterval = 0.3f;
+
+        private void Start()
+        {
+            gameObject.AddComponent<CircleCollider2D>().isTrigger = true;
+            gameObject.GetComponent<CircleCollider2D>().radius = 0.1f;
+            rb = GetComponent<Rigidbody2D>();
+        }
+
+        private void FixedUpdate()
+        {
+            driftTimer += Time.fixedDeltaTime;
+            if (driftTimer >= driftInterval)
+            {
+                driftTimer = 0f;
+                Vector2 randomDrift = new Vector2(
+                    UnityEngine.Random.Range(-0.5f, 0.5f),
+                    UnityEngine.Random.Range(-0.2f, 0.4f)
+                );
+                rb.AddForce(randomDrift * 0.02f, ForceMode2D.Impulse);
+            }
+        }
+
+        public void OnDestroy()
+        {
+            StartCoroutine(Mod.ModAPIPlus.PlaySound(transform.position, Mod.Pop, UnityEngine.Random.Range(0.8f, 1.2f)));
+            ModAPI.CreateParticleEffect("Vapor", transform.position);
+        }
+
+        public void OnTriggerEnter2D(Collider2D col)
+        {
+            if (col.gameObject == shooter)
+                return;
+            Destroy(gameObject);
+        }
     }
 
     public enum LayerType
@@ -4770,21 +4998,15 @@ namespace Mod
             if (!stopped) return;
 
             VFX2 = Instantiate(TimeFreeze.RunePrefab);
+            VFX2.name = "TimestopVFX";
             Destroy(VFX2, 5);
-            VFX2.transform.position = transform.root.Find("Body/MiddleBody").position;
+
+            if(person)
+                VFX2.transform.position = transform.root.Find("Body/MiddleBody").position;
+            else
+                VFX2.transform.position = transform.position;
+           
             VFX2.GetComponent<ParticleSystem>().Play();
-            VFX2.GetComponent<ParticleSystem>().startSize *= 3;
-
-            foreach (var child in VFX2.GetComponentsInChildren<ParticleSystem>())
-            {
-                if (child.gameObject != VFX2) Destroy(child.gameObject);
-            }
-
-            var ps2 = VFX2.GetComponent<ParticleSystem>();
-            var main2 = ps2.main;
-            main2.startDelay = 0;
-            var sizeOverLifetime = ps2.sizeOverLifetime;
-            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1, flipCurve(sizeOverLifetime.size.curve));
 
             OnResume?.Invoke();
 
@@ -4796,12 +5018,13 @@ namespace Mod
                 tickCoroutine = null;
             }
 
-            RemoveTargetsForPerson(person);
+            if(person)
+                RemoveTargetsForPerson(person);
 
             if (TimeHandler.Instance != null)
             {
-                foreach (var limb in person.Limbs)
-                    TimeHandler.Instance.RemoveUneffected(limb.gameObject);
+                foreach (var obj in transform.root.GetComponentsInChildren<PhysicalBehaviour>())
+                    TimeHandler.Instance.RemoveUneffected(obj.gameObject);
             }
 
             var hats = new List<HatBehaviour.HasHat>();
@@ -4824,7 +5047,8 @@ namespace Mod
             else
             {
                 TimeHandler.Instance.ResumeTime();
-                RemoveFreezeFromPerson(person);
+                if(person)
+                    RemoveFreezeFromPerson(person);
             }
         }
 
@@ -4863,48 +5087,33 @@ namespace Mod
             }
         }
 
-        private AnimationCurve flipCurve(AnimationCurve curve)
-        {
-            AnimationCurve flipped = new AnimationCurve(curve.keys);
-
-            Keyframe[] keys = flipped.keys;
-
-            for (int i = 0; i < keys.Length; i++)
-            {
-                keys[i].value = 1f - keys[i].value;
-                keys[i].inTangent = -keys[i].inTangent;
-                keys[i].outTangent = -keys[i].outTangent;
-            }
-
-            flipped.keys = keys;
-            return flipped;
-        }
-
         public void Stop()
         {
-            if (transform.root.TryGetComponent<PersonBehaviour>(out var per))
-                person = per;
-            else
-                person = null;
+            if (transform.root.GetComponent<PersonBehaviour>())
+                if (transform.root.TryGetComponent<PersonBehaviour>(out var per))
+                    person = per;
+                else
+                    person = null;
 
             if (!stopped)
             {
                 VFX = Instantiate(TimeFreeze.RunePrefab);
+
+                VFX.name = "TimestopVFX";
+
                 Destroy(VFX, 5);
-                VFX.transform.position = transform.root.Find("Body/MiddleBody").position;
+
+                if (person)
+                    VFX.transform.position = transform.root.Find("Body/MiddleBody").position;
+                else
+                    VFX.transform.position = transform.position;
+
                 VFX.GetComponent<ParticleSystem>().Play();
                 VFX.GetComponent<ParticleSystem>().startSize *= 3;
 
                 var ps = VFX.GetComponent<ParticleSystem>();
                 var main = ps.main;
                 main.startDelay = 0;
-
-                var specs = VFX.transform.Find("Specs").gameObject.GetComponent<ParticleSystem>();
-                var emission = specs.emission;
-                ParticleSystem.Burst[] bursts = new ParticleSystem.Burst[emission.burstCount];
-                emission.GetBursts(bursts);
-                bursts[1].time = 0;
-                emission.SetBursts(bursts);
 
                 OnStop?.Invoke();
 
@@ -5202,7 +5411,7 @@ namespace Mod
         public void PauseTime()
         {
             if (stopped) return;
-            Simplified = Settings.main.Get<bool>("SimpleStop");
+            Simplified = false;
             OnTimePaused?.Invoke();
 
             frozen = new List<FreezeBehaviour>();
@@ -5621,14 +5830,12 @@ namespace Mod
 
     public class TimeFreezeStone : StoneAbility, Messages.IUse
     {
-        public static GameObject RunePrefab;
-
         public Transform Stopped;
         public GameObject PFX;
 
         public void Start()
         {
-            PFX = Instantiate(RunePrefab);
+            PFX = Instantiate(TimeFreeze.RunePrefab);
             PFX.GetComponent<ParticleSystem>().Stop();
         }
 
