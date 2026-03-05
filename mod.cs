@@ -1241,10 +1241,11 @@ namespace Mod
                 menu.AddButton("White Suit", ModAPI.LoadSprite("Art/Thumbnails/White Suit Natasha.png"), ModAPIPlus.LimbSprites("Art/AltSkins/White Suit Natasha/"));
                 menu.AddButton("Infinity War", ModAPI.LoadSprite("Art/Thumbnails/Infinity War Black Widow.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Infinity War Black Widow/"));
                 menu.AddButton("Silver Age Fishnet", ModAPI.LoadSprite("Art/Thumbnails/Silver Age Fishnet.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Silver Age Fishnet/"), null, null, ModAPI.LoadSprite("Art/AltSkins/Silver Age Fishnet/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/Silver Age Fishnet/CapeThing.png"));
+                menu.AddButton("Marvel Rivals", ModAPI.LoadSprite("Art/Thumbnails/Rivals Widow.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Rivals Widow/"));
 
                 Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
-
+    
                 foreach (var limb in person.Limbs)
                 {
                     if (limb.name.Contains("LowerArm"))
@@ -1252,6 +1253,16 @@ namespace Mod
                         var widowGauntlet = ModAPI.CreatePhysicalObject("WidowGauntlet", Mod.WidowGauntlet);
                         var gaunt = widowGauntlet.AddComponent<WidowGauntlet>();
                         gaunt.Connect(limb);
+                    }
+
+                    if (limb.name.Contains("UpperBody"))
+                    {
+                        limb.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                     if (limb.name.Contains("ArmFront"))
+                    {
+                        limb.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
                     }
                 }
 
