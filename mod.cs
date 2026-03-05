@@ -1156,6 +1156,8 @@ namespace Mod
                 var menu = Instance.GetComponent<TextureMenu>();
 
                 menu.AddButton("No Helmet", ModAPI.LoadSprite("Art/Thumbnails/Thor No Helmet.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Thor No Helmet/"), null, null, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
+                menu.AddButton("Beard", ModAPI.LoadSprite("Art/Thumbnails/Thor Beard.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Thor Beard/"), null, null, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
+                menu.AddButton("Beard No Helmet", ModAPI.LoadSprite("Art/Thumbnails/Thor Beard Helmetless.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Thor Beard Helmetless/"), null, null, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Thor Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Thor Casual/"));
                 menu.AddButton("Battle Damaged", ModAPI.LoadSprite("Art/Thumbnails/Battle Damaged Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Battle Damaged Thor/"), null, null, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
                 menu.AddButton("Classic", ModAPI.LoadSprite("Art/Thumbnails/Classic Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Classic Thor/"), null, null, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
