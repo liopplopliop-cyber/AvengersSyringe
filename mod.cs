@@ -966,6 +966,8 @@ namespace Mod
       
                 var menu = Instance.GetComponent<TextureMenu>();
 
+                menu.AddButton("Mcu", ModAPI.LoadSprite("Art/Thumbnails/Mcu Tony.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Mcu Tony/"));
+
                 Nanotech.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Nanotech.png")).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
 
@@ -2023,7 +2025,8 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
 
-                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Casual Wiccan.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Casual Wiccan/"));
+                menu.AddButton("Galaxy Suit", ModAPI.LoadSprite("Art/Thumbnails/Wiccan Galaxy Suit.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wiccan Galaxy Suit/"), null, null, ModAPI.LoadSprite("Art/Altskins/Wiccan Galaxy Suit/Cape.png"), ModAPI.LoadSprite("Art/Altskins/Wiccan Galaxy Suit/CapeThing.png"));
+                menu.AddButton("Galaxy Suit (Hood)", ModAPI.LoadSprite("Art/Thumbnails/Wiccan Galaxy Suit Hood.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wiccan Galaxy Suit Hood/"), null, null, ModAPI.LoadSprite("Art/Altskins/Wiccan Galaxy Suit/Cape.png"), ModAPI.LoadSprite("Art/Altskins/Wiccan Galaxy Suit/CapeThing.png"));
 
                 AstralProjection.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Astral Projection.png"));
 
@@ -2090,8 +2093,6 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
 
-                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Casual Speed.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Casual Speed/"));
-
             }, "a");
 
             //Hulkling
@@ -2099,8 +2100,6 @@ namespace Mod
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 var menu = Instance.GetComponent<TextureMenu>();
-
-                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Casual Hulkling.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Casual Hulkling/"));
 
                 SpeedHealing.SetPower(person, null, true).EnablePower();
                 SuperMass.SetPower(person, null, 10, 30).EnablePower();
@@ -2115,17 +2114,11 @@ namespace Mod
                     }
                 }
 
+                Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Hulkling/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Hulkling/CapeThing.png"));
+
                 SizeChange.SetPower(person, person.Limbs[11], null, 3, "Grow").EnablePower();
                 Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
 
-                if (Instance.transform.localScale.x > 0)
-                {
-                    Instance.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
-                }
-                else
-                {
-                    Instance.transform.localScale = new Vector3(-1.2f, 1.2f, 1.2f);
-                }
             }, "a");
 
             //Patriot
@@ -2140,8 +2133,7 @@ namespace Mod
 
                 var menu = Instance.GetComponent<TextureMenu>();
 
-                menu.AddButton("Fully Masked", ModAPI.LoadSprite("Art/Thumbnails/Patriot Fully Masked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Patriot Fully Masked/"));
-                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Casual Patriot.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Casual Patriot/"));
+                menu.AddButton("Alt", ModAPI.LoadSprite("Art/Thumbnails/Patriot Alt.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Patriot Alt/"));
 
             }, "a");
 
@@ -2157,8 +2149,6 @@ namespace Mod
                 person.GetComponent<SuperMass>().EnablePower();
 
                 var menu = Instance.GetComponent<TextureMenu>();
-                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Kate Bishop Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Kate Bishop Casual/"));
-                menu.AddButton("Casual Glasses", ModAPI.LoadSprite("Art/Thumbnails/Kate Bishop Casual Glasses.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Kate Bishop Casual Glasses/"));
                 menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Kate Bishop Mcu.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Kate Bishop Mcu/"));
 
             }, "a");
@@ -2176,7 +2166,6 @@ namespace Mod
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("Stinger", ModAPI.LoadSprite("Art/Thumbnails/Stinger.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Stinger/"));
                 menu.AddButton("Mcu", ModAPI.LoadSprite("Art/Thumbnails/Stinger Mcu.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Stinger Mcu/"));
-                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Casual Stature.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Casual Stature/"));
                
             }, "a");
 
@@ -3025,6 +3014,24 @@ namespace Mod
                 Instance.GetComponent<ShieldModeSwitch>().FrontView = ModAPI.LoadSprite("Art/Objects/Sam Cap's Shield.png");
                 Instance.GetComponent<ShieldModeSwitch>().SideView = ModAPI.LoadSprite("Art/Objects/Sam Cap's ShieldSide.png");
 
+                Instance.AddComponent<FighterObject>();
+            }, "2", false);
+
+            //Patriot's Shield
+            ModAPIPlus.CreateObject("Rod", "Patriot's Shield", "", "Patriot's Shield", "Patriot's Shield", (Instance) =>
+            {
+                Instance.GetComponent<SpriteRenderer>().sprite = ModAPI.LoadSprite("Art/Objects/Patriot's Shield.png");
+                Destroy(Instance.GetComponent<Collider2D>());
+                Timtam.CreateCollider(Instance.GetComponent<SpriteRenderer>());
+                Instance.GetComponent<PhysicalBehaviour>().TrueInitialMass = 1;
+                Instance.GetComponent<SpriteRenderer>().sortingOrder += 10;
+                Instance.GetComponent<SpriteRenderer>().sortingLayerName = "Foreground";
+                Instance.AddComponent<ShieldBounce>();
+                Instance.AddComponent<ShieldModeSwitch>();
+
+                Instance.GetComponent<ShieldModeSwitch>().FrontView = ModAPI.LoadSprite("Art/Objects/Patriot's Shield.png");
+                Instance.GetComponent<ShieldModeSwitch>().SideView = ModAPI.LoadSprite("Art/Objects/Patriot's ShieldSide.png");
+                
                 Instance.AddComponent<FighterObject>();
             }, "2", false);
 
