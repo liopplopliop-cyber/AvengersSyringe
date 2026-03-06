@@ -124,6 +124,7 @@ namespace Mod
 
         public static Texture2D DamageTexture = ModAPI.LoadSprite("Art/TempForScripts/DamageTexture.png").texture;
 
+        public static Sprite NanotechIcon = ModAPI.LoadSprite("Art/UI/Icons/MindLaser.png");
         public static Sprite NoPowerSprite = ModAPI.LoadSprite("Art/UI/Icons/None.png");
         public static Sprite Dot = ModAPI.LoadSprite("Art/TempForScripts/Dot.png");
         public static Sprite streng = ModAPI.LoadSprite("Art/UI/Icons/Strength.png");
@@ -1150,8 +1151,8 @@ namespace Mod
                     }
                 }
 
-                ElectricAuraFlight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Lightning.png")).EnablePower();
-                BifrostTeleportation.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Lightning.png")).EnablePower();
+                ElectricAuraFlight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Aurathing.png")).EnablePower();
+                BifrostTeleportation.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Bifrost.png")).EnablePower();
 
                 var menu = Instance.GetComponent<TextureMenu>();
 
@@ -1353,10 +1354,10 @@ namespace Mod
                 menu.AddButton("Yellowjacket", ModAPI.LoadSprite("Art/Thumbnails/Yellowjacket.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Yellowjacket/"));
                 menu.AddButton("West Coast Avengers", ModAPI.LoadSprite("Art/Thumbnails/West Coast Avengers Hank Pym.png"), ModAPIPlus.LimbSprites("Art/AltSkins/West Coast Avengers Hank Pym/"));
 
-                SizeChange.SetPower(person, person.Limbs[11], null, 3, "Grow").EnablePower();
-                SizeChange.SetPower(person, person.Limbs[11], null, 0.1f);
-                SizeChange.SetPower(person, person.Limbs[13], null, 3, "Grow");
-                SizeChange.SetPower(person, person.Limbs[13], null, 0.1f).EnablePower();
+                SizeChange.SetPower(person, person.Limbs[11], ModAPI.LoadSprite("Art/UI/Icons/Shrink.png"), 3, "Grow").EnablePower();
+                SizeChange.SetPower(person, person.Limbs[11], ModAPI.LoadSprite("Art/UI/Icons/Shrink.png"), 0.1f);
+                SizeChange.SetPower(person, person.Limbs[13], ModAPI.LoadSprite("Art/UI/Icons/Shrink.png"), 3, "Grow");
+                SizeChange.SetPower(person, person.Limbs[13], ModAPI.LoadSprite("Art/UI/Icons/Shrink.png"), 0.1f).EnablePower();
 
                 person.Limbs[13].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[13].gameObject);
                 person.Limbs[11].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[11].gameObject);
@@ -1370,29 +1371,29 @@ namespace Mod
                 SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"));
                 Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
 
-                person.GetComponent<SpeedHealing>().EnablePower();
+                person.GetComponent<SlowHealing>().EnablePower();
                 person.GetComponent<SuperMass>().EnablePower();
 
                 var menu = Instance.GetComponent<TextureMenu>();
 
-                 menu.AddButton("Helmet", ModAPI.LoadSprite("Art/Thumbnails/Wasp Helmet.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp Helmet/"));
-                 menu.AddButton("Classic", ModAPI.LoadSprite("Art/Thumbnails/Wasp Red.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp Red/"));
-                 menu.AddButton("Classic Helmet", ModAPI.LoadSprite("Art/Thumbnails/Wasp Red Helmet.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp Red Helmet/"));
-                 menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Wasp MCU.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp MCU/"));
-                 menu.AddButton("EMH", ModAPI.LoadSprite("Art/Thumbnails/Wasp EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp EMH/"));
-                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Wasp Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp Casual/"));
+                menu.AddButton("Helmet", ModAPI.LoadSprite("Art/Thumbnails/Wasp Helmet.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp Helmet/"));
+                menu.AddButton("Classic", ModAPI.LoadSprite("Art/Thumbnails/Wasp Red.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp Red/"));
+                menu.AddButton("Classic Helmet", ModAPI.LoadSprite("Art/Thumbnails/Wasp Red Helmet.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp Red Helmet/"));
+                menu.AddButton("MCU", ModAPI.LoadSprite("Art/Thumbnails/Wasp MCU.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp MCU/"));
+                menu.AddButton("EMH", ModAPI.LoadSprite("Art/Thumbnails/Wasp EMH.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp EMH/"));
+                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Wasp Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wasp Casual/"));
 
-                SizeChange.SetPower(person, person.Limbs[11], null, 3, "Grow").EnablePower();
-                SizeChange.SetPower(person, person.Limbs[11], null, 0.1f);
-                SizeChange.SetPower(person, person.Limbs[13], null, 3, "Grow");
-                SizeChange.SetPower(person, person.Limbs[13], null, 0.1f).EnablePower();
+                SizeChange.SetPower(person, person.Limbs[11], ModAPI.LoadSprite("Art/UI/Icons/Shrink.png"), 3, "Grow").EnablePower();
+                SizeChange.SetPower(person, person.Limbs[11], ModAPI.LoadSprite("Art/UI/Icons/Shrink.png"), 0.1f);
+                SizeChange.SetPower(person, person.Limbs[13], ModAPI.LoadSprite("Art/UI/Icons/Shrink.png"), 3, "Grow");
+                SizeChange.SetPower(person, person.Limbs[13], ModAPI.LoadSprite("Art/UI/Icons/Shrink.png"), 0.1f).EnablePower();
 
                 person.Limbs[13].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[13].gameObject);
                 person.Limbs[11].gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(person.Limbs[11].gameObject);
             }, "a");
 
             //Wanda
-            ModAPIPlus.CreateHuman("Wanda Maximoff", "", "Wanda", "Wanda", (Instance) =>
+            ModAPIPlus.CreateHuman("Wanda Maximoff", "J to cycle powers \n<color=yellow>Head Abilities:\nArea Blast: Activate head to make anything in a specific vicinity of Wanda begin taking damage\nAstral Projection: Allows her to separate her soul from her body at will\nLife Drain (arms): activate with F to syphon life from others, or use H to instead swap damage with another person completely.\nMagic Projectile: Shoots a deadly projectile from her hands", "Wanda", "Wanda", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
 
@@ -1401,8 +1402,8 @@ namespace Mod
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
                 SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1.1f, 15).EnablePower();
 
-                WandaAreaBlast.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Area Blast.png")).EnablePower();
-                AstralProjection.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Astral Projection.png"));
+                WandaAreaBlast.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/WandaArea.png")).EnablePower();
+                AstralProjection.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/AstralProjection.png"));
 
                 Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
 
@@ -1413,7 +1414,7 @@ namespace Mod
                     if (limb.name.Contains("LowerArm"))
                     {
                         LifeDrain.SetPower(person, limb, ModAPI.LoadSprite("Art/UI/Icons/Life Drain.png")).EnablePower();
-                        WandaProjectile.SetPower(person, limb, ModAPI.LoadSprite("Art/UI/Icons/Wanda Projectile.png"));
+                        WandaProjectile.SetPower(person, limb, ModAPI.LoadSprite("Art/UI/Icons/WandaProjectile.png"));
                         MysticFist.SetPower(person, limb, ModAPI.LoadSprite("Art/UI/Icons/MysticFist.png"), ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "WandaRune"));
                         Telekinesis.SetPower(person, limb, ModAPI.LoadSprite("Art/UI/Icons/Telekinesis.png"), ABloader.LoadFromAB<GameObject>(ABloader.LoadFromFile("AssetBundles/portal"), "WandaRune"));
                         limb.gameObject.AddComponent<AbilityCycler>().targetPowers = ModAPIPlus.GetTargettedLimb(limb.gameObject);
@@ -1430,7 +1431,7 @@ namespace Mod
             }, "a");
 
             //Quicksilver
-            ModAPIPlus.CreateHuman("Quicksilver", "", "Quicksilver", "Quicksilver", (Instance) =>
+            ModAPIPlus.CreateHuman("Quicksilver", "J to cycle powers \n<color=yellow>Works similarly to the Flash, see Ability Menus for more details", "Quicksilver", "Quicksilver", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
 
@@ -1461,7 +1462,7 @@ namespace Mod
             }, "a");
 
             //Vision - keVin
-            ModAPIPlus.CreateAndroid("Vision", "", "Vision", "Vision", (Instance) =>
+            ModAPIPlus.CreateAndroid("Vision", "J to cycle powers \n<color=yellow>Flight: fly by activating the chest\nPhasing: Phase through", "Vision", "Vision", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
 
@@ -1471,7 +1472,7 @@ namespace Mod
 
                 UltronBot.SetBot(person, ModAPIPlus.LimbGlowSprites("Art/Skins/Vision/"), false, false);
 
-                VisionBeam.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Vision Beam.png")).EnablePower();
+                VisionBeam.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/MindLaser.png")).EnablePower();
 
                 Phase.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Phase.png"));
 
@@ -1549,23 +1550,23 @@ namespace Mod
             }, "a");
 
             //Doctor Strange
-            ModAPIPlus.CreateHuman("Doctor Strange", "", "Doctor Strange", "Doctor Strange", (Instance) =>
+            ModAPIPlus.CreateHuman("Doctor Strange", "J to cycle powers\n<color=yellow>Flight: fly by activating the chest\nAstral Projection: Allows her to separate her soul from her body at will\nA large variety of abilities on his arms", "Doctor Strange", "Doctor Strange", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
                 SuperMass.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Strength.png"), 1.1f, 15).EnablePower();
 
                 Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
-                AstralProjection.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Astral Projection.png")).EnablePower();
+                AstralProjection.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/AstralProjection.png")).EnablePower();
 
                 foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
                 {
                     if (Limbs.gameObject.name.Contains("LowerArm"))
                     {
-                        MagicProjectile.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Projectile.png")).EnablePower();
+                        MagicProjectile.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/MagicProjectile.png")).EnablePower();
                         MysticFist.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/MysticFist.png"));
-                        AstralFist.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/AstralFist.png"));
-                        MagicWhip.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Magic Whip.png"));
+                        AstralFist.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/AstralProjection.png"));
+                        MagicWhip.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Whip.png"));
                         Portaller.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Portal.png"));
                         Telekinesis.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Telekinesis.png"));
                         TimeFreeze.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/TimeFreeze.png"));
@@ -1619,7 +1620,7 @@ namespace Mod
             }, "a");
 
             //Wong
-            ModAPIPlus.CreateHuman("Wong", "", "Wong", "Wong", (Instance) =>
+            ModAPIPlus.CreateHuman("Wong", "J to cycle powers \n<color=yellow>Same abilities as Dr. Strange", "Wong", "Wong", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
@@ -1668,7 +1669,7 @@ namespace Mod
             }, "a");
 
             //Black Panther
-            ModAPIPlus.CreateHuman("Black Panther", "", "Black Panther", "Black Panther", (Instance) =>
+            ModAPIPlus.CreateHuman("Black Panther", "<color=yellow>Toggle claws with H\nHit surfaces to charge up stored energy, press F on head to release it in an explosion", "Black Panther", "Black Panther", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
@@ -1718,7 +1719,7 @@ namespace Mod
             }, "a");
 
             //Shuri
-            ModAPIPlus.CreateHuman("Shuri", "", "Shuri", "Shuri", (Instance) =>
+            ModAPIPlus.CreateHuman("Shuri", "<color=yellow>Same abilities as Black Panther", "Shuri", "Shuri", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
    
@@ -1738,7 +1739,7 @@ namespace Mod
             }, "a");
 
             //Captain Marvel
-            ModAPIPlus.CreateHuman("Captain Marvel", "", "Captain Marvel", "Captain Marvel", (Instance) =>
+            ModAPIPlus.CreateHuman("Captain Marvel", "<color=yellow>Flight: Activate body to fly\nActivate arms to shoot beams", "Captain Marvel", "Captain Marvel", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
 
@@ -1854,7 +1855,7 @@ namespace Mod
             }, "a");
 
             //Shang-Chi
-            ModAPIPlus.CreateHuman("Shang-Chi", "", "Shang-Chi", "Shang-Chi", (Instance) =>
+            ModAPIPlus.CreateHuman("Shang-Chi", "<color=yellow>Press J on the arms to switch Ring Modes", "Shang-Chi", "Shang-Chi", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 var menu = Instance.GetComponent<TextureMenu>();
@@ -1930,16 +1931,16 @@ namespace Mod
 
                     if (limb.name.Contains("LowerArm"))
                     {
-                        Repulsor.SetPower(person, limb, null);
-                        RepulsorCannons.SetPower(person, limb, null);
-                        NanoBlade.SetPower(person, limb, null);
-                        NanoShield.SetPower(person, limb, null);
-                        NanoHammer.SetPower(person, limb, null);
+                        Repulsor.SetPower(person, limb, Mod.NanotechIcon);
+                        RepulsorCannons.SetPower(person, limb, Mod.NanotechIcon);
+                        NanoBlade.SetPower(person, limb, Mod.NanotechIcon);
+                        NanoShield.SetPower(person, limb, Mod.NanotechIcon);
+                        NanoHammer.SetPower(person, limb, Mod.NanotechIcon);
                         limb.gameObject.AddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
                     }
 
                     if (limb.name.Contains("Foot"))
-                        Thruster.SetPower(person, limb, null);
+                        Thruster.SetPower(person, limb, Mod.NanotechIcon);
                 }
 
                 var menu = Instance.GetComponent<TextureMenu>();
@@ -2095,7 +2096,7 @@ namespace Mod
             }, "a");
 
             //Speed
-            ModAPIPlus.CreateHuman("Speed", "Catch me if you can. Spoiler: you can't.", "Speed", "Speed", (Instance) =>
+            ModAPIPlus.CreateHuman("Speed", "Catch me if you can. Spoiler: you can't.\n<color=yellow>Same abilities as Quicksilver but in yellow", "Speed", "Speed", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
                 SpeedHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png"));
@@ -2242,8 +2243,6 @@ namespace Mod
             ModAPIPlus.CreateHuman("Nick Fury", "", "Nick Fury", "Nick Fury", (Instance) =>
             {
                 var person = Instance.GetComponent<PersonBehaviour>();
-
-                person.GetComponent<SlowHealing>().EnablePower();
 
                 foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
                 {
@@ -3180,8 +3179,8 @@ namespace Mod
 
                 ig.AddAbility(typeof(PowerBeam), StoneAbilityEnum.Power, "Power Beam", "Unleashes a powerful beam of energy", ModAPI.LoadSprite("Art/UI/Icons/PBeam.png"));
                 ig.AddAbility(typeof(PowerPunch), StoneAbilityEnum.Power, "Power Fist", "Unleashes a powerful blast of energy when hitting anything", ModAPI.LoadSprite("Art/UI/Icons/PFist.png"));
-                ig.AddAbility(typeof(Timestop), StoneAbilityEnum.Time, "Time Stop", "Stops time for everyone except the user", ModAPI.LoadSprite("Art/UI/Icons/TStop.png"));
-                ig.AddAbility(typeof(TimeFreezeStone), StoneAbilityEnum.Time, "Time Freeze", "Freezes anyone the gauntlet aims at", ModAPI.LoadSprite("Art/UI/Icons/TFreeze.png"));
+                ig.AddAbility(typeof(Timestop), StoneAbilityEnum.Time, "Time Stop", "Stops time for everyone except the user", ModAPI.LoadSprite("Art/UI/Icons/Time.png"));
+                ig.AddAbility(typeof(TimeFreezeStone), StoneAbilityEnum.Time, "Time Freeze", "Freezes anyone the gauntlet aims at", ModAPI.LoadSprite("Art/UI/Icons/Time.png"));
                 ig.AddAbility(typeof(AstralBlast), StoneAbilityEnum.Soul, "Astral Blast", "Extracts the soul of anyone the gauntlet aims at", ModAPI.LoadSprite("Art/UI/Icons/SSoul.png"));
                 ig.AddAbility(typeof(RevivalBlast), StoneAbilityEnum.Soul, "Revival Blast", "Revives anyone the gauntlet aims at", ModAPI.LoadSprite("Art/UI/Icons/SRevive.png"));
                 ig.AddAbility(typeof(SpaceTeleport), StoneAbilityEnum.Space, "Space Teleport", "Teleports the user to a specified location", ModAPI.LoadSprite("Art/UI/Icons/SPortal.png"));
@@ -3191,7 +3190,7 @@ namespace Mod
                 ig.AddAbility(typeof(MindCraze), StoneAbilityEnum.Mind, "Mind Craze", "Causes madness in the minds of those affected", ModAPI.LoadSprite("Art/UI/Icons/MMind.png"));
                 ig.AddAbility(typeof(BrainBlast), StoneAbilityEnum.Mind, "Brain Blast", "Unleashes a powerful mental attack that causes the victim's head to explode.", ModAPI.LoadSprite("Art/UI/Icons/MBlast.png"));
                 ig.AddAbility(typeof(FakeoutDeath), StoneAbilityEnum.Reality, "Fakeout Death", "Once activated, it will cause the user to revive once killed a single time, rewriting reality.", ModAPI.LoadSprite("Art/UI/Icons/RRevive.png"));
-                ig.AddAbility(typeof(RealityBubble), StoneAbilityEnum.Reality, "Bubble Guns", "Makes anything that shoots projectiles instead shoot bubbles", ModAPI.LoadSprite("Art/UI/Icons/RBubble.png"));
+                ig.AddAbility(typeof(RealityBubble), StoneAbilityEnum.Reality, "Bubble Guns", "Makes anything that shoots projectiles instead shoot bubbles", ModAPI.LoadSprite("Art/UI/Icons/Bubble.png"));
                 ig.AddAbility(typeof(Snap), StoneAbilityEnum.All, "50% Snap", "Erases 50% of all life on the map, when used again, all life will return.", ModAPI.LoadSprite("Art/UI/Icons/Snap.png")); 
                 ig.AddAbility(typeof(SingleSnap), StoneAbilityEnum.All, "Single Snap", "Erases the victim from existed, using H will cause.", ModAPI.LoadSprite("Art/UI/Icons/Snap.png"));
             }, "2");
@@ -3202,20 +3201,22 @@ namespace Mod
                 Instance.GetComponent<PhysicalBehaviour>().Properties = PhysicalProperty.HollowMetal;
                 Instance.GetComponent<PhysicalBehaviour>().HoldingPositions = null;
                 var ig = Instance.AddComponent<InfinityGauntlet>();
-                ig.AddAbility(typeof(PowerBeam), StoneAbilityEnum.Power, "Power Beam", "Unleashes a powerful beam of energy", null);
-                ig.AddAbility(typeof(PowerPunch), StoneAbilityEnum.Power, "Power Fist", "Unleashes a powerful blast of energy when hitting anything", null);
-                ig.AddAbility(typeof(Timestop), StoneAbilityEnum.Time, "Time Stop", "Stops time for everyone except the user", null);
-                ig.AddAbility(typeof(TimeFreezeStone), StoneAbilityEnum.Time, "Time Freeze", "Freezes anyone the gauntlet aims at", null);
-                ig.AddAbility(typeof(AstralBlast), StoneAbilityEnum.Soul, "Astral Blast", "Extracts the soul of anyone the gauntlet aims at", null);
-                ig.AddAbility(typeof(RevivalBlast), StoneAbilityEnum.Soul, "Revival Blast", "Revives anyone the gauntlet aims at", null);
-                ig.AddAbility(typeof(SpaceTeleport), StoneAbilityEnum.Space, "Space Teleport", "Teleports the user to a specified location", null);
-                ig.AddAbility(typeof(SpacePortals), StoneAbilityEnum.Space, "Space Portal", "Creates portals where the gauntlet aims", null);
-                ig.AddAbility(typeof(MindTelekinesis), StoneAbilityEnum.Mind, "Mind Telekinesis", "Manipulate objects with telekinesis", ModAPI.LoadSprite("Art/UI?Icons/MTelekinesis.png"));
-                ig.AddAbility(typeof(PowerStopper), StoneAbilityEnum.Mind, "Power Disabler", "Causes the victim to have their abilities disabled (can be re-enabled in the abilities menu)", null);
-                ig.AddAbility(typeof(MindCraze), StoneAbilityEnum.Mind, "Mind Craze", "Causes madness in the minds of those affected", null);
-                ig.AddAbility(typeof(BrainBlast), StoneAbilityEnum.Mind, "Brain Blast", "Unleashes a powerful mental attack that causes the victim's head to explode.", null);
-                ig.AddAbility(typeof(Snap), StoneAbilityEnum.All, "50% Snap", "Erases 50% of all life on the map, when used again, all life will return.", null);
-                ig.AddAbility(typeof(SingleSnap), StoneAbilityEnum.All, "Single Snap", "Erases the victim from existed, using H will cause.", null);
+                ig.AddAbility(typeof(PowerBeam), StoneAbilityEnum.Power, "Power Beam", "Unleashes a powerful beam of energy", ModAPI.LoadSprite("Art/UI/Icons/PBeam.png"));
+                ig.AddAbility(typeof(PowerPunch), StoneAbilityEnum.Power, "Power Fist", "Unleashes a powerful blast of energy when hitting anything", ModAPI.LoadSprite("Art/UI/Icons/PFist.png"));
+                ig.AddAbility(typeof(Timestop), StoneAbilityEnum.Time, "Time Stop", "Stops time for everyone except the user", ModAPI.LoadSprite("Art/UI/Icons/Time.png"));
+                ig.AddAbility(typeof(TimeFreezeStone), StoneAbilityEnum.Time, "Time Freeze", "Freezes anyone the gauntlet aims at", ModAPI.LoadSprite("Art/UI/Icons/Time.png"));
+                ig.AddAbility(typeof(AstralBlast), StoneAbilityEnum.Soul, "Astral Blast", "Extracts the soul of anyone the gauntlet aims at", ModAPI.LoadSprite("Art/UI/Icons/SSoul.png"));
+                ig.AddAbility(typeof(RevivalBlast), StoneAbilityEnum.Soul, "Revival Blast", "Revives anyone the gauntlet aims at", ModAPI.LoadSprite("Art/UI/Icons/SRevive.png"));
+                ig.AddAbility(typeof(SpaceTeleport), StoneAbilityEnum.Space, "Space Teleport", "Teleports the user to a specified location", ModAPI.LoadSprite("Art/UI/Icons/SPortal.png"));
+                ig.AddAbility(typeof(SpacePortals), StoneAbilityEnum.Space, "Space Portal", "Creates portals where the gauntlet aims", ModAPI.LoadSprite("Art/UI/Icons/SPortal.png"));
+                ig.AddAbility(typeof(MindTelekinesis), StoneAbilityEnum.Mind, "Mind Telekinesis", "Manipulate objects with telekinesis", ModAPI.LoadSprite("Art/UI/Icons/MTelekinesis.png"));
+                ig.AddAbility(typeof(PowerStopper), StoneAbilityEnum.Mind, "Power Disabler", "Causes the victim to have their abilities disabled (can be re-enabled in the abilities menu)", ModAPI.LoadSprite("Art/UI/Icons/None.png"));
+                ig.AddAbility(typeof(MindCraze), StoneAbilityEnum.Mind, "Mind Craze", "Causes madness in the minds of those affected", ModAPI.LoadSprite("Art/UI/Icons/MMind.png"));
+                ig.AddAbility(typeof(BrainBlast), StoneAbilityEnum.Mind, "Brain Blast", "Unleashes a powerful mental attack that causes the victim's head to explode.", ModAPI.LoadSprite("Art/UI/Icons/MBlast.png"));
+                ig.AddAbility(typeof(FakeoutDeath), StoneAbilityEnum.Reality, "Fakeout Death", "Once activated, it will cause the user to revive once killed a single time, rewriting reality.", ModAPI.LoadSprite("Art/UI/Icons/RRevive.png"));
+                ig.AddAbility(typeof(RealityBubble), StoneAbilityEnum.Reality, "Bubble Guns", "Makes anything that shoots projectiles instead shoot bubbles", ModAPI.LoadSprite("Art/UI/Icons/Bubble.png"));
+                ig.AddAbility(typeof(Snap), StoneAbilityEnum.All, "50% Snap", "Erases 50% of all life on the map, when used again, all life will return.", ModAPI.LoadSprite("Art/UI/Icons/Snap.png"));
+                ig.AddAbility(typeof(SingleSnap), StoneAbilityEnum.All, "Single Snap", "Erases the victim from existed, using H will cause.", ModAPI.LoadSprite("Art/UI/Icons/Snap.png"));
             }, "2");
 
             #region stones
@@ -19413,13 +19414,13 @@ namespace Mod
 
                 if (limb.name.Contains("LowerArm"))
                 {
-                    Repulsor.SetPower(Person, limb, null);
-                    RepulsorCannons.SetPower(Person, limb, null);
-                    NanoBazooka.SetPower(Person, limb, null);
-                    IronLaser.SetPower(Person, limb, null);
-                    NanoBlade.SetPower(Person, limb, null);
-                    NanoHammer.SetPower(Person, limb, null);
-                    NanoShield.SetPower(Person, limb, null);
+                    Repulsor.SetPower(Person, limb, Mod.NanotechIcon);
+                    RepulsorCannons.SetPower(Person, limb, Mod.NanotechIcon);
+                    NanoBazooka.SetPower(Person, limb, Mod.NanotechIcon);
+                    IronLaser.SetPower(Person, limb, Mod.NanotechIcon);
+                    NanoBlade.SetPower(Person, limb, Mod.NanotechIcon);
+                    NanoHammer.SetPower(Person, limb, Mod.NanotechIcon);
+                    NanoShield.SetPower(Person, limb, Mod.NanotechIcon);
                     limb.gameObject.AddComponent<AbilityCycler>().targetPowers = Mod.ModAPIPlus.GetTargettedLimb(limb.gameObject);
                 }
 
@@ -19565,7 +19566,7 @@ namespace Mod
                 else
                 {
                     hadStrength = false;
-                    SuperMass.SetPower(Person, null, 0.5f, 15).EnablePower();
+                    SuperMass.SetPower(Person, null, 1f, 15).EnablePower();
                 }
 
                 Person.Limbs[2].PhysicalBehaviour.PlayClipOnce(TransformationSound);

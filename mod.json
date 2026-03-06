@@ -1,7 +1,7 @@
 {
   "Name": "Nova's Avengers Mod",
   "Author": "Nova Interactive",
-  "Description": "Adds The Avengers into PPG",
+  "Description": "Adds The Avengers to PPG",
   "ModVersion": "1.0",
   "GameVersion": "Latest",
   "ThumbnailPath": "thumb.png",
@@ -13,7 +13,7 @@
     "mod.cs"
   ],
   "Active": true,
-  "UGCIdentity": "8246583",
+  "UGCIdentity": null,
   "CreatorUGCIdentity": null,
   "AssemblyName": null
 }
