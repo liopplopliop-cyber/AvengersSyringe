@@ -1169,6 +1169,7 @@ namespace Mod
                 menu.AddButton("Love and Thunder", ModAPI.LoadSprite("Art/Thumbnails/Love and Thunder.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Love and Thunder/"), null, null, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
                 menu.AddButton("Fat Thor", ModAPI.LoadSprite("Art/Thumbnails/Fat Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Fat Thor/"));
                 menu.AddButton("Rivals", ModAPI.LoadSprite("Art/Thumbnails/Rivals Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Rivals Thor/"), null, null, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
+                menu.AddButton("Infinity War", ModAPI.LoadSprite("Art/Thumbnails/Infinity War Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Infinity War Thor/"), null, null, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
                 Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
 
             }, "a");
@@ -1891,12 +1892,46 @@ namespace Mod
                     }
                 }
 
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    Limbs.ImmuneToDamage = true;
+
+                    if (Limbs.gameObject.name.Contains("ArmFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 2;
+                    }
+
+                    if (Limbs.name.Contains("UpperBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                    }
+
+                    if (Limbs.name.Contains("Head"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Top";
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 2;
+                    }
+
+                    if (Limbs.gameObject.name.Contains("LegFront") || Limbs.gameObject.name.Contains("FootFront"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingLayerName = "Default";
+                    }
+
+                    if (Limbs.name.Contains("LowerBody"))
+                    {
+                        Limbs.GetComponent<SpriteRenderer>().sortingOrder += 4;
+                    }
+                }
+
                 Flight.SetPower(person, person.Limbs[1], ModAPI.LoadSprite("Art/UI/Icons/Flight.png")).EnablePower();
 
                 var menu = Instance.GetComponent<TextureMenu>();
+                menu.AddButton("Resurrection", ModAPI.LoadSprite("Art/Thumbnails/Wonder Man Resurrection.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wonder Man Resurrection/"));
+                menu.AddButton("Hollywood Costume", ModAPI.LoadSprite("Art/Thumbnails/Wonder Man Hollywood Costume.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wonder Man Hollywood Costume/"));
                 menu.AddButton("No Glasses", ModAPI.LoadSprite("Art/Thumbnails/Wonder Man No Glasses.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wonder Man No Glasses/"));
-                menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Wonder Man Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wonder Man Casual/"));
-                menu.AddButton("No Glasses Jacket", ModAPI.LoadSprite("Art/Thumbnails/Wonder Man No Glasses Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wonder Man No Glasses Casual/"));
+                menu.AddButton("Safari Jacket", ModAPI.LoadSprite("Art/Thumbnails/Wonder Man Safari Jacket.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wonder Man Safari Jacket/"));
+                menu.AddButton("Mcu", ModAPI.LoadSprite("Art/Thumbnails/Wonder Man MCU.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Wonder Man MCU/"));
 
             }, "a");
 
