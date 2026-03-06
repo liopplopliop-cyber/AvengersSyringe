@@ -1168,6 +1168,7 @@ namespace Mod
                 menu.AddButton("Love and Thunder", ModAPI.LoadSprite("Art/Thumbnails/Love and Thunder.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Love and Thunder/"), null, null, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
                 menu.AddButton("Fat Thor", ModAPI.LoadSprite("Art/Thumbnails/Fat Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Fat Thor/"));
                 menu.AddButton("Rivals", ModAPI.LoadSprite("Art/Thumbnails/Rivals Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Rivals Thor/"), null, null, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
+                menu.AddButton("Infinity War", ModAPI.LoadSprite("Art/Thumbnails/Infinity War Thor.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Infinity War Thor/"), null, null, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png"), ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
                 Cape.CreateCapeForPerson(person, ModAPI.LoadSprite("Art/Skins/Thor/Cape.png").texture, ModAPI.LoadSprite("Art/Skins/Thor/CapeThing.png"));
 
             }, "a");
