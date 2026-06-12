@@ -910,9 +910,11 @@ namespace Mod
             Settings.main.AddSetting("Capes", "When disabled, no characters will spawn with capes", "UseCapes", true, typeof(bool));
             Settings.main.AddSetting("Legacy Mass System", "When enabled, it will force all 'stronger' characters masses to be 0.5, negating issues with characters jumping around too much", "LegacyMass", true, typeof(bool));
             Settings.main.AddSetting("Stronger healing", "Automatically enables the Speed Healing power on entities using the slower varient.", "SpeedHeal", false, typeof(bool));
+            Settings.main.AddSetting("Simple Timestop", "Heavily reduces lag when using timestop at the cost of some affects being removed.", "SimpleTimestop", false, typeof(bool));
             Settings.main.AddSetting("Slow Motion Speed", "Adjust the slow motion speed", "SlowMotionSpeed", 0.1f, typeof(float), 0.01f, 0.1f);
             Settings.main.AddSetting("Flight Stun", "Adjust the duration that a character is stunned when hit while flying", "KnockoutTime", 1.5f, typeof(float), 0f, 5f);
             Settings.main.AddSetting("Durability", "Changes the damage dampening on speed healing and super strength, divides impact damage variable by whatever is inputted in this setting, and stacks if it has both strength and healing.", "DamDamp", 10, typeof(int), 1, 40);
+            Settings.main.AddSetting("Hammer Worthiness", "Toggle whether thor's hammer should only be able to be picked up by worthy users!", "HammerWorthiness", true, typeof(bool));
             Settings.main.AddSetting("Ultron Body Swapping", "Toggles whether Ultron can swap bodies when killed automatically", "UltronSwapping", true, typeof(bool));
             Settings.main.AddSetting("Default Web Type", "(1 = normal, 2 = connector, 3 = grapple, 4 = electric, 5 = webshot, 6 = none)", "DefaultWeb", 1, typeof(int), 1, 6);
             Settings.main.AddSetting("Synced Web Type", "When enabled, it will make all limbs with the web ability use the same web type when one is changed", "SyncedWeb", false, typeof(bool));
@@ -1043,6 +1045,7 @@ namespace Mod
                 var menu = Instance.GetComponent<TextureMenu>();
                 menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers Unmasked/"));
                 menu.AddButton("Casual", ModAPI.LoadSprite("Art/Thumbnails/Steve Rogers Casual.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Rogers Casual/"));
+                menu.AddButton("Battle Damaged", ModAPI.LoadSprite("Art/Thumbnails/Battle Damaged Cap.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Battle Damaged Cap/"));
                 menu.AddButton("Secret Avenger", ModAPI.LoadSprite("Art/Thumbnails/Cap Secret Avenger.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Cap Secret Avenger/"));
                 menu.AddButton("Secret Empire", ModAPI.LoadSprite("Art/Thumbnails/Secret Empire Steve.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Secret Empire Steve/"));
                 menu.AddButton("Ultimates WW2", ModAPI.LoadSprite("Art/Thumbnails/Steve Ultimates WW2.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Steve Ultimates WW2/"));
@@ -1533,6 +1536,8 @@ namespace Mod
                 menu.AddButton("White Vision", ModAPI.LoadSprite("Art/Thumbnails/White Vision.png"), ModAPIPlus.LimbSprites("Art/AltSkins/White Vision/"), null, null, ModAPI.LoadSprite("Art/AltSkins/White Vision/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/White Vision/CapeThing.png"));
                 menu.AddButton("Vision Mcu", ModAPI.LoadSprite("Art/Thumbnails/Vision Mcu.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Vision Mcu/"), null, null, ModAPI.LoadSprite("Art/AltSkins/Vision Mcu/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/Vision Mcu/CapeThing.png"));
                 menu.AddButton("Dead Vision", ModAPI.LoadSprite("Art/Thumbnails/Dead Vision.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Dead Vision/"), null, null, ModAPI.LoadSprite("Art/AltSkins/Dead Vision/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/Dead Vision/CapeThing.png"));
+
+                person.gameObject.AddComponent<Hammer.Worthy>();
 
                 Instance.AddComponent<DeathTrigger>().OnDeath = (x) =>
                 {
@@ -2478,6 +2483,8 @@ namespace Mod
                 menu.AddButton("X-Tron", ModAPI.LoadSprite("Art/Thumbnails/X-Tron.png"), ModAPIPlus.LimbSprites("Art/AltSkins/X-Tron/"), null, null, ModAPI.LoadSprite("Art/AltSkins/X-Tron/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/X-Tron/CapeThing.png"));
                 menu.AddButton("İnfinity Ultron", ModAPI.LoadSprite("Art/Thumbnails/İnfinity Ultron.png"), ModAPIPlus.LimbSprites("Art/AltSkins/İnfinity Ultron/"), null, null, ModAPI.LoadSprite("Art/AltSkins/İnfinity Ultron/Cape.png"), ModAPI.LoadSprite("Art/AltSkins/İnfinity Ultron/CapeThing.png"));
 
+                EnergyExplosion.SetPower(person, person.Limbs[0], ModAPI.LoadSprite("Art/UI/Icons/Energy Explosion.png"), new Color(0.9f, 0f, 0.9f)).EnablePower();
+
             }, "a");
 
             //Ultron Bot
@@ -2576,6 +2583,9 @@ namespace Mod
                 person.Limbs[1].GetComponent<Forcefield>().EnablePower();
 
                 var menu = Instance.GetComponent<TextureMenu>();
+
+                menu.AddButton("Unmasked", ModAPI.LoadSprite("Art/Thumbnails/Kang Unmasked.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Kang Unmasked/"));
+
             }, "a");
         
 
@@ -2741,6 +2751,14 @@ namespace Mod
 
                 Fighter.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Fight.png"), 0.5f).EnablePower();
                 SlowHealing.SetPower(person, ModAPI.LoadSprite("Art/UI/Icons/Heal.png")).EnablePower();
+
+                foreach (var Limbs in Instance.GetComponent<PersonBehaviour>().Limbs)
+                {
+                    if (Limbs.gameObject.name.Contains("LowerArm"))
+                    {
+                        Telekinesis.SetPower(person, Limbs, ModAPI.LoadSprite("Art/UI/Icons/Telekinesis.png"), new GameObject());
+                    }
+                }
 
                 menu.AddButton("Ebony Maw Mcu", ModAPI.LoadSprite("Art/Thumbnails/Ebony Maw Mcu.png"), ModAPIPlus.LimbSprites("Art/AltSkins/Ebony Maw Mcu/"));
             }, "a", null, null, ModAPIPlus.AddCloth(ModAPI.LoadSprite("Art/Skins/Ebony Maw/Skirt.png"), new Vector2(0, 0), 3), ModAPIPlus.removeCloth(3));
@@ -3127,6 +3145,8 @@ namespace Mod
 
                 Instance.GetComponent<PhysicalBehaviour>().TrueInitialMass = 1f;
 
+                SceptorBeam.SetPower(Instance, null);
+
                 Instance.GetComponent<PhysicalBehaviour>().ContextMenuOptions.Buttons.Add(new ContextMenuButton(() => !ColorpickerDialogBehaviour.IsOpen, "RemoveMind", "<color=\"yellow\">Remove Mind Stone</color>", "<color=\"yellow\">Remove Mind Stone</color>", delegate
                 {
                     ModAPI.CreateParticleEffect(ParticleEffects.Flash, Instance.transform.position);
@@ -3152,6 +3172,8 @@ namespace Mod
 
                 Instance.AddComponent<FighterObject>().strength *= 3;
                 Instance.GetComponent<FighterObject>().Shake = true;
+
+                Throwable.CreateThrowable(Instance, 40);
 
                 var cloth = DynamicCloth.CreateCloth(Instance, ModAPI.LoadTexture("Art/Objects/String.png"), new Vector2(0, -6f) * ModAPI.PixelSize);
 
@@ -3186,6 +3208,9 @@ namespace Mod
                 Timtam.CreateCollider(Instance.transform.GetChild(0).GetComponent<SpriteRenderer>());
 
                 Instance.AddComponent<StormBreaker>();
+
+                Throwable.CreateThrowable(Instance, 40);
+
             }, "2", false);
 
             //Hawkeye's Bow
@@ -3351,7 +3376,9 @@ namespace Mod
             ModAPI.RegisterLiquid(TBLiquid.ID, new TBLiquid());
             ModAPI.RegisterLiquid(OutriderLiquid.ID, new OutriderLiquid());
             ModAPI.OnItemSpawned += AddLimbLogger;
-            ModAPI.OnItemSpawned += AddBulletListener;
+
+            if(Settings.main.Get<bool>("SimpleTimestop"))
+                ModAPI.OnItemSpawned += AddBulletListener;
             #endregion
         }
 
@@ -3494,6 +3521,267 @@ namespace Mod
         public static bool HasComponents(this Transform tr, params Type[] types)
         {
             return tr.gameObject.HasComponents(types);
+        }
+    }
+
+    public class SceptorBeam : MonoBehaviour, Messages.IUse
+    {
+        public PersonBehaviour person;
+
+        AudioSource Source;
+        bool doingTransition;
+        bool Lasering;
+
+        RaycastHit2D hit;
+        public LineRenderer line;
+        public SpriteRenderer GlowEye;
+        public TrailRenderer trail;
+        public GameObject RaycastPoint;
+        public GameObject RaycastPoint2;
+        public float blastRadius = 20f;
+        public float maxForce = 10f;
+        public float crushRadius = 5f;
+
+        Vector3 offset;
+
+        public static SceptorBeam SetPower(GameObject obj, Sprite icon, Vector2 offset = default)
+        {
+            var power = obj.AddComponent<SceptorBeam>();
+            power.offset = offset == null ? Vector2.zero : offset;
+            return power;
+        }
+
+        public void Start()
+        {
+            line = gameObject.GetOrAddComponent<LineRenderer>();
+            line.startColor = Mod.ColorPlus.Teal;
+            line.endColor = Mod.ColorPlus.Teal;
+            line.startWidth = 0.025f;
+            line.endWidth = 0.025f;
+            line.material = UnityEngine.Object.Instantiate<Material>(ModAPI.FindMaterial("VeryBright"));
+            line.material.SetFloat("_GlowIntensity", 0.05f);
+            line.material.mainTexture = ModAPI.FindMaterial("Sprites-Default").mainTexture;
+            line.sortingOrder = gameObject.GetComponent<SpriteRenderer>().sortingOrder + 1;
+            line.sortingLayerID = gameObject.GetComponent<SpriteRenderer>().sortingLayerID;
+            line.positionCount = 2;
+            line.enabled = false;
+
+            trail = new GameObject("trail").AddComponent<TrailRenderer>();
+            trail.transform.parent = transform;
+            trail.transform.localPosition = (new Vector3(5f, 2f, 0) * ModAPI.PixelSize) + offset;
+            trail.transform.localRotation = Quaternion.identity;
+            trail.transform.localScale = Vector3.one;
+            trail.gameObject.layer = gameObject.layer;
+            trail.time = 0.1f;
+            trail.startWidth = 0.02f;
+            trail.endWidth = 0.005f;
+            trail.material = UnityEngine.Object.Instantiate<Material>(ModAPI.FindMaterial("VeryBright"));
+            trail.startColor = new Color(0, 0.5f, 1, 0.2f);
+            trail.endColor = new Color(0, 0, 0, 0);
+            trail.sortingLayerName = gameObject.GetComponent<SpriteRenderer>().sortingLayerName;
+            trail.sortingOrder = gameObject.GetComponent<SpriteRenderer>().sortingOrder + 1;
+            trail.enabled = false;
+
+            GlowEye = new GameObject("GlowEye").AddComponent<SpriteRenderer>();
+            GlowEye.transform.parent = transform;
+            GlowEye.transform.localPosition = Vector2.zero + (Vector2)offset;
+            GlowEye.transform.localRotation = Quaternion.identity;
+            GlowEye.transform.localScale = Vector3.one;
+            GlowEye.sprite = Mod.Dot;
+            GlowEye.material = UnityEngine.Object.Instantiate<Material>(ModAPI.FindMaterial("VeryBright"));
+            GlowEye.color = Color.clear;
+            GlowEye.sortingLayerName = gameObject.GetComponent<SpriteRenderer>().sortingLayerName;
+            GlowEye.sortingOrder = gameObject.GetComponent<SpriteRenderer>().sortingOrder + 1;
+            GlowEye.gameObject.layer = gameObject.layer;
+
+            Source = gameObject.AddComponent<AudioSource>();
+            Source.loop = true;
+            Source.clip = Mod.Laser;
+
+            if (!gameObject.GetComponent<AudioSourceTimeScaleBehaviour>())
+            {
+                gameObject.AddComponent<AudioSourceTimeScaleBehaviour>();
+            }
+
+            RaycastPoint = new GameObject("RaycastPoint");
+            RaycastPoint.transform.parent = transform;
+            RaycastPoint.transform.localPosition = (new Vector2(0, 9) * ModAPI.PixelSize) + (Vector2)offset;
+            RaycastPoint.transform.localRotation = Quaternion.identity;
+            RaycastPoint2 = new GameObject("RaycastPoint2");
+            RaycastPoint2.transform.parent = transform;
+            RaycastPoint2.transform.localPosition = (new Vector2(0, 9) * ModAPI.PixelSize) + (Vector2)offset;
+            RaycastPoint2.transform.localRotation = Quaternion.identity;
+        }
+
+        public void Use(ActivationPropagation activation)
+        {
+            line.endWidth = 0.025f;
+
+            if (!person.Braindead)
+            {
+                if (!doingTransition && !Lasering)
+                {
+                    StartCoroutine(Transition());
+                    StartCoroutine(PlaySound(Mod.LaserStart));
+                }
+                else if (!doingTransition)
+                {
+                    Source.Stop();
+                    StartCoroutine(DoneTransition());
+                    StartCoroutine(PlaySound(Mod.LaserEnd));
+                }
+            }
+        }
+
+        public IEnumerator Transition()
+        {
+            doingTransition = true;
+            StartCoroutine(RendererColorTransition(GlowEye, Mod.ColorPlus.Teal, Color.clear, 1f));
+            yield return new WaitForSeconds(1f);
+            line.enabled = true;
+            StartCoroutine(RendererColorTransition(line, Mod.ColorPlus.Teal, Color.clear, 0.1f));
+            Source.Play();
+            Lasering = true;
+            trail.enabled = true;
+            doingTransition = false;
+        }
+
+        public IEnumerator DoneTransition()
+        {
+            doingTransition = true;
+            Source.Stop();
+
+            StartCoroutine(RendererColorTransition(line, Color.clear, Mod.ColorPlus.Teal, 0.25f));
+            yield return new WaitForSeconds(0.25f);
+            StartCoroutine(RendererColorTransition(GlowEye, Color.clear, Mod.ColorPlus.Teal, 1f));
+
+            line.enabled = false;
+            Lasering = false;
+            trail.enabled = false;
+            doingTransition = false;
+        }
+
+        public IEnumerator RendererColorTransition(Renderer renderer, Color newColor, Color OriginalColor, float duration = 0.5f)
+        {
+            if (renderer.GetType() == typeof(SpriteRenderer))
+            {
+                var sr = renderer as SpriteRenderer;
+
+                float elapsedTime = 0;
+                while (elapsedTime < duration)
+                {
+                    sr.color = Color.Lerp(OriginalColor, newColor, (elapsedTime / duration));
+                    elapsedTime += Time.deltaTime;
+                    yield return null;
+                }
+                sr.color = newColor;
+            }
+            else if (renderer.GetType() == typeof(LineRenderer))
+            {
+                var l = renderer as LineRenderer;
+
+                float elapsedTime = 0;
+                while (elapsedTime < duration)
+                {
+                    l.startColor = Color.Lerp(OriginalColor, newColor, (elapsedTime / duration));
+                    l.endColor = Color.Lerp(OriginalColor, newColor, (elapsedTime / duration));
+                    elapsedTime += Time.deltaTime;
+                    yield return null;
+                }
+                l.startColor = newColor;
+                l.endColor = newColor;
+
+            }
+        }
+
+        private IEnumerator PlaySound(AudioClip SoundToPlay)
+        {
+            var sound = new GameObject();
+            sound.name = "SFX";
+            sound.transform.position = gameObject.transform.position;
+            sound.AddComponent<AudioSource>();
+            sound.GetComponent<AudioSource>().playOnAwake = false;
+            sound.GetComponent<AudioSource>().clip = SoundToPlay;
+            sound.GetComponent<AudioSource>().spatialBlend = 1;
+            sound.GetComponent<AudioSource>().volume = 5f;
+            sound.AddComponent<AudioDistortionFilter>().distortionLevel = 0.85f;
+            sound.AddComponent<AudioSourceTimeScaleBehaviour>();
+            sound.GetComponent<AudioSource>().Play();
+            sound.AddComponent<OBJDestroyer>();
+            yield return new WaitForSeconds(SoundToPlay.length);
+
+            Destroy(sound);
+        }
+
+        public void Update()
+        {
+            if (Lasering && person.Braindead)
+            {
+                DoneTransition();
+            }
+
+
+            if (person.transform.localScale.x > 0)
+            {
+                hit = Physics2D.Raycast(RaycastPoint2.transform.position, RaycastPoint.transform.up, 200000, LayerMask.GetMask(new string[] { "Objects", "Bounds" }));
+
+            }
+            else
+            {
+                hit = Physics2D.Raycast(RaycastPoint2.transform.position, -RaycastPoint.transform.up, 200000, LayerMask.GetMask(new string[] { "Objects", "Bounds" }));
+
+            }
+
+            if (Lasering)
+            {
+                line.SetPosition(0, RaycastPoint.transform.position);
+                line.SetPosition(1, hit.point);
+            }
+        }
+
+        public void FixedUpdate()
+        {
+            Vector2 hitPoint = hit.point;
+
+            if (Lasering)
+            {
+                if (hit.collider != null)
+                {
+                    Mod.ModAPIPlus.SetPFXColors(ModAPI.CreateParticleEffect("Flash", hit.point), Color.yellow);
+                    if (hit.collider.TryGetComponent<LimbBehaviour>(out var limb))
+                    {
+                        if (limb.Person != GetComponent<LimbBehaviour>().Person)
+                        {
+                            limb.Damage(limb.Health / 100);
+                            limb.PhysicalBehaviour.Temperature += 1f;
+                            limb.SkinMaterialHandler.AddDamagePoint(DamageType.Blunt, hit.point, 10);
+                            if (hit.collider.TryGetComponent<Rigidbody2D>(out var rb) && hit.collider.GetComponent<SpriteRenderer>())
+                            {
+                                Vector2 direction = (hit.point - (Vector2)transform.position).normalized;
+                                rb.AddForce(direction * maxForce, ForceMode2D.Impulse);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (hit.collider.TryGetComponent<Rigidbody2D>(out var rb) && hit.collider.GetComponent<SpriteRenderer>())
+                        {
+                            Vector2 direction = (hit.point - (Vector2)transform.position).normalized;
+                            rb.AddForce(direction * maxForce, ForceMode2D.Impulse);
+                        }
+                        else if (hit.collider.TryGetComponent<DestroyableBehaviour>(out var dest))
+                        {
+                            float dist = Vector2.Distance(dest.transform.position, hit.point);
+                            if (dist < crushRadius)
+                            {
+                                dest.Break();
+                            }
+                        }
+                    }
+                }
+
+                CameraShakeBehaviour.main.Shake(0.3f, transform.position);
+            }
         }
     }
 
@@ -5187,8 +5475,8 @@ namespace Mod
                     if(person)
                         foreach (var limb in person.Limbs)
                             TimeHandler.Instance.AddUneffected(limb.gameObject);
-                    else
-                        TimeHandler.Instance.AddUneffected(gameObject);
+
+                    TimeHandler.Instance.AddUneffected(gameObject);
                 }
 
                 foreach (var freeze in transform.root.GetComponentsInChildren<FreezeBehaviour2>())
@@ -11514,7 +11802,7 @@ namespace Mod
             power.limb = Limb;
             
             power.PFX = Instantiate(overrideRune??RunePrefab);
-            power.PFX.GetComponent<ParticleSystem>().Stop();
+            power.PFX.GetComponent<ParticleSystem>()?.Stop();
 
             return power;
         }
@@ -11532,7 +11820,7 @@ namespace Mod
                 if (target != hit.collider.gameObject && hit.collider.gameObject.GetComponent<Rigidbody2D>().bodyType != RigidbodyType2D.Static)
                 {
                     target = hit.collider.gameObject;
-                    PFX.GetComponent<ParticleSystem>().Play();
+                    PFX.GetComponent<ParticleSystem>()?.Play();
                 }
             }
             else
@@ -11598,7 +11886,7 @@ namespace Mod
         {
             target = null;
             doing = false;
-            PFX.GetComponent<ParticleSystem>().Stop();
+            PFX.GetComponent<ParticleSystem>()?.Stop();
         }
 
         public void Update()
@@ -11704,7 +11992,7 @@ namespace Mod
                     Vector3 dir = -transform.up;
                     transform.position += dir * speed * Time.deltaTime;
 
-                    RaycastHit2D hit = Physics2D.Raycast(transform.position, dir, 0.1f);
+                    RaycastHit2D hit = Physics2D.CircleCast(transform.position, 0.6f, dir, 0.2f);
                     if (hit.collider != null && hit.transform.root != projectile.transform.root)
                     {
                         Hit();
@@ -11727,6 +12015,8 @@ namespace Mod
         public GameObject Portal1;
         public GameObject Portal2;
 
+        Color PFXColor = Color.white;
+
         bool OnFirstPortal = true;
 
         public List<Transform> cooldowned= new List<Transform>();
@@ -11738,6 +12028,25 @@ namespace Mod
             power.Description = "Create a portal that teleports objects to a designated location.";
             power.icon = icon;
 
+            if (power.name.Contains("Front"))
+            {
+                power.targetLimb = TargettedLimb.FrontArm;
+            }
+            else
+            {
+                power.targetLimb = TargettedLimb.BackArm;
+            }
+
+            return power;
+        }
+
+        public static Portaller SetPower(PersonBehaviour Person, LimbBehaviour Limb, Sprite icon, Color PFXColor)
+        {
+            var power = Limb.gameObject.AddComponent<Portaller>();
+            power.Name = "Magic Portal";
+            power.Description = "Create a portal that teleports objects to a designated location.";
+            power.icon = icon;
+            power.PFXColor = PFXColor;
             if (power.name.Contains("Front"))
             {
                 power.targetLimb = TargettedLimb.FrontArm;
@@ -11764,6 +12073,13 @@ namespace Mod
                 Portal1.transform.rotation = Quaternion.Euler(89, 0, 0);
                 Portal1.transform.GetChild(0).transform.localScale = Vector3.one;
                 Portal1.transform.GetChild(1).transform.localScale = Vector3.one;
+
+                if(PFXColor != Color.white)
+                    foreach (var ps in Portal1.GetComponentsInChildren<ParticleSystem>())
+                    {
+                        var main = ps.main;
+                        main.startColor = PFXColor;
+                    }
             }
             else if (Portal2 == null)
             {
@@ -11774,6 +12090,13 @@ namespace Mod
                 Portal2.transform.rotation = Quaternion.Euler(89, 0, 0);
                 Portal2.transform.GetChild(0).transform.localScale = Vector3.one;
                 Portal2.transform.GetChild(1).transform.localScale = Vector3.one;
+
+                if (PFXColor != Color.white)
+                    foreach (var ps in Portal2.GetComponentsInChildren<ParticleSystem>())
+                    {
+                        var main = ps.main;
+                        main.startColor = PFXColor;
+                    }
             }
             else 
             { 
@@ -13109,7 +13432,7 @@ namespace Mod
 
         public override void OnGripped(GripBehaviour gripper)
         {
-            if (!gripper.transform.root.GetComponent<Worthy>())
+            if (!gripper.transform.root.GetComponent<Worthy>() && Settings.main.Get<bool>("HammerWorthiness"))
             {
                 useable = false;
                 GetComponent<Rigidbody2D>().mass = gripper.GetComponent<Rigidbody2D>().mass * 100;
@@ -13535,21 +13858,31 @@ namespace Mod
 
             if (phys == null)
                 phys = GetComponent<PhysicalBehaviour>();
+
             var rb = phys != null ? phys.rigidbody : null;
             if (rb == null)
                 return;
 
+            float inertia = Mathf.Max(0.01f, rb.inertia);
             float angleErrorDeg = Mathf.DeltaAngle(rb.rotation, 0f);
             float angVelDeg = rb.angularVelocity;
-            float inertia = Mathf.Max(0.01f, rb.inertia);
 
-            const float kP_up = 10f;
-            const float kD_up = 2.2f;
+            const float uprightKp = 22f;
+            const float uprightKd = 5.5f;
+            const float extraRecoveryStart = 25f;
+            const float extraRecoveryTorque = 14f;
 
-            float desiredAngAccelDeg = (-kP_up * angleErrorDeg) - (kD_up * angVelDeg);
+            float desiredAngAccelDeg = (-uprightKp * angleErrorDeg) - (uprightKd * angVelDeg);
             float torque = desiredAngAccelDeg * Mathf.Deg2Rad * inertia;
 
-            float maxTorque = Mathf.Clamp(inertia * 60f, 10f, 1200f);
+            float absAngleError = Mathf.Abs(angleErrorDeg);
+            if (absAngleError > extraRecoveryStart)
+            {
+                float extraFactor = (absAngleError - extraRecoveryStart) / (180f - extraRecoveryStart);
+                torque += -Mathf.Sign(angleErrorDeg) * extraRecoveryTorque * inertia * Mathf.Clamp01(extraFactor);
+            }
+
+            float maxTorque = Mathf.Clamp(inertia * 120f, 25f, 2400f);
             torque = Mathf.Clamp(torque, -maxTorque, maxTorque);
             rb.AddTorque(torque, ForceMode2D.Force);
 
@@ -13567,7 +13900,7 @@ namespace Mod
                 const float speedPerUnit = 4.5f;
                 const float maxSpeed = 55f;
 
-                float desiredSpeed = Mathf.Min(maxSpeed, baseSpeed + speedPerUnit * distExcess);
+                float desiredSpeed = Mathf.Min(maxSpeed, baseSpeed + (speedPerUnit * distExcess));
                 Vector2 desiredVel = dir * desiredSpeed;
 
                 const float velResponse = 9f;
@@ -13579,7 +13912,7 @@ namespace Mod
 
                 float accelMag = accel.magnitude;
                 if (accelMag > maxAccel)
-                    accel *= (maxAccel / accelMag);
+                    accel *= maxAccel / accelMag;
 
                 rb.AddForce(accel * rb.mass, ForceMode2D.Force);
             }
@@ -13589,8 +13922,9 @@ namespace Mod
             }
 
             float linDamp = Mathf.Clamp01(damping * 0.12f);
-            rb.velocity *= (1f - linDamp);
-            rb.angularVelocity *= 0.985f;
+            rb.velocity *= 1f - linDamp;
+            rb.MoveRotation(0);
+            rb.angularVelocity = 0;
         }
 
         public virtual void Use2()
@@ -14947,25 +15281,26 @@ namespace Mod
 
             foreach (var limb in Person.Limbs)
             {
-                foreach (var glow in Glows)
-                {
-                    limb.gameObject.GetOrAddComponent<ExpLimb>().parent = power;
-                    string a = glow.name;
-                    a = a.Replace("G", "");
-                    if (limb.name.Contains(a))
+                if(Glows != null)
+                    foreach (var glow in Glows)
                     {
-                        var sr = new GameObject("Glow").AddComponent<SpriteRenderer>();
-                        sr.sprite = glow;
-                        sr.gameObject.layer = 9;
-                        sr.sortingLayerName = limb.GetComponent<SpriteRenderer>().sortingLayerName;
-                        sr.sortingOrder = limb.GetComponent<SpriteRenderer>().sortingOrder + 1;
-                        sr.color = Color.clear;
-                        sr.material = ModAPI.FindMaterial("VeryBright");
-                        sr.transform.SetParent(limb.transform, false);
+                        limb.gameObject.GetOrAddComponent<ExpLimb>().parent = power;
+                        string a = glow.name;
+                        a = a.Replace("G", "");
+                        if (limb.name.Contains(a))
+                        {
+                            var sr = new GameObject("Glow").AddComponent<SpriteRenderer>();
+                            sr.sprite = glow;
+                            sr.gameObject.layer = 9;
+                            sr.sortingLayerName = limb.GetComponent<SpriteRenderer>().sortingLayerName;
+                            sr.sortingOrder = limb.GetComponent<SpriteRenderer>().sortingOrder + 1;
+                            sr.color = Color.clear;
+                            sr.material = ModAPI.FindMaterial("VeryBright");
+                            sr.transform.SetParent(limb.transform, false);
 
-                        power.glows.Add(sr);
+                            power.glows.Add(sr);
+                        }
                     }
-                }
             }
 
             return power;
@@ -14999,7 +15334,8 @@ namespace Mod
                         limb.ImmuneToDamage = false;
             }
 
-            foreach (var glow in glows)
+            if(glows != null && glows.Count > 0)
+                foreach (var glow in glows)
             {
                 glow.color = Color.Lerp(glow.color, new Color(color.r, color.g, color.b, charge / 100), 0.1f);
             }
@@ -22628,32 +22964,24 @@ namespace Mod
 
     public class Throwable : MonoBehaviour, Messages.IOnDrop
     {
-        private Rigidbody2D rigidbody;
-        private float additionalForce = 35f;
-        public UnityEvent OnThrow;
+        public float strength = 1;
 
-        public void Start()
+        public static Throwable CreateThrowable(GameObject throwable, float strength = 2)
         {
-            rigidbody = gameObject.GetComponent<Rigidbody2D>();
-            rigidbody.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-
-            var phys = gameObject.GetComponent<PhysicalBehaviour>();
-            phys.ForceContinuous = true;
+            var thro = throwable.AddComponent<Throwable>();
+            thro.strength = strength;
+            return thro;
         }
 
-        public void Throw(Vector2 direction)
+        public void OnDrop(GripBehaviour gripper)
         {
-            var mass = rigidbody.mass;
-            var force = direction.normalized * mass * additionalForce;
-            OnThrow?.Invoke();
-            var rotation = Quaternion.LookRotation(Vector3.forward, direction);
-            transform.rotation = rotation;
-            rigidbody.AddForce(force, ForceMode2D.Impulse);
-        }
-
-        public void OnDrop(GripBehaviour Gripper)
-        {
-            Throw(-Gripper.transform.up);
+            var rig = GetComponent<Rigidbody2D>();
+            float a = (transform.localScale.x > 0 ? -90 : 90);
+            rig.angularVelocity = 0;
+            Debug.Log(gripper.transform.rotation.z);
+            Debug.Log(gripper.transform.localRotation.z);
+            rig.transform.rotation = Quaternion.Euler(0, 0, gripper.transform.eulerAngles.z + a);
+            rig.velocity += -(Vector2)gripper.transform.up * strength;
         }
     }
 
@@ -27596,3 +27924,5 @@ namespace Mod
     }
 }
 //this mod was created by Nova Interactive, Don't take our code without permission or we'll kill your family https://www.patreon.com/c/NovaInt
+
+// Originally uploaded by 'Nova Interactive'. Do not reupload without their explicit permission.
