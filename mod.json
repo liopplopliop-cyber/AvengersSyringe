@@ -1,7 +1,7 @@
 {
-  "Name": "Nova's Avengers Mod",
-  "Author": "Nova Interactive",
-  "Description": "Adds The Avengers to PPG",
+  "Name": "Avengers Syringe",
+  "Author": "Nova Interactive (fork)",
+  "Description": "Syringe addon / fork — gives Avenger-style powers via syringes",
   "ModVersion": "1.0",
   "GameVersion": "Latest",
   "ThumbnailPath": "thumb.png",
