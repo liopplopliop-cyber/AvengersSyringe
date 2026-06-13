@@ -1,7 +1,3 @@
-// entry.cs
-// Small stable entry wrapper that delegates to the existing mod implementation.
-// Saves the loader from needing to know the original namespace/class details.
-
 using System;
 
 namespace AvengerSyringe
@@ -11,6 +7,13 @@ namespace AvengerSyringe
         // The loader may call Main or OnLoad. Provide both and delegate to the mod.
         public static void Main()
         {
+            // Best-effort: ensure spawn menu category is unique
+            try
+            {
+                Mod.Mod.CategoryName = "Avengers Syringe";
+            }
+            catch { }
+
             // Delegate to the mod's startup. Adjust if the real startup lives elsewhere.
             try
             {
