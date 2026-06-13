@@ -5,12 +5,13 @@
   "ModVersion": "1.0",
   "GameVersion": "Latest",
   "ThumbnailPath": "thumb.png",
-  "EntryPoint": "Mod.Mod",
+  "EntryPoint": "AvengerSyringe.Entry",
   "Tags": [
     "Fun"
   ],
   "Scripts": [
-    "mod.cs"
+    "mod.cs",
+    "entry.cs"
   ],
   "Active": true,
   "UGCIdentity": null,
